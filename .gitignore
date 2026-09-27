@@ -1,0 +1,35 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+secrets*.json
+
+# Dependencies and builds
+node_modules/
+vendor/
+dist/
+build/
+.next/
+coverage/
+
+# Local tools and caches
+.codex/
+.agents/
+.vscode/
+.idea/
+__pycache__/
+*.pyc
+*.log
+*.tmp
+~$*
+Thumbs.db
+.DS_Store
+
+# Unreviewed personal/source materials (use these folders locally)
+private/
+local-only/
+raw-materials/
+chat-exports/
