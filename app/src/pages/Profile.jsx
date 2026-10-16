@@ -2,51 +2,50 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { localDate } from '../lib/dates.js';
 import { formatInt, goalsSummary, setsSummary } from '../lib/format.js';
-import { EntryIcon } from '../components/EntryIcon.jsx';
-import { A } from '../lib/constants.js';
+import { A, mealTypes } from '../lib/constants.js';
 import { initials, Footer } from '../components/Layout.jsx';
-import { Field, Progress } from '../components/ui.jsx';
+import { Field } from '../components/ui.jsx';
+import { DaySummary } from '../components/DaySummary.jsx';
+import { EntryIcon } from '../components/EntryIcon.jsx';
+import './Profile.css';
 
-export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
-  const [values, setValues] = useState(() => ({
-    name: user.name,
-    target_calories: user.target_calories ?? '',
-    target_protein_g: user.target_protein_g == null ? '' : String(Number(user.target_protein_g)),
-    target_fat_g: user.target_fat_g == null ? '' : String(Number(user.target_fat_g)),
-    target_carbs_g: user.target_carbs_g == null ? '' : String(Number(user.target_carbs_g)),
-  }));
-  const [errors, setErrors] = useState({});
-  const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState('');
-  const [editing, setEditing] = useState(false);
-  const [stats, setStats] = useState(null);
-  const [todayWorkouts, setTodayWorkouts] = useState([]);
-  const [todayMeals, setTodayMeals] = useState([]);
-  const [statsError, setStatsError] = useState('');
-  function loadStats() {
-    setStatsError('');
-    Promise.all([
-      api(`/statistics?from=${localDate()}&to=${localDate()}`),
-      api('/workouts'),
-      api(`/meals?date=${localDate()}`),
-    ])
-      .then(([statistics, workouts, meals]) => {
-        setStats(statistics);
-        setTodayWorkouts(workouts.workouts.filter((item) => item.workout_date === localDate()));
-        setTodayMeals(meals.meals);
-      })
-      .catch((error) => setStatsError(error.message));
-  }
-  useEffect(() => {
-    loadStats();
-  }, []);
-  const change = (event) => {
-    setValues((previous) => ({ ...previous, [event.target.name]: event.target.value }));
-    setErrors((previous) => ({ ...previous, [event.target.name]: '' }));
+const goalFields = [
+  ['target_calories', 'Калории', 'ккал', '1', '100000', '1'],
+  ['target_protein_g', 'Белки', 'г', '0', '10000', '0.01'],
+  ['target_fat_g', 'Жиры', 'г', '0', '10000', '0.01'],
+  ['target_carbs_g', 'Углеводы', 'г', '0', '10000', '0.01'],
+];
+
+function formValues(user) {
+  const values = { name: user.name };
+  for (const [key] of goalFields) values[key] = user[key] == null ? '' : String(Number(user[key]));
+  return values;
+}
+
+function userGoals(user) {
+  return {
+    calories: user.target_calories,
+    protein: user.target_protein_g,
+    fat: user.target_fat_g,
+    carbs: user.target_carbs_g,
   };
+}
+
+function ProfileForm({ user, onSaved, onCancel }) {
+  const [values, setValues] = useState(() => formValues(user));
+  const [errors, setErrors] = useState({});
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const change = (event) => {
+    const { name, value } = event.target;
+    setValues((previous) => ({ ...previous, [name]: value }));
+    setErrors((previous) => ({ ...previous, [name]: '' }));
+  };
+
   async function save(event) {
     event.preventDefault();
-    setNotice('');
+    setMessage('');
     if (!values.name.trim()) {
       setErrors({ name: 'Введите имя.' });
       return;
@@ -54,219 +53,222 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
     setBusy(true);
     try {
       const payload = { name: values.name.trim() };
-      for (const key of ['target_calories', 'target_protein_g', 'target_fat_g', 'target_carbs_g'])
-        payload[key] = values[key] === '' ? null : values[key];
+      for (const [key] of goalFields) payload[key] = values[key] === '' ? null : values[key];
       const result = await api('/profile', { method: 'PUT', body: payload });
-      onUpdate(result.user);
-      setNotice('Профиль и цели сохранены.');
-      setEditing(false);
+      onSaved(result.user);
     } catch (error) {
       setErrors(error.fields || {});
-      setNotice(error.message);
-    } finally {
+      setMessage(error.message);
       setBusy(false);
     }
   }
-  if (statsError)
-    return (
-      <main className="content profile-content">
-        <h1>Личный кабинет</h1>
+
+  return (
+    <form className="panel profile-form" onSubmit={save} noValidate>
+      <div className="profile-form-head">
+        <h2>Профиль и цели КБЖУ</h2>
+        <p>Пустое поле — цель не задана. Инициалы формируются из имени.</p>
+      </div>
+      <div className="profile-form-grid">
+        <Field
+          label="Имя"
+          name="name"
+          value={values.name}
+          onChange={change}
+          error={errors.name}
+          autoComplete="name"
+        />
+        {goalFields.map(([key, label, suffix, min, max, step]) => (
+          <Field
+            key={key}
+            label={label}
+            name={key}
+            value={values[key]}
+            onChange={change}
+            error={errors[key]}
+            type="number"
+            min={min}
+            max={max}
+            step={step}
+            suffix={suffix}
+          />
+        ))}
+      </div>
+      {message && (
         <p className="form-message" role="alert">
-          Не удалось загрузить показатели: {statsError}
+          {message}
         </p>
-        <button className="button button--outline" onClick={loadStats}>
-          Повторить загрузку
+      )}
+      <div className="profile-form-actions">
+        <button className="button button--primary" type="submit" disabled={busy}>
+          {busy ? 'Сохраняем…' : 'Сохранить изменения'}
         </button>
-      </main>
-    );
-  if (!stats)
-    return (
-      <main className="content profile-content">
-        <h1>Личный кабинет</h1>
-        <p className="muted">Загружаем показатели…</p>
-      </main>
-    );
-  const day = stats.days[0];
-  const mealNames = { breakfast: 'Завтрак', lunch: 'Обед', dinner: 'Ужин', snack: 'Перекус' };
-  const caloriesPercent = user.target_calories
-    ? Math.min(100, Math.round((day.calories / user.target_calories) * 100))
-    : 0;
+        <button className="button button--outline" type="button" onClick={onCancel}>
+          Отмена
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function TodayWorkout({ workouts }) {
+  const exercises = workouts.flatMap((workout) =>
+    workout.exercises.map((exercise) => ({ ...exercise, workoutId: workout.id })),
+  );
+  return (
+    <section className="panel profile-card">
+      <h2>
+        <img src={`${A}nav-workouts.svg`} alt="" />
+        Тренировка сегодня
+      </h2>
+      {exercises.length ? (
+        exercises.slice(0, 3).map((exercise, index) => (
+          <a className="profile-entry" href={`/workouts/${exercise.workoutId}`} key={index}>
+            <EntryIcon label={exercise.muscle_group} />
+            <span className="profile-entry-text">
+              {exercise.exercise_name}
+              <small>{setsSummary(exercise.sets)}</small>
+            </span>
+          </a>
+        ))
+      ) : (
+        <p className="profile-empty">
+          Сегодня тренировки ещё не было. <a href="/workouts/new">Добавить тренировку →</a>
+        </p>
+      )}
+    </section>
+  );
+}
+
+const mealOrder = Object.keys(mealTypes);
+
+function TodayMeals({ meals }) {
+  const sorted = [...meals].sort(
+    (a, b) => mealOrder.indexOf(a.meal_type) - mealOrder.indexOf(b.meal_type),
+  );
+  return (
+    <section className="panel profile-card">
+      <h2>
+        <img src={`${A}nav-food.svg`} alt="" />
+        Питание
+      </h2>
+      {sorted.length ? (
+        sorted.slice(0, 4).map((meal) => {
+          const calories = `${formatInt(meal.totals.calories)} ккал`;
+          const products = meal.items.map((item) => item.product_name_snapshot).join(', ');
+          return (
+            <a className="profile-entry" href={`/nutrition/${meal.id}`} key={meal.id}>
+              <EntryIcon meal={meal.meal_type} />
+              <span className="profile-entry-text">
+                {mealTypes[meal.meal_type]}
+                <small className="wide-only">{products || 'Без продуктов'}</small>
+                <small className="narrow-only">{calories}</small>
+              </span>
+              <b className="wide-only">{calories}</b>
+            </a>
+          );
+        })
+      ) : (
+        <p className="profile-empty">
+          Сегодня приёмов пищи пока нет. <a href="/nutrition/new">Добавить питание →</a>
+        </p>
+      )}
+    </section>
+  );
+}
+
+export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
+  const [today, setToday] = useState(null);
+  const [error, setError] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [notice, setNotice] = useState('');
+
+  function load() {
+    const date = localDate();
+    setError('');
+    Promise.all([
+      api(`/statistics?from=${date}&to=${date}`),
+      api('/workouts'),
+      api(`/meals?date=${date}`),
+    ])
+      .then(([statistics, workouts, meals]) =>
+        setToday({
+          day: statistics.days[0],
+          workouts: workouts.workouts.filter((workout) => workout.workout_date === date),
+          meals: meals.meals,
+        }),
+      )
+      .catch((loadError) => setError(loadError.message));
+  }
+  useEffect(load, []);
+
+  function openSettings() {
+    setNotice('');
+    setEditing(true);
+  }
+
+  function saved(nextUser) {
+    onUpdate(nextUser);
+    setEditing(false);
+    setNotice('Профиль и цели сохранены.');
+  }
+
   return (
     <>
       <div className="profile-banner" role="img" aria-label="Северный горный пейзаж" />
-      <main className="content profile-content">
-        <h1 className="profile-mobile-title">Личный кабинет</h1>
+      <main className="content profile-page">
+        <h1 className="profile-title">Личный кабинет</h1>
         <section className="profile-identity">
-          <div className="avatar avatar--large">{initials(user.name)}</div>
-          <div>
-            <h1>{user.name}</h1>
+          <div className="avatar profile-avatar">{initials(user.name)}</div>
+          <div className="profile-name">
+            <h2>{user.name}</h2>
             <p>{user.email}</p>
           </div>
-          <button className="text-button profile-settings" onClick={() => setEditing(!editing)}>
-            {editing ? 'Закрыть настройки' : '⚙ Настройки профиля'}
+          <button
+            className="profile-settings"
+            onClick={editing ? () => setEditing(false) : openSettings}
+            aria-expanded={editing}
+          >
+            <img src={`${A}icon-settings.svg`} alt="" />
+            {editing ? 'Закрыть настройки' : 'Настройки профиля'}
           </button>
         </section>
-        {editing && (
-          <form className="panel profile-form" onSubmit={save} noValidate>
-            <div className="section-heading">
-              <h2>Профиль и цели КБЖУ</h2>
-              <span>Пустое поле — цель не задана</span>
-            </div>
-            <div className="form-grid">
-              <Field
-                label="Имя"
-                name="name"
-                value={values.name}
-                onChange={change}
-                error={errors.name}
-                autoComplete="name"
-              />
-              <Field
-                label="Калории"
-                name="target_calories"
-                value={values.target_calories}
-                onChange={change}
-                error={errors.target_calories}
-                type="number"
-                min="1"
-                max="100000"
-                step="1"
-                suffix="ккал"
-              />
-              <Field
-                label="Белки"
-                name="target_protein_g"
-                value={values.target_protein_g}
-                onChange={change}
-                error={errors.target_protein_g}
-                type="number"
-                min="0"
-                max="10000"
-                step="0.01"
-                suffix="г"
-              />
-              <Field
-                label="Жиры"
-                name="target_fat_g"
-                value={values.target_fat_g}
-                onChange={change}
-                error={errors.target_fat_g}
-                type="number"
-                min="0"
-                max="10000"
-                step="0.01"
-                suffix="г"
-              />
-              <Field
-                label="Углеводы"
-                name="target_carbs_g"
-                value={values.target_carbs_g}
-                onChange={change}
-                error={errors.target_carbs_g}
-                type="number"
-                min="0"
-                max="10000"
-                step="0.01"
-                suffix="г"
-              />
-            </div>
-            {notice && (
-              <p className="form-notice" role="status">
-                {notice}
-              </p>
-            )}
-            <button className="button button--primary" type="submit" disabled={busy}>
-              {busy ? 'Сохраняем…' : 'Сохранить изменения'}
-            </button>
-          </form>
-        )}
-        {!editing && notice && (
-          <p className="form-notice" role="status">
+
+        {editing && <ProfileForm user={user} onSaved={saved} onCancel={() => setEditing(false)} />}
+        {notice && (
+          <p className="form-notice profile-notice" role="status">
             {notice}
           </p>
         )}
-        <section className="panel nutrition-progress">
-          <div className="calorie-summary">
-            <img src={`${A}icon-flame.svg`} alt="" />
-            <span>
-              Сегодня в рационе
-              <strong>
-                {formatInt(day.calories)} /{' '}
-                {user.target_calories ? formatInt(user.target_calories) : '—'} ккал
-              </strong>
-            </span>
+
+        {error ? (
+          <div className="section-notice" role="alert">
+            <p>Не удалось загрузить показатели: {error}</p>
+            <button className="button button--outline" onClick={load}>
+              Повторить
+            </button>
           </div>
-          <div className="calorie-progress">
-            <div className="progress-track">
-              <span style={{ width: `${caloriesPercent}%` }} />
+        ) : !today ? (
+          <p className="muted">Загружаем показатели…</p>
+        ) : (
+          <>
+            <DaySummary title="Сегодня в рационе" day={today.day} goals={userGoals(user)} />
+            <div className="profile-cards">
+              <TodayWorkout workouts={today.workouts} />
+              <TodayMeals meals={today.meals} />
             </div>
-            <span>{user.target_calories ? `${caloriesPercent}%` : 'Цель не задана'}</span>
-          </div>
-          <div className="macro-grid profile-macros">
-            <Progress label="Белки" value={day.protein} target={user.target_protein_g} />
-            <Progress label="Жиры" value={day.fat} target={user.target_fat_g} />
-            <Progress label="Углеводы" value={day.carbs} target={user.target_carbs_g} />
-          </div>
-        </section>
-        <div className="profile-cards">
-          <section className="panel">
-            <h3>
-              <img src={`${A}nav-workouts.svg`} alt="" />
-              Тренировка сегодня
-            </h3>
-            {todayWorkouts.length ? (
-              todayWorkouts
-                .flatMap((workout) => workout.exercises)
-                .slice(0, 2)
-                .map((exercise, index) => (
-                  <div className="profile-entry" key={`${exercise.id}-${index}`}>
-                    <EntryIcon label={exercise.muscle_group} />
-                    <span>
-                      {exercise.exercise_name}
-                      <small>{setsSummary(exercise.sets)}</small>
-                    </span>
-                  </div>
-                ))
-            ) : (
-              <div className="profile-empty">
-                Пока нет записи за сегодня. <a href="/workouts/new">Добавить тренировку →</a>
-              </div>
-            )}
-          </section>
-          <section className="panel">
-            <h3>
-              <img src={`${A}nav-food.svg`} alt="" />
-              Питание
-            </h3>
-            {todayMeals.length ? (
-              todayMeals.slice(0, 3).map((meal) => (
-                <div className="profile-entry" key={meal.id}>
-                  <EntryIcon meal={meal.meal_type} />
-                  <span>
-                    {mealNames[meal.meal_type]}
-                    <small>
-                      {meal.items.map((item) => item.product_name_snapshot).join(', ') ||
-                        'Без продуктов'}
-                    </small>
-                  </span>
-                  <b>{formatInt(meal.totals.calories)} ккал</b>
-                </div>
-              ))
-            ) : (
-              <div className="profile-empty">
-                Сегодня приёмов пищи пока нет. <a href="/nutrition/new">Добавить питание →</a>
-              </div>
-            )}
-          </section>
-        </div>
-        <div className="profile-links">
+          </>
+        )}
+
+        <nav className="profile-links" aria-label="Разделы профиля">
           <a href="/statistics">
             <img src={`${A}icon-chart.svg`} alt="" />
             <span>
-              Статистика<small>Динамика тренировок и питания</small>
+              Статистика
+              <small>Динамика тренировок и питания</small>
             </span>
           </a>
-          <button onClick={() => setEditing(true)}>
+          <button type="button" onClick={openSettings}>
             <img src={`${A}icon-sliders.svg`} alt="" />
             <span>
               Цели КБЖУ
@@ -274,14 +276,20 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
             </span>
           </button>
           <a href="/workouts">
-            <img src={`${A}nav-workouts.svg`} alt="" />
+            <img src={`${A}icon-calendar.svg`} alt="" />
             <span>
-              Сохранённые тренировки<small>Все выполненные тренировки</small>
+              Сохранённые тренировки
+              <small>Все выполненные тренировки</small>
             </span>
           </a>
-        </div>
-        <button className="text-button mobile-logout" onClick={onLogout} disabled={logoutBusy}>
-          Выйти из аккаунта
+        </nav>
+
+        <button
+          className="button button--outline profile-logout narrow-only"
+          onClick={onLogout}
+          disabled={logoutBusy}
+        >
+          {logoutBusy ? 'Выходим…' : 'Выйти из аккаунта'}
         </button>
       </main>
       <Footer />

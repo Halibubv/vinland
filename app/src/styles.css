@@ -894,74 +894,11 @@ h3 {
   color: var(--success);
   font-size: 13px;
 }
-.profile-banner {
-  height: 82px;
-  background: url('/assets/panorama.png') center/cover no-repeat;
-}
-.profile-content {
-  padding: 22px 16px 70px;
-}
-.profile-identity {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  margin-bottom: 22px;
-}
-.avatar--large {
-  width: 64px;
-  height: 64px;
-  font-size: 22px;
-  border: 0;
-}
-.profile-identity h1 {
-  font-size: 22px;
-  margin: 0 0 4px;
-}
-.profile-identity p {
-  font-size: 14px;
-  color: var(--muted);
-  margin: 0;
-}
-.profile-settings {
-  margin-left: auto;
-}
-.profile-form {
-  margin: 0 0 20px;
-}
-.profile-form h2 {
-  font-size: 26px;
-  margin: 0;
-}
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin: 16px 0;
-}
-.profile-form > .button {
-  margin-top: 8px;
-}
-.nutrition-progress {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 16px 28px;
-}
-.calorie-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.calorie-summary span {
-  font-size: 14px;
-}
-.calorie-summary strong {
-  font-size: 22px;
-}
-.macro-grid {
-  grid-column: 1/-1;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
 }
 .progress-stat {
   min-width: 0;
@@ -1002,63 +939,6 @@ h3 {
   text-align: right;
   color: var(--muted);
   font-size: 11px;
-}
-.profile-cards {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin: 18px 0;
-}
-.profile-cards .panel {
-  display: block;
-  min-height: 145px;
-  transition:
-    border-color 0.2s,
-    transform 0.2s;
-}
-.profile-cards .panel:hover {
-  border-color: var(--cream);
-  transform: translateY(-2px);
-}
-.profile-cards img {
-  width: 24px;
-  height: 24px;
-}
-.profile-cards h3 {
-  font-size: 17px;
-  margin: 10px 0 4px;
-}
-.profile-cards p {
-  color: var(--muted);
-  font-size: 13px;
-  margin: 0;
-}
-.profile-links {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-.profile-links > a,
-.profile-links > button {
-  border: 0;
-  background: transparent;
-  padding: 5px 0;
-  color: var(--cream);
-  font-size: 14px;
-  text-align: left;
-}
-.profile-links span {
-  display: block;
-  color: var(--muted);
-  font-size: 12px;
-  margin-top: 4px;
-}
-.profile-links > a:hover,
-.profile-links > button:hover {
-  text-decoration: underline;
-}
-.mobile-logout {
-  display: none;
 }
 
 @media (max-width: 980px) {
@@ -1144,8 +1024,7 @@ h3 {
     object-fit: contain;
   }
   .app-header ~ main,
-  .app-header ~ .home-hero,
-  .app-header ~ .profile-banner {
+  .app-header ~ .home-hero {
     margin-bottom: 0;
   }
   .site-footer {
@@ -1345,49 +1224,8 @@ h3 {
   .auth-panel .site-footer {
     display: block;
   }
-  .profile-banner {
-    height: 80px;
-  }
-  .profile-content {
-    padding: 20px 18px 95px;
-  }
-  .profile-identity {
-    gap: 14px;
-    flex-wrap: wrap;
-  }
-  .avatar--large {
-    width: 54px;
-    height: 54px;
-  }
-  .profile-identity h1 {
-    font-size: 20px;
-  }
-  .profile-settings {
-    width: 100%;
-    margin-left: 0;
-    text-align: left;
-    padding: 6px 0;
-  }
-  .nutrition-progress {
-    grid-template-columns: 1fr;
-  }
-  .macro-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-  .profile-cards {
-    grid-template-columns: 1fr;
-  }
-  .profile-links {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
   .form-grid {
     grid-template-columns: 1fr;
-  }
-  .mobile-logout {
-    display: block;
-    margin-top: 24px;
   }
   .placeholder-page {
     padding: 55px 20px 100px;
@@ -1410,8 +1248,7 @@ h3 {
     transition: none;
   }
   .button,
-  .progress-track > span,
-  .profile-cards .panel {
+  .progress-track > span {
     transition: none;
   }
 }
@@ -1419,13 +1256,7 @@ h3 {
 .auth-mobile-photo {
   display: none;
 }
-.profile-banner {
-  height: 103px;
-}
 @media (max-width: 700px) {
-  .profile-banner {
-    height: 80px;
-  }
   .landing {
     padding-bottom: 65px;
   }
@@ -2292,233 +2123,6 @@ h3 {
 @media (prefers-reduced-motion: reduce) {
   .reveal.is-visible {
     animation: none;
-  }
-}
-
-/* Account overview uses the same compact progress and content cards as Figma. */
-.profile-mobile-title {
-  display: none;
-}
-.nutrition-progress {
-  display: block;
-  padding: 16px;
-}
-.calorie-summary {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 16px;
-}
-.calorie-summary img {
-  width: 36px;
-  height: 36px;
-}
-.calorie-summary span {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 14px;
-}
-.calorie-summary strong {
-  font-size: 26px;
-}
-.calorie-progress {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 10px 0 16px;
-}
-.calorie-progress .progress-track {
-  margin: 0;
-  flex: 1;
-}
-.calorie-progress > span {
-  min-width: 34px;
-  font-size: 13px;
-}
-.profile-macros {
-  grid-column: auto;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 30px;
-}
-.profile-macros .progress-label {
-  display: block;
-}
-.profile-macros .progress-label span {
-  display: block;
-  margin-bottom: 4px;
-}
-.profile-macros .progress-label strong {
-  font-size: 17px;
-}
-.profile-macros .progress-percent {
-  text-align: left;
-}
-.profile-cards .panel {
-  min-height: 150px;
-  transform: none;
-}
-.profile-cards .panel:hover {
-  transform: none;
-}
-.profile-cards h3 {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0 0 12px;
-  font-size: 16px;
-  font-weight: 500;
-}
-.profile-cards h3 img {
-  width: 22px;
-  height: 22px;
-}
-.profile-entry {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 8px 0;
-  font-size: 14px;
-}
-.profile-entry > .entry-icon {
-  width: 70px;
-  height: 45px;
-}
-.profile-entry > span {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  flex-direction: column;
-  gap: 4px;
-}
-.profile-entry small {
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.profile-entry b {
-  font-size: 12px;
-  font-weight: 400;
-  white-space: nowrap;
-}
-.profile-empty {
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.5;
-}
-.profile-empty a {
-  display: block;
-  margin-top: 8px;
-  color: var(--cream);
-}
-.profile-links > a,
-.profile-links > button {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  min-height: 72px;
-  padding: 6px 0;
-}
-.profile-links img {
-  width: 26px;
-  height: 26px;
-  object-fit: contain;
-}
-.profile-links span {
-  display: block;
-  margin: 0;
-  color: var(--cream);
-  font-size: 15px;
-}
-.profile-links small {
-  display: block;
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 400;
-}
-@media (max-width: 700px) {
-  .profile-mobile-title {
-    display: block;
-    margin: 0 0 18px;
-    font-size: 22px;
-    line-height: 28px;
-  }
-  .profile-identity {
-    margin-bottom: 16px;
-  }
-  .profile-identity h1 {
-    font-size: 18px;
-  }
-  .profile-settings {
-    font-size: 13px;
-  }
-  .nutrition-progress {
-    padding: 16px;
-  }
-  .calorie-summary {
-    gap: 10px;
-  }
-  .calorie-summary img {
-    width: 30px;
-    height: 30px;
-  }
-  .calorie-summary span {
-    font-size: 12px;
-  }
-  .calorie-summary strong {
-    font-size: 18px;
-  }
-  .calorie-progress {
-    margin: 12px 0 14px;
-  }
-  .profile-macros {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-  }
-  .profile-macros .progress-label span {
-    font-size: 11px;
-  }
-  .profile-macros .progress-label strong {
-    font-size: 12px;
-    white-space: nowrap;
-  }
-  .profile-macros .progress-track {
-    height: 6px;
-  }
-  .profile-macros .progress-percent {
-    font-size: 10px;
-  }
-  .profile-cards {
-    gap: 10px;
-    margin: 12px 0;
-  }
-  .profile-cards .panel {
-    min-height: 100px;
-    padding: 13px;
-  }
-  .profile-cards h3 {
-    font-size: 14px;
-    margin-bottom: 10px;
-  }
-  .profile-links {
-    gap: 8px;
-  }
-  .profile-links > a,
-  .profile-links > button {
-    min-height: 64px;
-    padding: 13px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface);
-  }
-  .profile-links span {
-    font-size: 14px;
-  }
-  .profile-links small {
-    font-size: 11px;
   }
 }
 
