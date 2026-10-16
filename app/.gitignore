@@ -1,0 +1,12 @@
+# Local PostgreSQL runtime and data used only for integration checks.
+tools/
+.postgres-data/
+.postgres-*.log
+postgresql-*.log
+
+# Runtime files created by the PHP application.
+var/*
+!var/.gitkeep
+
+# Local application configuration.
+.env
