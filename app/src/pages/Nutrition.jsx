@@ -72,10 +72,13 @@ function MealSlot({ type, label, meals, date }) {
   );
 }
 
-export function NutritionPage() {
+// The diary for one day. With `history` it is the "История питания" screen:
+// same day view, opened on a past date, with a way back to today.
+export function NutritionPage({ history = false, initialDate }) {
+  const path = history ? '/nutrition/history' : '/nutrition';
   const [date, setDate] = useState(() => {
     const value = new URLSearchParams(window.location.search).get('date');
-    return parseDate(value) ? value : localDate();
+    return parseDate(value) ? value : initialDate || localDate();
   });
   const [meals, setMeals] = useState(null);
   const [statistics, setStatistics] = useState(null);
@@ -92,14 +95,14 @@ export function NutritionPage() {
   }
   useEffect(() => {
     // Keep the chosen day in the address, so reload and "back" return to it.
-    const search = date === localDate() ? '' : `?date=${date}`;
-    window.history.replaceState(window.history.state, '', `/nutrition${search}`);
+    const search = !history && date === localDate() ? '' : `?date=${date}`;
+    window.history.replaceState(window.history.state, '', `${path}${search}`);
     reload();
   }, [date]);
   const day = relativeDay(date);
   return (
     <Shell
-      title="Дневник питания"
+      title={history ? 'История питания' : 'Дневник питания'}
       action={
         <>
           <DateStepper value={date} onChange={setDate} label="Дата дневника" />
@@ -122,7 +125,13 @@ export function NutritionPage() {
       ) : (
         <>
           <DaySummary
-            title={day === 'Сегодня' ? 'Сегодня в рационе' : `${day} в рационе`}
+            title={
+              history
+                ? 'За выбранный день'
+                : day === 'Сегодня'
+                  ? 'Сегодня в рационе'
+                  : `${day} в рационе`
+            }
             day={statistics.days[0]}
             goals={statistics.goals}
           />
@@ -137,18 +146,32 @@ export function NutritionPage() {
               />
             ))}
           </div>
-          <a className="history-link" href="/nutrition/history">
-            <img src={`${A}icon-calendar.svg`} alt="" />
-            <span>
-              <strong>
-                История питания<span className="narrow-only"> — выбрать дату</span>
-              </strong>
-              <small className="wide-only">Прошлые дни доступны по дате</small>
-            </span>
-            <b className="wide-only" aria-hidden="true">
-              →
-            </b>
-          </a>
+          {history ? (
+            <>
+              <a className="history-link" href="/nutrition">
+                <img src={`${A}icon-calendar.svg`} alt="" />
+                <span>
+                  <strong>К сегодняшнему дню</strong>
+                </span>
+              </a>
+              <p className="diary-note">
+                Прошлые итоги сохраняются при изменении справочника продуктов.
+              </p>
+            </>
+          ) : (
+            <a className="history-link" href="/nutrition/history">
+              <img src={`${A}icon-calendar.svg`} alt="" />
+              <span>
+                <strong>
+                  История питания<span className="narrow-only"> — выбрать дату</span>
+                </strong>
+                <small className="wide-only">Прошлые дни доступны по дате</small>
+              </span>
+              <b className="wide-only" aria-hidden="true">
+                →
+              </b>
+            </a>
+          )}
         </>
       )}
     </Shell>

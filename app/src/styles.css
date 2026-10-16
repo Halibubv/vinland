@@ -2376,27 +2376,6 @@ h3 {
   color: var(--muted);
   font-size: 13px;
 }
-.history-list {
-  border-top: 1px solid var(--border);
-}
-.history-list > a {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 15px;
-  padding: 18px 4px;
-  border-bottom: 1px solid var(--border);
-}
-.history-list > a:hover {
-  background: var(--surface);
-}
-.history-list span {
-  color: var(--muted);
-  font-size: 13px;
-}
-.history-list b {
-  justify-self: end;
-  font-size: 13px;
-}
 .statistics-panel {
   display: grid;
   grid-template-columns: 60% 40%;
@@ -2797,12 +2776,6 @@ h3 {
   .meal-preview {
     flex-wrap: wrap;
     gap: 10px;
-  }
-  .history-list > a {
-    grid-template-columns: 1fr 1fr;
-  }
-  .history-list b {
-    justify-self: start;
   }
   .statistics-panel {
     grid-template-columns: 1fr;
