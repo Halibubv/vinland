@@ -15,15 +15,24 @@ export async function api(path, options = {}) {
     throw new Error('Нет связи с сервером. Проверьте подключение и повторите попытку.');
   }
   let data;
-  try { data = await response.json(); }
-  catch { throw new Error('Сервер вернул неожиданный ответ. Обновите страницу и повторите попытку.'); }
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error('Сервер вернул неожиданный ответ. Обновите страницу и повторите попытку.');
+  }
   if (data.csrf) csrf = data.csrf;
   if (!response.ok) {
-    if ((response.status === 401 && path !== '/auth/login') || (response.status === 403 && options.method && options.method !== 'GET')) {
+    if (
+      (response.status === 401 && path !== '/auth/login') ||
+      (response.status === 403 && options.method && options.method !== 'GET')
+    ) {
       try {
         const renewed = await session();
-        if (!renewed.user && path !== '/auth/register' && path !== '/auth/login') window.dispatchEvent(new CustomEvent('vinland:auth-required'));
-      } catch { /* Preserve the original error and form values; never replay a write. */ }
+        if (!renewed.user && path !== '/auth/register' && path !== '/auth/login')
+          window.dispatchEvent(new CustomEvent('vinland:auth-required'));
+      } catch {
+        /* Preserve the original error and form values; never replay a write. */
+      }
     }
     const error = new Error(data.error || 'Не удалось выполнить действие.');
     error.status = response.status;
@@ -33,7 +42,9 @@ export async function api(path, options = {}) {
   return data;
 }
 
-export function session() { return api('/session'); }
+export function session() {
+  return api('/session');
+}
 
 export function localDate(date = new Date()) {
   const year = date.getFullYear();
@@ -45,8 +56,12 @@ export function localDate(date = new Date()) {
 export function dateLabel(value, options = {}) {
   if (!value) return '';
   const [year, month, day] = value.split('-').map(Number);
-  return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', ...options })
-    .format(new Date(year, month - 1, day));
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    ...options,
+  }).format(new Date(year, month - 1, day));
 }
 
 export function formatNumber(value) {
