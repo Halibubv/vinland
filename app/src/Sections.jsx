@@ -1,14 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { api, dateLabel, formatNumber, localDate } from './api';
+import { go as navigate } from './router';
 
 const A = '/assets/';
 const mealTypes = { breakfast: 'Завтрак', lunch: 'Обед', snack: 'Перекус', dinner: 'Ужин' };
 
-function navigate(path) {
-  window.history.pushState({}, '', path);
-  window.dispatchEvent(new PopStateEvent('popstate'));
-  window.scrollTo({ top: 0, behavior: 'instant' });
-}
 
 function Shell({ title, subtitle, action, children, className = '' }) {
   return (

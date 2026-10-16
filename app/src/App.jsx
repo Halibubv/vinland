@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api, dateLabel, formatNumber, localDate, session } from './api';
+import { currentLocation, currentPath, go, interceptLinks } from './router';
 import {
   AdminCatalog,
   MealEditor,
@@ -18,18 +19,17 @@ const navigation = [
   ['/profile', 'Профиль', 'nav-profile.svg'],
 ];
 
-function pathNow() {
-  return window.location.pathname === '/ui/' ? '/' : window.location.pathname;
-}
-function go(path) {
-  window.history.pushState({}, '', path);
-  window.dispatchEvent(new PopStateEvent('popstate'));
-  window.scrollTo({ top: 0, behavior: 'instant' });
+
+// Statistics is opened from the profile, so the profile tab stays highlighted there.
+function isActive(to, path) {
+  if (to === '/') return path === '/';
+  if (to === '/profile' && path === '/statistics') return true;
+  return path === to || path.startsWith(`${to}/`);
 }
 
 function Brand() {
   return (
-    <a className="brand" href="#/" aria-label="ВИНЛАНД — главная">
+    <a className="brand" href="/" aria-label="ВИНЛАНД — главная">
       <img src={`${A}logo-v.svg`} alt="" />
       <span>ВИНЛАНД</span>
     </a>
@@ -38,25 +38,25 @@ function Brand() {
 
 function LinkButton({ to, children, variant = 'primary', className = '' }) {
   return (
-    <a className={`button button--${variant} ${className}`} href={`#${to}`}>
+    <a className={`button button--${variant} ${className}`} href={to}>
       {children}
     </a>
   );
 }
 
 function AppHeader({ user, onLogout, busy }) {
-  const path = pathNow();
+  const path = currentPath();
   return (
     <>
       <header className="app-header">
         <Brand />
         <nav className="desktop-nav" aria-label="Основная навигация">
           {navigation.map(([to, label, icon]) => {
-            const active = to === '/' ? path === '/' : path === to || path.startsWith(`${to}/`);
+            const active = isActive(to, path);
             return (
               <a
                 key={to}
-                href={`#${to}`}
+                href={to}
                 className={active ? 'active' : ''}
                 aria-current={active ? 'page' : undefined}
               >
@@ -68,11 +68,11 @@ function AppHeader({ user, onLogout, busy }) {
         </nav>
         <div className="header-account">
           {user.role === 'admin' && (
-            <a className="admin-entry" href="#/admin/exercises">
+            <a className="admin-entry" href="/admin/exercises">
               Администрирование
             </a>
           )}
-          <a href="#/profile" className="avatar" aria-label="Открыть профиль">
+          <a href="/profile" className="avatar" aria-label="Открыть профиль">
             {initials(user.name)}
           </a>
           <span>{user.name.split(' ')[0]}</span>
@@ -83,11 +83,11 @@ function AppHeader({ user, onLogout, busy }) {
       </header>
       <nav className="mobile-nav" aria-label="Основная навигация">
         {navigation.map(([to, label, icon]) => {
-          const active = to === '/' ? path === '/' : path === to || path.startsWith(`${to}/`);
+          const active = isActive(to, path);
           return (
             <a
               key={to}
-              href={`#${to}`}
+              href={to}
               className={active ? 'active' : ''}
               aria-current={active ? 'page' : undefined}
             >
@@ -120,15 +120,15 @@ function Footer({ guest = false }) {
         <span>ВИНЛАНД · Тренировки и питание</span>
       </div>
       <nav aria-label="Нижняя навигация">
-        <a href="#/">Главная</a>
+        <a href="/">Главная</a>
         {guest ? (
           <>
-            <a href="#/login">Войти</a>
-            <a href="#/register">Создать аккаунт</a>
+            <a href="/login">Войти</a>
+            <a href="/register">Создать аккаунт</a>
           </>
         ) : (
           navigation.slice(1).map(([to, label]) => (
-            <a key={to} href={`#${to}`}>
+            <a key={to} href={to}>
               {label}
             </a>
           ))
@@ -144,7 +144,7 @@ function GuestMobileNav() {
       {navigation.map(([to, label, icon]) => (
         <a
           key={to}
-          href={`#${to === '/' ? '/' : '/login'}`}
+          href={to === '/' ? '/' : '/login'}
           aria-label={to === '/' ? label : `${label} — войти`}
         >
           <img src={`${A}${icon}`} alt="" />
@@ -647,7 +647,7 @@ function AuthPage({ mode, onAuth }) {
               'После регистрации будет создан пользовательский аккаунт.'
             ) : (
               <>
-                Нет аккаунта? <a href="#/register">Регистрация →</a>
+                Нет аккаунта? <a href="/register">Регистрация →</a>
               </>
             )}
           </div>
@@ -733,15 +733,15 @@ function Home({ user }) {
               Разбираем ключевые принципы, технику и частые ошибки, чтобы приседания были
               эффективными и безопасными.
             </p>
-            <a href="#/workouts">Открыть тренировки →</a>
+            <a href="/workouts">Открыть тренировки →</a>
           </article>
           <div className="useful-links">
-            <a href="#/nutrition">
+            <a href="/nutrition">
               <strong>Дневник питания без догадок</strong>
               <span>Как проще учитывать рацион и видеть реальную картину.</span>
               <b>→</b>
             </a>
-            <a href="#/statistics">
+            <a href="/statistics">
               <strong>Восстановление после нагрузки</strong>
               <span>Что помогает организму быть готовым к новым тренировкам.</span>
               <b>→</b>
@@ -751,7 +751,7 @@ function Home({ user }) {
         <section className="dashboard-preview">
           <div className="section-heading">
             <h2>Сегодня</h2>
-            <a href="#/statistics">Вся статистика →</a>
+            <a href="/statistics">Вся статистика →</a>
           </div>
           {error ? (
             <p className="form-message">{error}</p>
@@ -768,13 +768,13 @@ function Home({ user }) {
                   target={goals.calories}
                   unit="ккал"
                 />
-                <a href="#/nutrition">Открыть дневник →</a>
+                <a href="/nutrition">Открыть дневник →</a>
               </article>
               <article className="panel">
                 <span className="eyebrow">ТРЕНИРОВКИ</span>
                 <h3>{day.workouts} за сегодня</h3>
                 <p>{day.sets} подходов записано</p>
-                <a href="#/workouts">Открыть историю →</a>
+                <a href="/workouts">Открыть историю →</a>
               </article>
             </div>
           )}
@@ -1022,7 +1022,7 @@ function Profile({ user, onUpdate, onLogout, logoutBusy }) {
                 ))
             ) : (
               <div className="profile-empty">
-                Пока нет записи за сегодня. <a href="#/workouts/new">Добавить тренировку →</a>
+                Пока нет записи за сегодня. <a href="/workouts/new">Добавить тренировку →</a>
               </div>
             )}
           </section>
@@ -1047,13 +1047,13 @@ function Profile({ user, onUpdate, onLogout, logoutBusy }) {
               ))
             ) : (
               <div className="profile-empty">
-                Сегодня приёмов пищи пока нет. <a href="#/nutrition/new">Добавить питание →</a>
+                Сегодня приёмов пищи пока нет. <a href="/nutrition/new">Добавить питание →</a>
               </div>
             )}
           </section>
         </div>
         <div className="profile-links">
-          <a href="#/statistics">
+          <a href="/statistics">
             <img src={`${A}icon-chart.svg`} alt="" />
             <span>
               Статистика<small>Динамика тренировок и питания</small>
@@ -1076,7 +1076,7 @@ function Profile({ user, onUpdate, onLogout, logoutBusy }) {
               </small>
             </span>
           </button>
-          <a href="#/workouts">
+          <a href="/workouts">
             <img src={`${A}nav-workouts.svg`} alt="" />
             <span>
               Сохранённые тренировки<small>Все выполненные тренировки</small>
@@ -1093,23 +1093,18 @@ function Profile({ user, onUpdate, onLogout, logoutBusy }) {
 }
 
 export default function App() {
-  const [path, setPath] = useState(pathNow());
+  const [location, setLocation] = useState(currentLocation());
+  const path = location.split('?')[0];
   const [user, setUser] = useState(undefined);
   const [logoutBusy, setLogoutBusy] = useState(false);
   const [sessionError, setSessionError] = useState('');
   useEffect(() => {
-    const change = () => setPath(pathNow());
-    const follow = (event) => {
-      const link = event.target.closest('a[href^="#/"]');
-      if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-      event.preventDefault();
-      go(link.getAttribute('href').slice(1));
-    };
+    const change = () => setLocation(currentLocation());
     window.addEventListener('popstate', change);
-    document.addEventListener('click', follow);
+    const stopIntercepting = interceptLinks();
     return () => {
       window.removeEventListener('popstate', change);
-      document.removeEventListener('click', follow);
+      stopIntercepting();
     };
   }, []);
   useEffect(() => {
@@ -1231,10 +1226,10 @@ export default function App() {
       ) : path === '/profile' ? (
         <Profile user={user} onUpdate={setUser} onLogout={logout} logoutBusy={logoutBusy} />
       ) : (
-        <>
+        <React.Fragment key={location}>
           {section}
           <Footer />
-        </>
+        </React.Fragment>
       )}
     </>
   );

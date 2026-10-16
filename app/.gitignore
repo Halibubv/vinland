@@ -10,3 +10,6 @@ var/*
 
 # Local application configuration.
 .env
+
+# Built UI: produced by `pnpm run build`
+public/ui/
