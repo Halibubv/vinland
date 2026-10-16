@@ -8,6 +8,9 @@ require dirname(__DIR__) . '/backend/database.php';
 if (PHP_SAPI !== 'cli') {
     exit(1);
 }
+// Same zone as backend/bootstrap.php, so "today" in the seed is today in the app.
+date_default_timezone_set('Europe/Moscow');
+
 $email = strtolower($argv[1] ?? 'demo@vinland.local');
 $password = $argv[2] ?? 'VinlandDemo2026';
 
