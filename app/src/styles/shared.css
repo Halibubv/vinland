@@ -230,22 +230,28 @@ body.modal-open {
 }
 .modal h2 {
   margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
   font-size: 22px;
+  font-weight: 400;
 }
 .modal-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   margin-bottom: 16px;
 }
 .modal-close {
   width: 36px;
   height: 36px;
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: 50%;
   background: none;
   color: var(--cream);
-  font-size: 20px;
+  font-size: 28px;
+}
+.modal-close:hover {
+  background: var(--surface2);
 }
 .modal-actions {
   display: flex;
@@ -261,6 +267,7 @@ body.modal-open {
 .catalog-dialog {
   display: flex;
   flex-direction: column;
+  box-shadow: 0 25px 90px #0009;
 }
 .catalog-dialog:not([open]) {
   display: none;
@@ -273,29 +280,39 @@ body.modal-open {
   border-radius: 8px;
   background: var(--bg);
   color: var(--cream);
+  font: inherit;
 }
 .catalog-options {
   display: grid;
   gap: 6px;
+  max-height: 460px;
   margin-top: 12px;
   overflow-y: auto;
 }
 .catalog-options button {
   display: grid;
   gap: 4px;
+  min-height: 52px;
   padding: 12px 14px;
   border: 1px solid transparent;
   border-radius: 8px;
   background: var(--surface2);
   color: var(--cream);
+  font: inherit;
   text-align: left;
 }
 .catalog-options button:hover,
 .catalog-options button:focus-visible {
   border-color: var(--cream);
+  background: var(--surface);
+}
+.catalog-options strong {
+  font-size: 14px;
+  font-weight: 500;
 }
 .catalog-options small {
   color: var(--muted);
+  font-size: 12px;
 }
 @media (max-width: 700px) {
   .modal {
@@ -303,5 +320,22 @@ body.modal-open {
   }
   .modal-actions .button {
     flex: 1;
+  }
+}
+
+/* On a phone the catalog picker is a bottom sheet above the navigation. */
+@media (max-width: 700px) {
+  .modal.catalog-dialog {
+    inset: auto 0 0;
+    width: 100%;
+    max-width: none;
+    max-height: 82vh;
+    margin: 0;
+    padding: 20px 18px calc(20px + env(safe-area-inset-bottom));
+    border-width: 1px 0 0;
+    border-radius: 16px 16px 0 0;
+  }
+  .catalog-options {
+    max-height: none;
   }
 }

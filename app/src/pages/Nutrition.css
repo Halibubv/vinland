@@ -95,8 +95,39 @@
   font-size: 14px;
 }
 
-.diary-page .history-link {
-  border-bottom: 0;
+/* Link under the day: "История питания" or, in history, "К сегодняшнему дню". */
+.history-link {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 0;
+  font-size: 16px;
+}
+.history-link > img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+.history-link > span {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.history-link strong {
+  font-size: 16px;
+  font-weight: 500;
+}
+.history-link small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.history-link > b {
+  color: var(--muted);
+  font-size: 25px;
+  font-weight: 400;
 }
 
 /* Tablet and phone: each meal type is a card, as in the "Адаптив" and "Приложение" mockups. */
@@ -166,7 +197,7 @@
   .meal-slot-add {
     width: 100%;
   }
-  .diary-page .history-link > img {
+  .history-link > img {
     width: 22px;
     height: 22px;
   }
@@ -178,14 +209,6 @@
   .meal-entry-text {
     font-size: 15px;
   }
-}
-
-.diary-page .history-link strong span {
-  display: inline;
-  margin: 0;
-  padding: 0;
-  color: inherit;
-  font-size: inherit;
 }
 
 .diary-note {
