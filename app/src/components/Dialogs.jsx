@@ -8,6 +8,9 @@ export function useModal(onClose) {
     const dialog = ref.current;
     const opener = document.activeElement;
     dialog.showModal();
+    // React's autoFocus would run before showModal(), so the dialog focuses
+    // its [data-autofocus] element itself once it is open.
+    dialog.querySelector('[data-autofocus]')?.focus();
     document.body.classList.add('modal-open');
     return () => {
       document.body.classList.remove('modal-open');
@@ -41,7 +44,7 @@ export function CatalogDialog({ title, items, describe, onChoose, onClose }) {
         </button>
       </div>
       <input
-        autoFocus
+        data-autofocus
         type="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
@@ -81,7 +84,7 @@ export function ConfirmDialog({
         <button className="button button--danger" type="button" onClick={onConfirm} disabled={busy}>
           {busy ? 'Удаляем…' : confirmLabel}
         </button>
-        <button autoFocus className="button button--outline" type="button" onClick={onClose}>
+        <button data-autofocus className="button button--outline" type="button" onClick={onClose}>
           Отмена
         </button>
       </div>

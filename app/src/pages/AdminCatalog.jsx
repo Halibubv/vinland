@@ -89,7 +89,7 @@ function EntryDialog({ kind, entry, onSaved, onClose }) {
       <form className="admin-form" onSubmit={save} noValidate>
         <label>
           Название
-          <input autoFocus value={form.name} onChange={set('name')} maxLength={150} />
+          <input data-autofocus value={form.name} onChange={set('name')} maxLength={150} />
           {fields.name && <small className="field-error">{fields.name}</small>}
         </label>
         {kind === 'exercises' ? (
