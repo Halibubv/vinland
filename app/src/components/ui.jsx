@@ -74,11 +74,25 @@ export function Progress({ label, value, target, unit = 'г' }) {
   );
 }
 
-export function Shell({ title, subtitle, action, children, className = '' }) {
+// Back link above the page title: "‹ Тренировки / 27 сентября 2026".
+export function BackLink({ to, label, current }) {
+  return (
+    <nav className="back-link" aria-label="Навигация по разделу">
+      <a href={to}>
+        <span aria-hidden="true">‹</span>
+        {label}
+      </a>
+      {current && <span className="back-link-current"> / {current}</span>}
+    </nav>
+  );
+}
+
+export function Shell({ title, subtitle, action, back, children, className = '' }) {
   return (
     <>
       <div className="section-banner" />
       <main className={`content section-content ${className}`}>
+        {back}
         <div className="section-title-row">
           <div>
             <h1>{title}</h1>

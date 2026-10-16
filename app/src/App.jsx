@@ -8,6 +8,7 @@ import { Home } from './pages/Home.jsx';
 import { Profile } from './pages/Profile.jsx';
 import { WorkoutsPage } from './pages/Workouts.jsx';
 import { WorkoutEditor } from './pages/WorkoutEditor.jsx';
+import { WorkoutView } from './pages/WorkoutView.jsx';
 import { NutritionPage } from './pages/Nutrition.jsx';
 import { MealEditor } from './pages/MealEditor.jsx';
 import { NutritionHistory } from './pages/NutritionHistory.jsx';
@@ -106,11 +107,13 @@ export default function App() {
       </div>
     );
   const workoutId = path.match(/^\/workouts\/(\d+)$/)?.[1];
+  const editedWorkoutId = path.match(/^\/workouts\/(\d+)\/edit$/)?.[1];
   const mealId = path.match(/^\/nutrition\/(\d+)$/)?.[1];
   let section = null;
   if (path === '/workouts') section = <WorkoutsPage />;
   else if (path === '/workouts/new') section = <WorkoutEditor />;
-  else if (workoutId) section = <WorkoutEditor id={workoutId} />;
+  else if (workoutId) section = <WorkoutView id={workoutId} />;
+  else if (editedWorkoutId) section = <WorkoutEditor id={editedWorkoutId} />;
   else if (path === '/nutrition') section = <NutritionPage />;
   else if (path === '/nutrition/new') section = <MealEditor />;
   else if (mealId) section = <MealEditor id={mealId} />;

@@ -16,6 +16,26 @@
   color: var(--cream);
 }
 
+/* "‹ Тренировки / 27 сентября 2026" above a page title. */
+.back-link {
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.back-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--muted);
+}
+.back-link a span {
+  font-size: 22px;
+  line-height: 1;
+}
+.back-link a:hover {
+  color: var(--cream);
+}
+
 /* Progress bar used by DaySummary. */
 .bar {
   flex: 1;

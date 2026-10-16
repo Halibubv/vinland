@@ -9,6 +9,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 if (in_array($method, ['GET', 'HEAD'], true) && (
     in_array($path, ['/', '/login', '/register', '/profile', '/workouts', '/workouts/new', '/nutrition', '/nutrition/new', '/nutrition/history', '/statistics', '/admin/exercises', '/admin/products'], true)
     || preg_match('#^/(?:workouts|nutrition)/[1-9][0-9]*$#', $path)
+    || preg_match('#^/workouts/[1-9][0-9]*/edit$#', $path)
 )) {
     $entry = __DIR__ . '/ui/index.html';
     if (!is_file($entry)) {
