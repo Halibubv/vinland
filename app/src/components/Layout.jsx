@@ -58,8 +58,9 @@ export function AppHeader({ user, onLogout, busy }) {
         </nav>
         <div className="header-account">
           {user.role === 'admin' && (
-            <a className="admin-entry" href="/admin/exercises">
-              Администрирование
+            <a className="admin-entry" href="/admin/exercises" title="Администрирование">
+              <span className="admin-entry-long">Администрирование</span>
+              <span className="admin-entry-short">Админ</span>
             </a>
           )}
           <a href="/profile" className="avatar" aria-label="Открыть профиль">

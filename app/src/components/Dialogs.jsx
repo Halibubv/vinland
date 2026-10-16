@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 // Opens a native <dialog> as a modal: the rest of the page becomes inert,
 // Escape closes it, and focus returns to the button that opened it.
-function useModal(onClose) {
+export function useModal(onClose) {
   const ref = useRef(null);
   useEffect(() => {
     const dialog = ref.current;
