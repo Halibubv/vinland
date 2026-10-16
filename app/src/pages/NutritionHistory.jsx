@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { api, dateLabel, formatNumber } from '../lib/api.js';
+import { api } from '../lib/api.js';
+import { dateLabel } from '../lib/dates.js';
+import { formatInt, plural } from '../lib/format.js';
 import { mealTypes } from '../lib/constants.js';
 import { Shell, Notice, Empty } from '../components/ui.jsx';
 
@@ -32,8 +34,8 @@ export function NutritionHistory() {
             <a href={`/nutrition/${meal.id}`} key={meal.id}>
               <span>{dateLabel(meal.meal_date)}</span>
               <strong>{mealTypes[meal.meal_type]}</strong>
-              <span>{meal.items.length} продуктов</span>
-              <b>{formatNumber(meal.totals.calories)} ккал →</b>
+              <span>{plural(meal.items.length, 'продукт', 'продукта', 'продуктов')}</span>
+              <b>{formatInt(meal.totals.calories)} ккал →</b>
             </a>
           ))}
         </div>

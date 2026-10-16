@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { api, localDate } from '../lib/api.js';
+import { api } from '../lib/api.js';
+import { dayMonth, localDate } from '../lib/dates.js';
 import { go as navigate } from '../lib/router.js';
 import { A } from '../lib/constants.js';
-import { Shell, Notice, CatalogDialog } from '../components/ui.jsx';
-import { dayMonth } from '../lib/dates.js';
+import { Shell, Notice } from '../components/ui.jsx';
+import { DateStepper } from '../components/DateStepper.jsx';
+import { CatalogDialog, ConfirmDialog } from '../components/Dialogs.jsx';
 
 const newExercise = () => ({ key: crypto.randomUUID(), exercise_id: '', notes: '', sets: [] });
 
 const newSet = () => ({ key: crypto.randomUUID(), repetitions: '8', weight_kg: '0', notes: '' });
 
-export function WorkoutEditor({ id, user }) {
-  const draftKey = `vinland-workout-${user.id}-${id || 'new'}`;
+export function WorkoutEditor({ id }) {
   const [form, setForm] = useState({ workout_date: localDate(), notes: '', exercises: [] });
   const [catalog, setCatalog] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -20,6 +21,7 @@ export function WorkoutEditor({ id, user }) {
   const [error, setError] = useState('');
   const [fields, setFields] = useState({});
   const [pickerIndex, setPickerIndex] = useState(null);
+  const [confirming, setConfirming] = useState(false);
   useEffect(() => {
     setLoading(true);
     setLoadError('');
@@ -43,18 +45,13 @@ export function WorkoutEditor({ id, user }) {
             })),
           })),
         };
-        try {
-          setForm(JSON.parse(sessionStorage.getItem(draftKey) || 'null') || base);
-        } catch {
-          setForm(base);
-        }
+        setForm(base);
       })
       .catch((problem) => setLoadError(problem.message))
       .finally(() => setLoading(false));
   }, [id, loadAttempt]);
   function change(next) {
     setForm(next);
-    sessionStorage.setItem(draftKey, JSON.stringify(next));
     setFields({});
   }
   function editExercise(index, patch) {
@@ -106,7 +103,6 @@ export function WorkoutEditor({ id, user }) {
         method: id ? 'PUT' : 'POST',
         body,
       });
-      sessionStorage.removeItem(draftKey);
       navigate(`/workouts/${result.workout.id}`);
     } catch (problem) {
       setError(Object.values(problem.fields || {}).join(' ') || problem.message);
@@ -116,16 +112,15 @@ export function WorkoutEditor({ id, user }) {
     }
   }
   async function remove() {
-    if (!window.confirm('Удалить тренировку? Это действие нельзя отменить.')) return;
     setBusy(true);
     setError('');
     try {
       await api(`/workouts/${id}`, { method: 'DELETE' });
-      sessionStorage.removeItem(draftKey);
       navigate('/workouts');
     } catch (problem) {
       setError(problem.message);
       setBusy(false);
+      setConfirming(false);
     }
   }
   const addExercise = () => {
@@ -159,15 +154,14 @@ export function WorkoutEditor({ id, user }) {
       ) : (
         <form className="editor-form workout-form" onSubmit={save} noValidate>
           <div className="form-intro">
-            <label>
-              Дата тренировки
-              <input
-                type="date"
+            <div className="form-date">
+              <span>Дата тренировки</span>
+              <DateStepper
                 value={form.workout_date}
-                onChange={(event) => change({ ...form, workout_date: event.target.value })}
-                required
+                onChange={(workout_date) => change({ ...form, workout_date })}
+                label="Дата тренировки"
               />
-            </label>
+            </div>
             <label>
               Заметка (необязательно)
               <input
@@ -347,7 +341,7 @@ export function WorkoutEditor({ id, user }) {
               <button
                 className="button button--danger"
                 type="button"
-                onClick={remove}
+                onClick={() => setConfirming(true)}
                 disabled={busy}
               >
                 Удалить тренировку
@@ -356,10 +350,22 @@ export function WorkoutEditor({ id, user }) {
           </div>
         </form>
       )}
+      {confirming && (
+        <ConfirmDialog
+          title="Удалить тренировку?"
+          busy={busy}
+          onConfirm={remove}
+          onClose={() => setConfirming(false)}
+        >
+          Тренировка за {dayMonth(form.workout_date)} и все её подходы будут удалены. Это действие
+          нельзя отменить.
+        </ConfirmDialog>
+      )}
       {pickerIndex !== null && (
         <CatalogDialog
           title="Выберите упражнение"
           items={catalog}
+          describe={(item) => item.muscle_group}
           onChoose={(item) => {
             editExercise(pickerIndex.index, {
               exercise_id: String(item.id),

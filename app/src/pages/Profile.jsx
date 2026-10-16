@@ -1,27 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { api, formatNumber, localDate } from '../lib/api.js';
+import { api } from '../lib/api.js';
+import { localDate } from '../lib/dates.js';
+import { formatInt, goalsSummary, setsSummary } from '../lib/format.js';
+import { EntryIcon } from '../components/EntryIcon.jsx';
 import { A } from '../lib/constants.js';
 import { initials, Footer } from '../components/Layout.jsx';
 import { Field, Progress } from '../components/ui.jsx';
 
 export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
-  const [values, setValues] = useState(() => {
-    const defaults = {
-      name: user.name,
-      target_calories: user.target_calories ?? '',
-      target_protein_g: user.target_protein_g ?? '',
-      target_fat_g: user.target_fat_g ?? '',
-      target_carbs_g: user.target_carbs_g ?? '',
-    };
-    try {
-      return {
-        ...defaults,
-        ...JSON.parse(sessionStorage.getItem(`vinland-profile-${user.id}`) || '{}'),
-      };
-    } catch {
-      return defaults;
-    }
-  });
+  const [values, setValues] = useState(() => ({
+    name: user.name,
+    target_calories: user.target_calories ?? '',
+    target_protein_g: user.target_protein_g == null ? '' : String(Number(user.target_protein_g)),
+    target_fat_g: user.target_fat_g == null ? '' : String(Number(user.target_fat_g)),
+    target_carbs_g: user.target_carbs_g == null ? '' : String(Number(user.target_carbs_g)),
+  }));
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
@@ -48,11 +41,7 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
     loadStats();
   }, []);
   const change = (event) => {
-    setValues((previous) => {
-      const next = { ...previous, [event.target.name]: event.target.value };
-      sessionStorage.setItem(`vinland-profile-${user.id}`, JSON.stringify(next));
-      return next;
-    });
+    setValues((previous) => ({ ...previous, [event.target.name]: event.target.value }));
     setErrors((previous) => ({ ...previous, [event.target.name]: '' }));
   };
   async function save(event) {
@@ -68,7 +57,6 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
       for (const key of ['target_calories', 'target_protein_g', 'target_fat_g', 'target_carbs_g'])
         payload[key] = values[key] === '' ? null : values[key];
       const result = await api('/profile', { method: 'PUT', body: payload });
-      sessionStorage.removeItem(`vinland-profile-${user.id}`);
       onUpdate(result.user);
       setNotice('Профиль и цели сохранены.');
       setEditing(false);
@@ -203,8 +191,8 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
             <span>
               Сегодня в рационе
               <strong>
-                {formatNumber(day.calories)} /{' '}
-                {user.target_calories ? formatNumber(user.target_calories) : '—'} ккал
+                {formatInt(day.calories)} /{' '}
+                {user.target_calories ? formatInt(user.target_calories) : '—'} ккал
               </strong>
             </span>
           </div>
@@ -232,10 +220,10 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
                 .slice(0, 2)
                 .map((exercise, index) => (
                   <div className="profile-entry" key={`${exercise.id}-${index}`}>
-                    <img src={`${A}squat-photo.png`} alt="" />
+                    <EntryIcon label={exercise.muscle_group} />
                     <span>
                       {exercise.exercise_name}
-                      <small>{exercise.sets.length} подходов</small>
+                      <small>{setsSummary(exercise.sets)}</small>
                     </span>
                   </div>
                 ))
@@ -253,7 +241,7 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
             {todayMeals.length ? (
               todayMeals.slice(0, 3).map((meal) => (
                 <div className="profile-entry" key={meal.id}>
-                  <img src={`${A}food-photo.png`} alt="" />
+                  <EntryIcon meal={meal.meal_type} />
                   <span>
                     {mealNames[meal.meal_type]}
                     <small>
@@ -261,7 +249,7 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
                         'Без продуктов'}
                     </small>
                   </span>
-                  <b>{formatNumber(meal.totals.calories)} ккал</b>
+                  <b>{formatInt(meal.totals.calories)} ккал</b>
                 </div>
               ))
             ) : (
@@ -282,17 +270,7 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
             <img src={`${A}icon-sliders.svg`} alt="" />
             <span>
               Цели КБЖУ
-              <small>
-                {[
-                  user.target_calories,
-                  user.target_protein_g,
-                  user.target_fat_g,
-                  user.target_carbs_g,
-                ]
-                  .map((value) => value || '—')
-                  .join(' / ')}{' '}
-                ккал / г
-              </small>
+              <small>{goalsSummary(user)}</small>
             </span>
           </button>
           <a href="/workouts">

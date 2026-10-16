@@ -27,7 +27,7 @@ function user_statistics(array $user, array $params): never
         FROM meals m LEFT JOIN meal_items mi ON mi.meal_id = m.id
         WHERE m.user_id = ? AND m.meal_date BETWEEN ? AND ? GROUP BY m.meal_date',
         [$user['id'], $from, $to])->fetchAll();
-    $workouts = query('SELECT w.workout_date, COUNT(DISTINCT w.id) AS workouts, COUNT(ws.id) AS sets
+    $workouts = query('SELECT w.workout_date, COUNT(DISTINCT w.id) AS workouts, COUNT(DISTINCT we.id) AS exercises, COUNT(ws.id) AS sets
         FROM workouts w LEFT JOIN workout_exercises we ON we.workout_id = w.id
         LEFT JOIN workout_sets ws ON ws.workout_exercise_id = we.id
         WHERE w.user_id = ? AND w.workout_date BETWEEN ? AND ? GROUP BY w.workout_date',
@@ -45,6 +45,7 @@ function user_statistics(array $user, array $params): never
     }
     foreach ($workouts as $row) {
         $byDate[$row['workout_date']]['workouts'] = (int) $row['workouts'];
+        $byDate[$row['workout_date']]['exercises'] = (int) $row['exercises'];
         $byDate[$row['workout_date']]['sets'] = (int) $row['sets'];
         $totals['workouts'] += (int) $row['workouts'];
         $totals['sets'] += (int) $row['sets'];
@@ -52,7 +53,7 @@ function user_statistics(array $user, array $params): never
     $days = [];
     for ($date = $start; $date <= $end; $date = $date->modify('+1 day')) {
         $day = ['date' => $date->format('Y-m-d'), 'calories' => 0.0, 'protein' => 0.0,
-            'fat' => 0.0, 'carbs' => 0.0, 'workouts' => 0, 'sets' => 0];
+            'fat' => 0.0, 'carbs' => 0.0, 'workouts' => 0, 'exercises' => 0, 'sets' => 0];
         $day = array_replace($day, $byDate[$day['date']] ?? []);
         $days[] = $day;
     }

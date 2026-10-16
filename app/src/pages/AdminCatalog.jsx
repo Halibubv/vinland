@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { api, formatNumber } from '../lib/api.js';
+import { api } from '../lib/api.js';
+import { formatNumber } from '../lib/format.js';
 import { Shell, Notice, Empty } from '../components/ui.jsx';
 
 const emptyCatalog = (kind) =>

@@ -2380,13 +2380,11 @@ h3 {
   margin: 8px 0;
   font-size: 14px;
 }
-.profile-entry > img {
+.profile-entry > .entry-icon {
   width: 70px;
   height: 45px;
-  object-fit: cover;
-  border-radius: 4px;
 }
-.profile-entry span {
+.profile-entry > span {
   display: flex;
   flex: 1;
   min-width: 0;

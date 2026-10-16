@@ -56,7 +56,7 @@ function owned_workout(int $workoutId, int $userId, bool $lock = false): array
 function workout_payload(int $workoutId, int $userId): array
 {
     $workout = owned_workout($workoutId, $userId);
-    $exerciseRows = query('SELECT we.id, we.exercise_id, we.position, we.notes, e.name AS exercise_name
+    $exerciseRows = query('SELECT we.id, we.exercise_id, we.position, we.notes, e.name AS exercise_name, e.muscle_group
         FROM workout_exercises we JOIN exercises e ON e.id = we.exercise_id
         WHERE we.workout_id = ? ORDER BY we.position', [$workoutId])->fetchAll();
     $workout['exercises'] = array_map(function (array $exercise): array {

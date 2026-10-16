@@ -1,0 +1,164 @@
+.meal-form {
+  max-width: 860px;
+}
+.meal-form h2 {
+  margin: 28px 0 16px;
+  font-size: 22px;
+  font-weight: 500;
+}
+.meal-form-when {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 48px;
+}
+.meal-form-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.meal-form-when .date-stepper {
+  margin-left: -6px;
+}
+.meal-type-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.meal-type-choice button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: none;
+  color: var(--cream);
+}
+.meal-type-choice button:hover {
+  border-color: var(--cream);
+}
+.meal-type-choice button.selected {
+  border-color: var(--cream);
+  background: var(--cream);
+  color: var(--bg);
+  font-weight: 600;
+}
+.meal-items {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.meal-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 24px;
+  padding: 20px;
+}
+.meal-item h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+}
+.meal-item p {
+  grid-column: 1;
+  margin: 0;
+  font-size: 15px;
+}
+.meal-item p small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.meal-item-grams {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 6px 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.meal-item-grams img {
+  width: 16px;
+  height: 16px;
+}
+.meal-item-grams input {
+  grid-column: 1 / -1;
+  width: 140px;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--cream);
+  font-size: 16px;
+}
+.meal-item-remove {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--error);
+  font-size: 14px;
+}
+.meal-item-remove img {
+  width: 18px;
+  height: 18px;
+}
+.meal-form-empty {
+  margin: 0 0 8px;
+}
+.meal-total {
+  display: grid;
+  gap: 6px;
+  margin: 24px 0 16px;
+}
+.meal-total strong {
+  font-size: 24px;
+}
+.meal-total span {
+  color: var(--cream);
+}
+.meal-total small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.meal-add {
+  gap: 10px;
+  width: 100%;
+}
+.meal-add img {
+  width: 18px;
+  height: 18px;
+}
+.meal-form .form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+@media (max-width: 700px) {
+  .meal-item {
+    grid-template-columns: 1fr;
+  }
+  .meal-item-grams {
+    grid-column: 1;
+    grid-row: auto;
+    margin-top: 10px;
+  }
+  .meal-item-grams input {
+    width: 100%;
+  }
+  .meal-form .form-actions .button {
+    width: 100%;
+  }
+}

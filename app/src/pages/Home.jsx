@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { api, formatNumber, localDate } from '../lib/api.js';
+import { api } from '../lib/api.js';
+import { localDate } from '../lib/dates.js';
+import { formatInt, plural } from '../lib/format.js';
 import { A } from '../lib/constants.js';
 import { LinkButton, Footer } from '../components/Layout.jsx';
 import { Progress } from '../components/ui.jsx';
@@ -88,7 +90,7 @@ export function Home({ user }) {
             <div className="overview-grid">
               <article className="panel">
                 <span className="eyebrow">ПИТАНИЕ</span>
-                <h3>{formatNumber(day.calories)} ккал</h3>
+                <h3>{formatInt(day.calories)} ккал</h3>
                 <Progress
                   label="Калории"
                   value={day.calories}
@@ -99,8 +101,16 @@ export function Home({ user }) {
               </article>
               <article className="panel">
                 <span className="eyebrow">ТРЕНИРОВКИ</span>
-                <h3>{day.workouts} за сегодня</h3>
-                <p>{day.sets} подходов записано</p>
+                <h3>
+                  {day.workouts
+                    ? plural(day.workouts, 'тренировка', 'тренировки', 'тренировок')
+                    : 'Тренировок нет'}
+                </h3>
+                <p>
+                  {day.sets
+                    ? `${plural(day.sets, 'подход', 'подхода', 'подходов')} за сегодня`
+                    : 'Запишите первую тренировку дня'}
+                </p>
                 <a href="/workouts">Открыть историю →</a>
               </article>
             </div>

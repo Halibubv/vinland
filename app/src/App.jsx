@@ -53,14 +53,6 @@ export default function App() {
     setLogoutBusy(true);
     try {
       await api('/auth/logout', { method: 'POST' });
-      for (const key of Object.keys(sessionStorage)) {
-        if (
-          key === `vinland-profile-${user.id}` ||
-          key.startsWith(`vinland-workout-${user.id}-`) ||
-          key.startsWith(`vinland-meal-${user.id}-`)
-        )
-          sessionStorage.removeItem(key);
-      }
       setUser(null);
       go('/');
     } catch (error) {
@@ -117,11 +109,11 @@ export default function App() {
   const mealId = path.match(/^\/nutrition\/(\d+)$/)?.[1];
   let section = null;
   if (path === '/workouts') section = <WorkoutsPage />;
-  else if (path === '/workouts/new') section = <WorkoutEditor user={user} />;
-  else if (workoutId) section = <WorkoutEditor id={workoutId} user={user} />;
-  else if (path === '/nutrition') section = <NutritionPage user={user} />;
-  else if (path === '/nutrition/new') section = <MealEditor user={user} />;
-  else if (mealId) section = <MealEditor id={mealId} user={user} />;
+  else if (path === '/workouts/new') section = <WorkoutEditor />;
+  else if (workoutId) section = <WorkoutEditor id={workoutId} />;
+  else if (path === '/nutrition') section = <NutritionPage />;
+  else if (path === '/nutrition/new') section = <MealEditor />;
+  else if (mealId) section = <MealEditor id={mealId} />;
   else if (path === '/nutrition/history') section = <NutritionHistory />;
   else if (path === '/statistics') section = <StatisticsPage />;
   else if (path === '/admin/exercises') section = <AdminCatalog kind="exercises" user={user} />;
