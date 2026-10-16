@@ -1,35 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import { api } from '../lib/api.js';
-import { localDate } from '../lib/dates.js';
-import { formatInt, plural } from '../lib/format.js';
+import React from 'react';
 import { A } from '../lib/constants.js';
-import { LinkButton, Footer } from '../components/Layout.jsx';
-import { Progress } from '../components/ui.jsx';
+import { Footer } from '../components/Layout.jsx';
+import './Home.css';
 
+const guides = [
+  {
+    to: '/nutrition',
+    icon: 'nav-food.svg',
+    topic: 'Питание',
+    title: 'Дневник питания без догадок',
+    text: 'Как проще учитывать рацион и видеть реальную картину.',
+  },
+  {
+    to: '/statistics',
+    icon: 'icon-chart.svg',
+    topic: 'Восстановление',
+    title: 'Восстановление после нагрузки',
+    text: 'Что помогает организму быть готовым к новым тренировкам.',
+  },
+];
+
+// Signed-in start page: greeting with the two main actions and short guides.
 export function Home({ user }) {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState('');
-  useEffect(() => {
-    let live = true;
-    Promise.all([
-      api(`/statistics?from=${localDate()}&to=${localDate()}`),
-      api('/workouts'),
-      api(`/meals?date=${localDate()}`),
-    ])
-      .then((results) => {
-        if (live) setData({ stats: results[0], workouts: results[1], meals: results[2] });
-      })
-      .catch((e) => live && setError(e.message));
-    return () => {
-      live = false;
-    };
-  }, []);
-  const day = data?.stats?.days?.[0];
-  const goals = data?.stats?.goals || {};
   return (
     <>
       <section className="home-hero">
-        <div className="home-hero-photo" />
         <div className="home-hero-copy">
           <h1>
             Добрый день,
@@ -37,22 +32,27 @@ export function Home({ user }) {
             {user.name.split(' ')[0]}
           </h1>
           <p>Сегодня — новый шаг в пути.</p>
-          <div className="button-row">
-            <LinkButton to="/workouts/new">Записать тренировку</LinkButton>
-            <LinkButton to="/nutrition/new" variant="outline">
+          <div className="home-hero-actions">
+            <a className="button button--primary" href="/workouts/new">
+              <img src={`${A}nav-workouts.svg`} alt="" />
+              Записать тренировку
+            </a>
+            <a className="button button--outline" href="/nutrition/new">
+              <img src={`${A}nav-food.svg`} alt="" />
               Добавить питание
-            </LinkButton>
+            </a>
           </div>
         </div>
       </section>
+
       <main className="content home-content">
-        <div className="ornament" />
+        <div className="home-ornament" aria-hidden="true" />
         <h2>Полезное</h2>
-        <p className="subheading">Знания. Практика. Твой путь.</p>
-        <div className="useful-grid">
+        <p className="home-lead">Знания. Практика. Твой путь.</p>
+        <div className="home-useful">
           <img src={`${A}article-barbell.png`} alt="Штанга для силовой тренировки" />
-          <article>
-            <span className="eyebrow">ТРЕНИРОВКИ</span>
+          <article className="home-feature">
+            <span>Тренировки</span>
             <h3>
               Техника приседаний:
               <br />
@@ -62,60 +62,32 @@ export function Home({ user }) {
               Разбираем ключевые принципы, технику и частые ошибки, чтобы приседания были
               эффективными и безопасными.
             </p>
-            <a href="/workouts">Открыть тренировки →</a>
+            <a href="/workouts">
+              <span aria-hidden="true">→</span>
+              Открыть тренировки
+            </a>
           </article>
-          <div className="useful-links">
-            <a href="/nutrition">
-              <strong>Дневник питания без догадок</strong>
-              <span>Как проще учитывать рацион и видеть реальную картину.</span>
-              <b>→</b>
-            </a>
-            <a href="/statistics">
-              <strong>Восстановление после нагрузки</strong>
-              <span>Что помогает организму быть готовым к новым тренировкам.</span>
-              <b>→</b>
-            </a>
-          </div>
+          <ul className="home-guides">
+            {guides.map((guide) => (
+              <li key={guide.to}>
+                <a href={guide.to}>
+                  <span className="home-guide-icon">
+                    <img className="wide-only" src={`${A}${guide.icon}`} alt="" />
+                    <img className="narrow-only" src={`${A}icon-book.svg`} alt="" />
+                  </span>
+                  <span className="home-guide-text">
+                    <small className="wide-only">{guide.topic}</small>
+                    <strong>{guide.title}</strong>
+                    <span className="wide-only">{guide.text}</span>
+                  </span>
+                  <b className="wide-only" aria-hidden="true">
+                    →
+                  </b>
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
-        <section className="dashboard-preview">
-          <div className="section-heading">
-            <h2>Сегодня</h2>
-            <a href="/statistics">Вся статистика →</a>
-          </div>
-          {error ? (
-            <p className="form-message">{error}</p>
-          ) : !data ? (
-            <p className="muted">Загружаем данные…</p>
-          ) : (
-            <div className="overview-grid">
-              <article className="panel">
-                <span className="eyebrow">ПИТАНИЕ</span>
-                <h3>{formatInt(day.calories)} ккал</h3>
-                <Progress
-                  label="Калории"
-                  value={day.calories}
-                  target={goals.calories}
-                  unit="ккал"
-                />
-                <a href="/nutrition">Открыть дневник →</a>
-              </article>
-              <article className="panel">
-                <span className="eyebrow">ТРЕНИРОВКИ</span>
-                <h3>
-                  {day.workouts
-                    ? plural(day.workouts, 'тренировка', 'тренировки', 'тренировок')
-                    : 'Тренировок нет'}
-                </h3>
-                <p>
-                  {day.sets
-                    ? `${plural(day.sets, 'подход', 'подхода', 'подходов')} за сегодня`
-                    : 'Запишите первую тренировку дня'}
-                </p>
-                <a href="/workouts">Открыть историю →</a>
-              </article>
-            </div>
-          )}
-        </section>
       </main>
       <Footer />
     </>
