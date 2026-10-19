@@ -1,0 +1,11 @@
+# Что не нужно копировать в Docker-образ.
+node_modules
+public/ui
+.env
+.env.*
+var
+tests
+docs
+tools
+.postgres-data
+*.log

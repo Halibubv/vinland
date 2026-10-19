@@ -1,6 +1,6 @@
-/* New / edited workout. Desktop: exercises separated by rules, sets in a table,
-   actions in one row. Tablet and phone (≤900px): each exercise is a card with
-   "Выше / Ниже" buttons, actions stacked full width. */
+/* Новая или редактируемая тренировка. Компьютер: упражнения разделены линиями,
+   подходы в таблице, кнопки в один ряд. Планшет и телефон (≤900px): каждое
+   упражнение — карточка с кнопками «Выше / Ниже», кнопки на всю ширину. */
 
 .workout-form-label {
   display: block;
@@ -124,7 +124,7 @@
   margin: 0 0 8px 66px;
 }
 
-/* Set table: number, repetitions, weight, remove. */
+/* Таблица подходов: номер, повторения, вес, удаление. */
 .workout-sets-edit {
   margin-left: 66px;
   border: 1px solid var(--border);

@@ -1,8 +1,10 @@
 <?php
+// Unit-тесты без базы данных: проверка полей форм и расчёт КБЖУ. Запуск: php tests/unit.php
 declare(strict_types=1);
 require dirname(__DIR__) . '/backend/http.php';
 require dirname(__DIR__) . '/backend/validation.php';
 
+// Счётчик пройденных проверок; при первой неудаче скрипт падает с её названием.
 $checks = 0;
 function check(bool $condition, string $name): void
 {
@@ -12,6 +14,7 @@ function check(bool $condition, string $name): void
     }
     $checks++;
 }
+// Ожидаем, что действие отклонено с ошибкой 422 именно для поля $field.
 function rejects(callable $action, string $field): void
 {
     try {

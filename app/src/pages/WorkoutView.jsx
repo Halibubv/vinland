@@ -1,13 +1,15 @@
+// Просмотр одной сохранённой тренировки (только чтение). Редактирование — на /workouts/:id/edit.
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { dateLabel } from '../lib/dates.js';
 import { formatNumber } from '../lib/format.js';
 import { go as navigate } from '../lib/router.js';
-import { A } from '../lib/constants.js';
+import { ASSETS } from '../lib/constants.js';
 import { Shell, Notice, BackLink } from '../components/ui.jsx';
 import { ConfirmDialog } from '../components/Dialogs.jsx';
 import './WorkoutView.css';
 
+// Таблица подходов одного упражнения; заметка к подходу — отдельной строкой под ним.
 function SetsTable({ sets }) {
   if (!sets.length) return <p className="muted workout-view-empty">Подходы не записаны.</p>;
   return (
@@ -39,7 +41,31 @@ function SetsTable({ sets }) {
   );
 }
 
-// Read-only page of one saved workout; editing lives at /workouts/:id/edit.
+// Список упражнений тренировки и её заметка.
+function WorkoutDetails({ workout }) {
+  return (
+    <>
+      {workout.notes && <p className="workout-view-note">Заметка: {workout.notes}</p>}
+      <h2 className="workout-view-heading wide-only">Упражнения</h2>
+      {!workout.exercises.length && (
+        <p className="muted workout-view-empty">В этой тренировке нет упражнений.</p>
+      )}
+      <ol className="workout-view-exercises">
+        {workout.exercises.map((exercise, index) => (
+          <li className="workout-view-exercise" key={exercise.id}>
+            <h3>
+              <span>{index + 1}.</span>
+              {exercise.exercise_name}
+            </h3>
+            {exercise.notes && <p className="workout-view-exercise-note">{exercise.notes}</p>}
+            <SetsTable sets={exercise.sets} />
+          </li>
+        ))}
+      </ol>
+    </>
+  );
+}
+
 export function WorkoutView({ id }) {
   const [workout, setWorkout] = useState(null);
   const [error, setError] = useState('');
@@ -67,14 +93,15 @@ export function WorkoutView({ id }) {
   }
 
   const date = workout ? dateLabel(workout.workout_date) : '';
+  // Кнопки показываются справа от заголовка на широком экране и под списком на узком.
   const actions = (
     <div className="workout-view-actions">
       <a className="button button--outline" href={`/workouts/${id}/edit`}>
-        <img src={`${A}icon-pencil.svg`} alt="" />
+        <img src={`${ASSETS}icon-pencil.svg`} alt="" />
         Редактировать
       </a>
       <button className="workout-view-delete" type="button" onClick={() => setConfirming(true)}>
-        <img src={`${A}icon-trash.svg`} alt="" />
+        <img src={`${ASSETS}icon-trash.svg`} alt="" />
         <span>
           Удалить<span className="narrow-only"> тренировку</span>
         </span>
@@ -94,29 +121,11 @@ export function WorkoutView({ id }) {
       action={workout && <div className="wide-only">{actions}</div>}
       className="workout-view-page"
     >
-      {error ? (
-        <Notice message={error} retry={load} />
-      ) : !workout ? (
-        <p className="muted">Загружаем тренировку…</p>
-      ) : (
+      {error && <Notice message={error} retry={load} />}
+      {!error && !workout && <p className="muted">Загружаем тренировку…</p>}
+      {!error && workout && (
         <>
-          {workout.notes && <p className="workout-view-note">Заметка: {workout.notes}</p>}
-          <h2 className="workout-view-heading wide-only">Упражнения</h2>
-          {!workout.exercises.length && (
-            <p className="muted workout-view-empty">В этой тренировке нет упражнений.</p>
-          )}
-          <ol className="workout-view-exercises">
-            {workout.exercises.map((exercise, index) => (
-              <li className="workout-view-exercise" key={exercise.id}>
-                <h3>
-                  <span>{index + 1}.</span>
-                  {exercise.exercise_name}
-                </h3>
-                {exercise.notes && <p className="workout-view-exercise-note">{exercise.notes}</p>}
-                <SetsTable sets={exercise.sets} />
-              </li>
-            ))}
-          </ol>
+          <WorkoutDetails workout={workout} />
           <div className="narrow-only">{actions}</div>
         </>
       )}

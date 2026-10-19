@@ -1,4 +1,5 @@
 <?php
+// Тренировки: упражнения в заданном порядке и подходы (повторения, вес, заметки).
 declare(strict_types=1);
 
 function workout_input(array $data): array
@@ -40,6 +41,7 @@ function workout_input(array $data): array
     ];
 }
 
+// Тренировку ищем сразу по id и владельцу: чужая выглядит так же, как несуществующая.
 function owned_workout(int $workoutId, int $userId, bool $lock = false): array
 {
     $sql = 'SELECT id, workout_date, notes, created_at FROM workouts WHERE id = ? AND user_id = ?';
@@ -56,55 +58,72 @@ function owned_workout(int $workoutId, int $userId, bool $lock = false): array
 function workout_payload(int $workoutId, int $userId): array
 {
     $workout = owned_workout($workoutId, $userId);
-    $exerciseRows = query('SELECT we.id, we.exercise_id, we.position, we.notes, e.name AS exercise_name, e.muscle_group
+    $exercises = query('SELECT we.id, we.exercise_id, we.position, we.notes, e.name AS exercise_name, e.muscle_group
         FROM workout_exercises we JOIN exercises e ON e.id = we.exercise_id
         WHERE we.workout_id = ? ORDER BY we.position', [$workoutId])->fetchAll();
-    $workout['exercises'] = array_map(function (array $exercise): array {
-        $exercise['sets'] = query('SELECT id, set_number, repetitions, weight_kg, notes
+    foreach ($exercises as $index => $exercise) {
+        $exercises[$index]['sets'] = query('SELECT id, set_number, repetitions, weight_kg, notes
             FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number', [$exercise['id']])->fetchAll();
-        return $exercise;
-    }, $exerciseRows);
+    }
+    $workout['exercises'] = $exercises;
     return $workout;
 }
 
+// Значение boolean из PostgreSQL может прийти как true или как строка 't'.
 function active_catalog_value(mixed $value): bool
 {
     return $value === true || $value === 1 || $value === '1' || $value === 't';
 }
 
+// Создаёт тренировку ($workoutId = null) или перезаписывает упражнения существующей.
+// Всё в одной транзакции: при любой ошибке в базе ничего не меняется.
 function write_workout(int $userId, array $input, ?int $workoutId = null): array
 {
     $db = database();
     $db->beginTransaction();
     try {
-        $historicalCounts = [];
+        // Сколько раз каждое упражнение уже было в этой тренировке до правки.
+        $countsBefore = [];
         if ($workoutId === null) {
             $workoutId = (int) query('INSERT INTO workouts (user_id, workout_date, notes) VALUES (?, ?, ?) RETURNING id', [
                 $userId, $input['workout_date'], $input['notes'],
             ])->fetchColumn();
         } else {
             owned_workout($workoutId, $userId, true);
-            foreach (query('SELECT exercise_id, COUNT(*) AS occurrences FROM workout_exercises WHERE workout_id = ? GROUP BY exercise_id', [$workoutId])->fetchAll() as $row) {
-                $historicalCounts[(int) $row['exercise_id']] = (int) $row['occurrences'];
+            $rows = query('SELECT exercise_id, COUNT(*) AS occurrences FROM workout_exercises
+                WHERE workout_id = ? GROUP BY exercise_id', [$workoutId])->fetchAll();
+            foreach ($rows as $row) {
+                $countsBefore[(int) $row['exercise_id']] = (int) $row['occurrences'];
             }
             query('UPDATE workouts SET workout_date = ?, notes = ? WHERE id = ?', [
                 $input['workout_date'], $input['notes'], $workoutId,
             ]);
+            // Упражнения и подходы проще записать заново; подходы удалятся каскадом.
             query('DELETE FROM workout_exercises WHERE workout_id = ?', [$workoutId]);
         }
-        $incomingCounts = [];
+
+        $countsNow = [];
         foreach ($input['exercises'] as $position => $exercise) {
-            $catalogExercise = query('SELECT is_active FROM exercises WHERE id = ?', [$exercise['exercise_id']])->fetch();
-            $incomingCounts[$exercise['exercise_id']] = ($incomingCounts[$exercise['exercise_id']] ?? 0) + 1;
-            if (!$catalogExercise || (!active_catalog_value($catalogExercise['is_active'])
-                && $incomingCounts[$exercise['exercise_id']] > ($historicalCounts[$exercise['exercise_id']] ?? 0))) {
+            $exerciseId = $exercise['exercise_id'];
+            $catalogExercise = query('SELECT is_active FROM exercises WHERE id = ?', [$exerciseId])->fetch();
+            if (!$catalogExercise) {
                 invalid('exercises', 'Выберите активное упражнение из справочника.');
             }
+
+            // Отключённое упражнение можно оставить в старой тренировке,
+            // но нельзя добавить ещё раз сверх того, что уже было.
+            $countsNow[$exerciseId] = ($countsNow[$exerciseId] ?? 0) + 1;
+            $isActive = active_catalog_value($catalogExercise['is_active']);
+            $wasThereBefore = $countsNow[$exerciseId] <= ($countsBefore[$exerciseId] ?? 0);
+            if (!$isActive && !$wasThereBefore) {
+                invalid('exercises', 'Выберите активное упражнение из справочника.');
+            }
+
             $workoutExerciseId = (int) query('INSERT INTO workout_exercises (workout_id, exercise_id, position, notes)
-                VALUES (?, ?, ?, ?) RETURNING id', [$workoutId, $exercise['exercise_id'], $position + 1, $exercise['notes']])->fetchColumn();
-            foreach ($exercise['sets'] as $setNumber => $set) {
+                VALUES (?, ?, ?, ?) RETURNING id', [$workoutId, $exerciseId, $position + 1, $exercise['notes']])->fetchColumn();
+            foreach ($exercise['sets'] as $setIndex => $set) {
                 query('INSERT INTO workout_sets (workout_exercise_id, set_number, repetitions, weight_kg, notes)
-                    VALUES (?, ?, ?, ?, ?)', [$workoutExerciseId, $setNumber + 1, $set['repetitions'], $set['weight_kg'], $set['notes']]);
+                    VALUES (?, ?, ?, ?, ?)', [$workoutExerciseId, $setIndex + 1, $set['repetitions'], $set['weight_kg'], $set['notes']]);
             }
         }
         $db->commit();
@@ -120,7 +139,11 @@ function write_workout(int $userId, array $input, ?int $workoutId = null): array
 function list_workouts(int $userId): never
 {
     $rows = query('SELECT id FROM workouts WHERE user_id = ? ORDER BY workout_date DESC, id DESC', [$userId])->fetchAll();
-    respond(['workouts' => array_map(fn (array $row): array => workout_payload((int) $row['id'], $userId), $rows)]);
+    $workouts = [];
+    foreach ($rows as $row) {
+        $workouts[] = workout_payload((int) $row['id'], $userId);
+    }
+    respond(['workouts' => $workouts]);
 }
 
 function list_exercises(): never

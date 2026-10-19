@@ -1,3 +1,5 @@
+/* Экран «Тренировки»: фильтр по месяцу и дням, список карточек. */
+
 .workouts-page .section-title-row {
   align-items: center;
 }
@@ -100,7 +102,7 @@
   font-size: 13px;
 }
 
-/* Desktop: a timeline of rows. */
+/* Компьютер: строки на линии времени. */
 .workout-list {
   margin: 0;
   padding: 0;
@@ -152,7 +154,7 @@
   font-size: 20px;
   font-weight: 500;
 }
-/* The title link covers the whole card. */
+/* Ссылка в заголовке растянута на всю карточку. */
 .workout-card-body h3 a::after {
   content: '';
   position: absolute;
@@ -198,7 +200,7 @@
   font-size: 14px;
 }
 
-/* Tablet and phone: full-width cards, only days with records in the filter. */
+/* Планшет и телефон: карточки на всю ширину, в фильтре только дни с записями. */
 @media (max-width: 900px) {
   .workouts-page .section-title-row {
     flex-direction: column;

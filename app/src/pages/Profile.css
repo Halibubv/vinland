@@ -1,5 +1,5 @@
-/* Personal account: identity, today's KBJU, today's workout and meals, shortcuts.
-   Desktop, tablet (≤900px) and phone (≤700px) follow the "Личный кабинет" mockups. */
+/* Личный кабинет: имя, КБЖУ за сегодня, тренировка и питание за сегодня, ссылки.
+   Компьютер, планшет (≤900px) и телефон (≤700px) — по макетам «Личный кабинет». */
 
 .profile-banner {
   height: 103px;
@@ -10,7 +10,7 @@
   padding-bottom: 60px;
 }
 
-/* The page title is only drawn on narrow screens; on desktop the name says it all. */
+/* Заголовок страницы виден только на узком экране; на компьютере хватает имени. */
 .profile-title {
   position: absolute;
   width: 1px;
@@ -297,7 +297,7 @@
   .profile-banner {
     height: 80px;
   }
-  /* Room for the fixed bottom navigation. */
+  /* Место под закреплённое нижнее меню. */
   .profile-page {
     padding-top: 20px;
     padding-bottom: 100px;

@@ -1,4 +1,7 @@
--- PostgreSQL DDL for DrawSQL. Public registration must always create role = 'user'.
+-- Основная схема базы (PostgreSQL). Файл можно импортировать в DrawSQL, чтобы получить диаграмму.
+
+-- Пользователи. Регистрация всегда создаёт role = 'user', администратора назначает только create-admin.php.
+-- target_* — личные цели КБЖУ, NULL значит «не задана».
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -12,6 +15,7 @@ CREATE TABLE users (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Справочник упражнений. is_active = FALSE скрывает упражнение из выбора, но старые тренировки остаются.
 CREATE TABLE exercises (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
@@ -20,6 +24,7 @@ CREATE TABLE exercises (
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+-- Справочник продуктов, КБЖУ на 100 г. is_active работает так же, как у упражнений.
 CREATE TABLE products (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
@@ -30,6 +35,7 @@ CREATE TABLE products (
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+-- Тренировка пользователя за конкретный день.
 CREATE TABLE workouts (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id),
@@ -38,6 +44,7 @@ CREATE TABLE workouts (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Упражнения внутри тренировки; position задаёт порядок (1, 2, 3...).
 CREATE TABLE workout_exercises (
     id BIGSERIAL PRIMARY KEY,
     workout_id BIGINT NOT NULL REFERENCES workouts(id) ON DELETE CASCADE,
@@ -47,6 +54,7 @@ CREATE TABLE workout_exercises (
     UNIQUE (workout_id, position)
 );
 
+-- Подходы упражнения: номер, повторения и вес.
 CREATE TABLE workout_sets (
     id BIGSERIAL PRIMARY KEY,
     workout_exercise_id BIGINT NOT NULL REFERENCES workout_exercises(id) ON DELETE CASCADE,
@@ -57,6 +65,7 @@ CREATE TABLE workout_sets (
     UNIQUE (workout_exercise_id, set_number)
 );
 
+-- Приём пищи: день и тип (breakfast, lunch, snack, dinner).
 CREATE TABLE meals (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id),
@@ -65,13 +74,15 @@ CREATE TABLE meals (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Продукты в приёме пищи. Название и КБЖУ копируются сюда при записи,
+-- чтобы поздняя правка справочника не меняла историю.
 CREATE TABLE meal_items (
     id BIGSERIAL PRIMARY KEY,
     meal_id BIGINT NOT NULL REFERENCES meals(id) ON DELETE CASCADE,
     product_id BIGINT NOT NULL REFERENCES products(id),
     product_name_snapshot VARCHAR(150) NOT NULL,
     quantity_g NUMERIC(8, 2) NOT NULL CHECK (quantity_g > 0),
-    -- Snapshots below store the product values per 100 g at the time of entry.
+    -- Снимки КБЖУ продукта на 100 г на момент записи.
     calories_snapshot NUMERIC(8, 2) NOT NULL,
     protein_snapshot NUMERIC(8, 2) NOT NULL,
     fat_snapshot NUMERIC(8, 2) NOT NULL,

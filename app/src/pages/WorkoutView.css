@@ -1,5 +1,5 @@
-/* One saved workout, read-only. Desktop shows plain sections with set tables;
-   tablet and phone (≤900px) show each exercise as a card, actions at the bottom. */
+/* Просмотр сохранённой тренировки. Компьютер: разделы с таблицами подходов;
+   планшет и телефон (≤900px): каждое упражнение — карточка, кнопки внизу. */
 
 .workout-view-actions {
   display: flex;

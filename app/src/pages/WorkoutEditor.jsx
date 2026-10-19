@@ -1,23 +1,35 @@
+// Создание и редактирование тренировки: дата, заметка, упражнения и их подходы.
 import React, { useEffect, useState } from 'react';
-import { api } from '../lib/api.js';
+import { api, errorText } from '../lib/api.js';
 import { dateLabel, localDate } from '../lib/dates.js';
 import { go as navigate } from '../lib/router.js';
-import { A } from '../lib/constants.js';
+import { ASSETS } from '../lib/constants.js';
 import { Shell, Notice, BackLink } from '../components/ui.jsx';
 import { DateStepper } from '../components/DateStepper.jsx';
 import { CatalogDialog } from '../components/Dialogs.jsx';
 import './WorkoutEditor.css';
 
-const newExercise = () => ({ key: crypto.randomUUID(), exercise_id: '', notes: '', sets: [] });
+// key у упражнений и подходов — уникальный ключ строки для React,
+// на сервер он не отправляется. Числа в полях ввода храним строками.
 
-// A new set repeats the previous one: people usually do several identical sets.
-const newSet = (previous) => ({
-  key: crypto.randomUUID(),
-  repetitions: previous?.repetitions ?? '8',
-  weight_kg: previous?.weight_kg ?? '0',
-  notes: '',
-});
+function newExercise() {
+  return { key: crypto.randomUUID(), exercise_id: '', notes: '', sets: [] };
+}
 
+// Новый подход повторяет предыдущий: обычно делают несколько одинаковых подходов.
+function newSet(previous) {
+  if (!previous) {
+    return { key: crypto.randomUUID(), repetitions: '8', weight_kg: '0', notes: '' };
+  }
+  return {
+    key: crypto.randomUUID(),
+    repetitions: previous.repetitions,
+    weight_kg: previous.weight_kg,
+    notes: '',
+  };
+}
+
+// Сохранённая тренировка с сервера → состояние формы.
 function formFromWorkout(workout) {
   return {
     workout_date: workout.workout_date,
@@ -37,6 +49,7 @@ function formFromWorkout(workout) {
   };
 }
 
+// Состояние формы → тело запроса к серверу (без служебных key).
 function requestBody(form) {
   return {
     workout_date: form.workout_date,
@@ -44,15 +57,16 @@ function requestBody(form) {
     exercises: form.exercises.map((exercise) => ({
       exercise_id: Number(exercise.exercise_id),
       notes: exercise.notes,
-      sets: exercise.sets.map(({ repetitions, weight_kg, notes }) => ({
-        repetitions,
-        weight_kg,
-        notes,
+      sets: exercise.sets.map((set) => ({
+        repetitions: set.repetitions,
+        weight_kg: set.weight_kg,
+        notes: set.notes,
       })),
     })),
   };
 }
 
+// Таблица подходов: номер, повторения, вес и кнопка удаления.
 function SetRows({ sets, onEdit, onRemove }) {
   return (
     <div className="workout-sets-edit" role="group" aria-label="Подходы">
@@ -98,15 +112,31 @@ function SetRows({ sets, onEdit, onRemove }) {
   );
 }
 
+// Карточка одного упражнения в форме. index — его номер в списке, count — всего упражнений.
 function ExerciseEditor({ exercise, index, count, catalog, onChange, onMove, onRemove, onPick }) {
+  // В справочнике только активные упражнения. Если упражнение отключено (в архиве),
+  // его там нет, и название берём из сохранённой тренировки.
   const selected = catalog.find((item) => String(item.id) === exercise.exercise_id);
-  const name = selected?.name || exercise.exercise_name;
-  const editSet = (setIndex, patch) =>
-    onChange({
-      sets: exercise.sets.map((set, itemIndex) =>
-        itemIndex === setIndex ? { ...set, ...patch } : set,
-      ),
+  let name = exercise.exercise_name;
+  if (selected) name = selected.name;
+
+  function editSet(setIndex, patch) {
+    const sets = exercise.sets.map((set, itemIndex) => {
+      if (itemIndex === setIndex) return { ...set, ...patch };
+      return set;
     });
+    onChange({ sets });
+  }
+
+  function removeSet(setIndex) {
+    onChange({ sets: exercise.sets.filter((set, itemIndex) => itemIndex !== setIndex) });
+  }
+
+  function addSet() {
+    const lastSet = exercise.sets[exercise.sets.length - 1];
+    onChange({ sets: [...exercise.sets, newSet(lastSet)] });
+  }
+
   return (
     <li className="workout-exercise">
       <div className="workout-exercise-head">
@@ -131,36 +161,27 @@ function ExerciseEditor({ exercise, index, count, catalog, onChange, onMove, onR
           </button>
         </div>
         <button type="button" className="workout-exercise-remove" onClick={onRemove}>
-          <img src={`${A}icon-trash.svg`} alt="" />
+          <img src={`${ASSETS}icon-trash.svg`} alt="" />
           <span>
             Удалить<span className="narrow-only"> упражнение</span>
           </span>
         </button>
       </div>
-      {exercise.sets.length ? (
-        <SetRows
-          sets={exercise.sets}
-          onEdit={editSet}
-          onRemove={(setIndex) =>
-            onChange({ sets: exercise.sets.filter((_, itemIndex) => itemIndex !== setIndex) })
-          }
-        />
-      ) : (
+      {exercise.sets.length > 0 && (
+        <SetRows sets={exercise.sets} onEdit={editSet} onRemove={removeSet} />
+      )}
+      {exercise.sets.length === 0 && (
         <p className="muted workout-exercise-empty">
           Подходов пока нет — упражнение можно сохранить и без них.
         </p>
       )}
-      <button
-        type="button"
-        className="workout-add-set"
-        onClick={() => onChange({ sets: [...exercise.sets, newSet(exercise.sets.at(-1))] })}
-      >
-        <img src={`${A}icon-plus.svg`} alt="" />
+      <button type="button" className="workout-add-set" onClick={addSet}>
+        <img src={`${ASSETS}icon-plus.svg`} alt="" />
         Добавить подход
       </button>
       <details className="workout-exercise-notes">
         <summary>
-          <img src={`${A}icon-pencil.svg`} alt="" />
+          <img src={`${ASSETS}icon-pencil.svg`} alt="" />
           Заметки к упражнению и подходам
         </summary>
         <label>
@@ -187,21 +208,27 @@ function ExerciseEditor({ exercise, index, count, catalog, onChange, onMove, onR
   );
 }
 
+// id есть — редактируем сохранённую тренировку, нет — создаём новую.
 export function WorkoutEditor({ id }) {
   const [form, setForm] = useState({ workout_date: localDate(), notes: '', exercises: [] });
   const [catalog, setCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  // Увеличение счётчика заново запускает загрузку (кнопка «Повторить»).
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // Открытое окно выбора упражнения: { index — для какой карточки,
+  // created — карточка только что добавлена }. null — окно закрыто.
   const [picker, setPicker] = useState(null);
   const backHref = id ? `/workouts/${id}` : '/workouts';
 
   useEffect(() => {
     setLoading(true);
     setLoadError('');
-    Promise.all([api('/exercises'), id ? api(`/workouts/${id}`) : null])
+    let workoutRequest = null;
+    if (id) workoutRequest = api(`/workouts/${id}`);
+    Promise.all([api('/exercises'), workoutRequest])
       .then(([exercises, existing]) => {
         setCatalog(exercises.exercises);
         if (existing) setForm(formFromWorkout(existing.workout));
@@ -214,31 +241,54 @@ export function WorkoutEditor({ id }) {
     setForm((previous) => ({ ...previous, ...patch }));
     setError('');
   }
+
+  // Все изменения списка упражнений идут через эту функцию. update получает
+  // текущий список и возвращает новый (берём свежее состояние через previous).
   function setExercises(update) {
     setForm((previous) => ({ ...previous, exercises: update(previous.exercises) }));
     setError('');
   }
-  const editExercise = (index, patch) =>
+
+  function editExercise(index, patch) {
     setExercises((items) =>
-      items.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+      items.map((item, itemIndex) => {
+        if (itemIndex === index) return { ...item, ...patch };
+        return item;
+      }),
     );
-  const removeExercise = (index) =>
-    setExercises((items) => items.filter((_, itemIndex) => itemIndex !== index));
+  }
+
+  function removeExercise(index) {
+    setExercises((items) => items.filter((item, itemIndex) => itemIndex !== index));
+  }
+
+  // direction: -1 — выше, 1 — ниже. Меняем упражнение местами с соседним.
   function moveExercise(index, direction) {
     setExercises((items) => {
       const target = index + direction;
       if (target < 0 || target >= items.length) return items;
       const next = [...items];
-      [next[index], next[target]] = [next[target], next[index]];
+      const moved = next[index];
+      next[index] = next[target];
+      next[target] = moved;
       return next;
     });
   }
+
+  // Новая карточка сразу открывает выбор упражнения.
   function addExercise() {
     setExercises((items) => [...items, newExercise()]);
     setPicker({ index: form.exercises.length, created: true });
   }
+
+  // Если выбор отменили у только что добавленной карточки, пустую карточку убираем.
   function closePicker() {
-    if (picker?.created) removeExercise(picker.index);
+    if (picker && picker.created) removeExercise(picker.index);
+    setPicker(null);
+  }
+
+  function chooseExercise(item) {
+    editExercise(picker.index, { exercise_id: String(item.id), exercise_name: item.name });
     setPicker(null);
   }
 
@@ -251,13 +301,13 @@ export function WorkoutEditor({ id }) {
     setBusy(true);
     setError('');
     try {
-      const result = await api(id ? `/workouts/${id}` : '/workouts', {
-        method: id ? 'PUT' : 'POST',
-        body: requestBody(form),
-      });
+      const body = requestBody(form);
+      let result;
+      if (id) result = await api(`/workouts/${id}`, { method: 'PUT', body });
+      else result = await api('/workouts', { method: 'POST', body });
       navigate(`/workouts/${result.workout.id}`);
     } catch (problem) {
-      setError(Object.values(problem.fields || {}).join(' ') || problem.message);
+      setError(errorText(problem));
       setBusy(false);
     }
   }
@@ -269,11 +319,11 @@ export function WorkoutEditor({ id }) {
       back={<BackLink to={backHref} label={id ? 'К тренировке' : 'К тренировкам'} />}
       className="workout-editor-page"
     >
-      {loading ? (
-        <p className="muted">Загружаем форму…</p>
-      ) : loadError ? (
-        <Notice message={loadError} retry={() => setLoadAttempt((value) => value + 1)} />
-      ) : (
+      {loading && <p className="muted">Загружаем форму…</p>}
+      {!loading && loadError && (
+        <Notice message={loadError} retry={() => setLoadAttempt(loadAttempt + 1)} />
+      )}
+      {!loading && !loadError && (
         <form className="workout-form" onSubmit={save} noValidate>
           <div className="workout-form-intro">
             <div>
@@ -330,7 +380,7 @@ export function WorkoutEditor({ id }) {
               type="button"
               onClick={addExercise}
             >
-              <img src={`${A}icon-plus.svg`} alt="" />
+              <img src={`${ASSETS}icon-plus.svg`} alt="" />
               Добавить упражнение
             </button>
           </div>
@@ -341,10 +391,7 @@ export function WorkoutEditor({ id }) {
           title="Выберите упражнение"
           items={catalog}
           describe={(item) => item.muscle_group}
-          onChoose={(item) => {
-            editExercise(picker.index, { exercise_id: String(item.id), exercise_name: item.name });
-            setPicker(null);
-          }}
+          onChoose={chooseExercise}
           onClose={closePicker}
         />
       )}

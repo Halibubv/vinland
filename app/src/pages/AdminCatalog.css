@@ -1,5 +1,5 @@
-/* Admin catalogs of exercises and products. Desktop: tabs and a table;
-   tablet and phone (≤900px): segmented tabs and one card per entry. */
+/* Справочники администратора. На компьютере — вкладки и таблица,
+   на планшете и телефоне (≤900px) — переключатель и карточка на каждую запись. */
 
 .admin-banner {
   min-height: 208px;
@@ -169,7 +169,7 @@
   font-size: 13px;
 }
 
-/* Add / edit dialog. */
+/* Окно добавления и редактирования. */
 .admin-dialog {
   width: min(560px, calc(100vw - 32px));
 }

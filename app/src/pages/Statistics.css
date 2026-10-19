@@ -1,3 +1,5 @@
+/* Экран «Статистика»: график калорий, итоги дня и тренировки. */
+
 .stats-page .section-title-row {
   align-items: center;
 }
@@ -31,7 +33,7 @@
   background: var(--surface);
 }
 
-/* Desktop: chart and today's summary share one panel. */
+/* Компьютер: график и итоги дня в одной панели. */
 .stats-overview {
   display: grid;
   grid-template-columns: minmax(0, 1.75fr) minmax(300px, 1fr);
@@ -83,7 +85,7 @@
   grid-column: 2;
 }
 
-/* Bar chart. Bars are positioned in % of the tallest value (or the goal). */
+/* Столбчатый график. Высота столбиков — в % от самого большого значения (или цели). */
 .stats-chart {
   margin: 24px 0 0;
 }
@@ -179,7 +181,7 @@
   font-size: 12px;
 }
 
-/* Workouts card. */
+/* Карточка «Тренировки». */
 .stats-workouts {
   margin-top: 14px;
   padding: 20px 24px;
@@ -245,7 +247,7 @@
   color: var(--cream);
 }
 
-/* Tablet and phone: three stacked cards. */
+/* Планшет и телефон: три карточки друг под другом. */
 @media (max-width: 900px) {
   .stats-page .section-title-row {
     flex-direction: column;

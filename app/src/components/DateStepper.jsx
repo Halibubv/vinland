@@ -1,12 +1,18 @@
+// Выбор даты: стрелки листают дни, а по клику на дату открывается календарь.
 import React from 'react';
-import { A } from '../lib/constants.js';
+import { ASSETS } from '../lib/constants.js';
 import { dateLabel, offsetDate } from '../lib/dates.js';
 
-// "‹ 16 октября 2026 ›": arrows move by a day, the label opens the calendar.
+// Выглядит как "‹ 16 октября 2026 ›". Поверх подписи лежит невидимый <input type="date">.
 export function DateStepper({ value, onChange, label = 'Дата', className = '' }) {
+  function openCalendar(event) {
+    // showPicker есть не во всех браузерах, поэтому сначала проверяем.
+    if (event.currentTarget.showPicker) event.currentTarget.showPicker();
+  }
+
   return (
     <div className={`date-stepper ${className}`}>
-      <img src={`${A}icon-calendar.svg`} alt="" />
+      <img src={`${ASSETS}icon-calendar.svg`} alt="" />
       <button
         type="button"
         aria-label="Предыдущий день"
@@ -20,8 +26,11 @@ export function DateStepper({ value, onChange, label = 'Дата', className = '
           type="date"
           value={value}
           aria-label={label}
-          onClick={(event) => event.currentTarget.showPicker?.()}
-          onChange={(event) => event.target.value && onChange(event.target.value)}
+          onClick={openCalendar}
+          onChange={(event) => {
+            // Пустое значение бывает, когда в календаре нажали «Очистить».
+            if (event.target.value) onChange(event.target.value);
+          }}
         />
       </label>
       <button

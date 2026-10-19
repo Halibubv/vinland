@@ -1,3 +1,4 @@
+-- Неудачные попытки входа: по ним считается лимит 5 на аккаунт и 20 на IP за 15 минут.
 CREATE TABLE login_attempts (
     id BIGSERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL,

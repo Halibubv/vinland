@@ -1,5 +1,6 @@
+// Квадратная иконка слева от упражнения или приёма пищи в списках.
 import React from 'react';
-import { A } from '../lib/constants.js';
+import { ASSETS } from '../lib/constants.js';
 
 const mealIcons = {
   breakfast: 'icon-sun.svg',
@@ -8,12 +9,15 @@ const mealIcons = {
   dinner: 'nav-food.svg',
 };
 
-// A neutral icon tile instead of a stock photo: real catalog entries have no pictures.
+// Вместо фотографий — нейтральная иконка: у записей справочника картинок нет.
+// meal — тип приёма пищи; без него показывается гантель (упражнение).
 export function EntryIcon({ meal, label }) {
-  const icon = meal ? mealIcons[meal] || 'nav-food.svg' : 'icon-dumbbell.svg';
+  let icon = 'icon-dumbbell.svg';
+  if (meal) icon = mealIcons[meal] || 'nav-food.svg';
+
   return (
     <span className="entry-icon" title={label}>
-      <img src={`${A}${icon}`} alt="" />
+      <img src={`${ASSETS}${icon}`} alt="" />
     </span>
   );
 }

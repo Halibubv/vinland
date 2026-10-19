@@ -1,23 +1,40 @@
+// Экран «Тренировки»: список сохранённых тренировок за месяц с фильтром по дню.
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
-import { A } from '../lib/constants.js';
+import { ASSETS } from '../lib/constants.js';
 import { dateLabel, dayMonth, monthShift, monthTitle } from '../lib/dates.js';
 import { plural, setsSummary } from '../lib/format.js';
 import { Shell, Notice, Empty } from '../components/ui.jsx';
 import { EntryIcon } from '../components/EntryIcon.jsx';
 import './Workouts.css';
 
+// Сколько упражнений показывать в карточке, остальные видны на странице тренировки.
 const SHOWN_EXERCISES = 2;
 
+// День месяца из даты "2026-10-16" → 16.
+function dayOfMonth(date) {
+  return Number(date.slice(8));
+}
+
+// Карточка одной тренировки в списке.
 function WorkoutCard({ workout }) {
-  const { exercises } = workout;
-  const sets = exercises.reduce((total, exercise) => total + exercise.sets.length, 0);
+  const exercises = workout.exercises;
+  let setCount = 0;
+  for (const exercise of exercises) setCount += exercise.sets.length;
+
+  // Строка вида "3 упражнения · 9 подходов · показано 2 из 3".
   const counts = [
     plural(exercises.length, 'упражнение', 'упражнения', 'упражнений'),
-    plural(sets, 'подход', 'подхода', 'подходов'),
+    plural(setCount, 'подход', 'подхода', 'подходов'),
   ];
-  if (exercises.length > SHOWN_EXERCISES)
+  if (exercises.length > SHOWN_EXERCISES) {
     counts.push(`показано ${SHOWN_EXERCISES} из ${exercises.length}`);
+  }
+
+  // Заголовок карточки — заметка к тренировке, если она есть.
+  let title = 'Тренировка';
+  if (workout.notes && workout.notes.trim()) title = workout.notes.trim();
+
   return (
     <li className="workout-card">
       <span className="workout-card-dot" aria-hidden="true" />
@@ -30,7 +47,7 @@ function WorkoutCard({ workout }) {
       </div>
       <div className="workout-card-body">
         <h3>
-          <a href={`/workouts/${workout.id}`}>{workout.notes?.trim() || 'Тренировка'}</a>
+          <a href={`/workouts/${workout.id}`}>{title}</a>
         </h3>
         <p>{counts.join(' · ')}</p>
         {exercises.length > 0 && (
@@ -57,6 +74,7 @@ function WorkoutCard({ workout }) {
 export function WorkoutsPage() {
   const [workouts, setWorkouts] = useState(null);
   const [error, setError] = useState('');
+  // Выбранный месяц (Date на первое число) и выбранный день (число или null — «Все»).
   const [month, setMonth] = useState(() => monthShift(new Date(), 0));
   const [day, setDay] = useState(null);
   function reload() {
@@ -66,22 +84,35 @@ export function WorkoutsPage() {
       .catch((problem) => setError(problem.message));
   }
   useEffect(reload, []);
-  const prefix = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}-`;
-  const inMonth = (workouts || []).filter((item) => item.workout_date.startsWith(prefix));
-  const activeDays = new Set(inMonth.map((item) => Number(item.workout_date.slice(8))));
-  const rows = day ? inMonth.filter((item) => Number(item.workout_date.slice(8)) === day) : inMonth;
+
+  // Тренировки выбранного месяца: дата начинается с "ГГГГ-ММ-".
+  const monthPrefix = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}-`;
+  const inMonth = (workouts || []).filter((item) => item.workout_date.startsWith(monthPrefix));
+
+  // Дни, в которые были тренировки: только их можно выбрать в фильтре.
+  const activeDays = new Set();
+  for (const item of inMonth) activeDays.add(dayOfMonth(item.workout_date));
+
+  let shown = inMonth;
+  if (day) shown = inMonth.filter((item) => dayOfMonth(item.workout_date) === day);
+
+  // Нулевое число следующего месяца — это последний день текущего.
   const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
-  const changeMonth = (offset) => {
+  const dayNumbers = [];
+  for (let number = 1; number <= daysInMonth; number++) dayNumbers.push(number);
+
+  function changeMonth(offset) {
     setMonth(monthShift(month, offset));
     setDay(null);
-  };
+  }
+
   return (
     <Shell
       title="Тренировки"
       subtitle="История и записи тренировок"
       action={
         <a className="button button--primary workouts-add" href="/workouts/new">
-          <img src={`${A}icon-plus.svg`} alt="" />
+          <img src={`${ASSETS}icon-plus.svg`} alt="" />
           Добавить тренировку
         </a>
       }
@@ -89,7 +120,7 @@ export function WorkoutsPage() {
     >
       <div className="workouts-filter">
         <div className="workouts-month">
-          <img src={`${A}icon-calendar.svg`} alt="" className="narrow-only" />
+          <img src={`${ASSETS}icon-calendar.svg`} alt="" className="narrow-only" />
           <button type="button" aria-label="Предыдущий месяц" onClick={() => changeMonth(-1)}>
             ‹
           </button>
@@ -105,16 +136,16 @@ export function WorkoutsPage() {
           <button type="button" className={!day ? 'selected' : ''} onClick={() => setDay(null)}>
             Все
           </button>
-          {Array.from({ length: daysInMonth }, (_, index) => index + 1).map((value) => (
+          {dayNumbers.map((number) => (
             <button
               type="button"
-              key={value}
-              className={`${day === value ? 'selected' : ''} ${activeDays.has(value) ? 'has-workout' : ''}`}
-              disabled={!activeDays.has(value)}
-              onClick={() => setDay(value)}
-              aria-pressed={day === value}
+              key={number}
+              className={`${day === number ? 'selected' : ''} ${activeDays.has(number) ? 'has-workout' : ''}`}
+              disabled={!activeDays.has(number)}
+              onClick={() => setDay(number)}
+              aria-pressed={day === number}
             >
-              {value}
+              {number}
             </button>
           ))}
         </div>
@@ -122,24 +153,23 @@ export function WorkoutsPage() {
       <div className="workouts-heading wide-only">
         <h2>Сохранённые тренировки</h2>
         <span>
-          <img src={`${A}icon-book.svg`} alt="" />
+          <img src={`${ASSETS}icon-book.svg`} alt="" />
           Упражнения добавляются из справочника
         </span>
       </div>
-      {error ? (
-        <Notice message={error} retry={reload} />
-      ) : !workouts ? (
-        <p className="muted">Загружаем тренировки…</p>
-      ) : !rows.length ? (
+      {error && <Notice message={error} retry={reload} />}
+      {!error && !workouts && <p className="muted">Загружаем тренировки…</p>}
+      {!error && workouts && shown.length === 0 && (
         <Empty
           title="В этом месяце пока нет тренировок"
           detail="Добавьте первую запись: упражнения и подходы сохранятся в вашей истории."
           action="Добавить тренировку"
           to="/workouts/new"
         />
-      ) : (
+      )}
+      {!error && workouts && shown.length > 0 && (
         <ol className="workout-list">
-          {rows.map((workout) => (
+          {shown.map((workout) => (
             <WorkoutCard workout={workout} key={workout.id} />
           ))}
         </ol>

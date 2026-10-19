@@ -1,41 +1,51 @@
-// Client-side navigation. Every internal link is a plain "/path" href, so it
-// works with Ctrl+click and "open in new tab"; ordinary clicks are intercepted
-// here and handled without reloading the page.
+// Переходы между экранами без перезагрузки страницы.
+// Все внутренние ссылки — обычные <a href="/путь">, поэтому работают Ctrl+клик
+// и «открыть в новой вкладке»; обычный клик перехватывается здесь.
 
 export function currentPath() {
-  return window.location.pathname === '/ui/' ? '/' : window.location.pathname;
+  // Собранный фронтенд лежит в /ui/ (см. vite.config.js), этот адрес — тоже главная.
+  if (window.location.pathname === '/ui/') return '/';
+  return window.location.pathname;
 }
 
-// Path plus query string: a change of either must remount the screen.
+// Путь вместе с ?параметрами: при смене любого из них экран открывается заново.
 export function currentLocation() {
   return currentPath() + window.location.search;
 }
 
+// Перейти на другой экран. App.jsx слушает событие popstate и перерисовывается.
 export function go(path) {
-  if (path !== currentLocation()) window.history.pushState({}, '', path);
+  if (path !== currentLocation()) {
+    window.history.pushState({}, '', path);
+  }
   window.dispatchEvent(new PopStateEvent('popstate'));
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
+// Адрес ссылки, если её можно открыть внутри приложения, иначе null.
 function internalHref(link) {
   if (link.target && link.target !== '_self') return null;
   if (link.hasAttribute('download')) return null;
   const href = link.getAttribute('href');
   if (!href || !href.startsWith('/') || href.startsWith('//')) return null;
+  // API и картинки отдаёт сервер, их не перехватываем.
   if (href.startsWith('/api/') || href.startsWith('/assets/')) return null;
   return href;
 }
 
+// Включает перехват кликов по ссылкам. Возвращает функцию, которая его выключает.
 export function interceptLinks() {
-  const follow = (event) => {
+  function handleClick(event) {
     if (event.defaultPrevented || event.button !== 0) return;
+    // С зажатой клавишей браузер должен сам открыть новую вкладку или окно.
     if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     const link = event.target.closest('a[href]');
-    const href = link && internalHref(link);
+    if (!link) return;
+    const href = internalHref(link);
     if (!href) return;
     event.preventDefault();
     go(href);
-  };
-  document.addEventListener('click', follow);
-  return () => document.removeEventListener('click', follow);
+  }
+  document.addEventListener('click', handleClick);
+  return () => document.removeEventListener('click', handleClick);
 }

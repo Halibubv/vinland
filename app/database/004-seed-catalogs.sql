@@ -1,5 +1,7 @@
--- Starter catalogs so a fresh install can be used right away.
--- Rows are added only when an entry with the same name is missing.
+-- Начальные справочники, чтобы приложением можно было пользоваться сразу после установки.
+-- Строка добавляется, только если записи с таким названием ещё нет.
+
+-- Упражнения.
 INSERT INTO exercises (name, muscle_group, description)
 SELECT v.name, v.muscle_group, v.description
 FROM (VALUES
@@ -25,7 +27,7 @@ FROM (VALUES
 ) AS v(name, muscle_group, description)
 WHERE NOT EXISTS (SELECT 1 FROM exercises e WHERE e.name = v.name);
 
--- Values per 100 g, rounded from common nutrition tables.
+-- Продукты: КБЖУ на 100 г, округлено по распространённым таблицам калорийности.
 INSERT INTO products (name, calories_per_100g, protein_per_100g, fat_per_100g, carbs_per_100g)
 SELECT v.name, v.kcal, v.protein, v.fat, v.carbs
 FROM (VALUES

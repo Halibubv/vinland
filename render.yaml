@@ -1,0 +1,25 @@
+# Blueprint для Render: бесплатный веб-сервис из app/Dockerfile.
+# База — внешняя (Neon), её адрес вводится вручную при создании (sync: false), в Git его нет.
+services:
+  - type: web
+    name: vinland
+    runtime: docker
+    plan: free
+    # Тот же регион, что у базы в Neon (AWS Europe Central, Франкфурт): так запросы быстрее.
+    region: frankfurt
+    rootDir: app
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      # Cookie сессии только по HTTPS: на Render сайт открывается через https://.
+      - key: SESSION_SECURE
+        value: "1"
+      # Render стоит прокси перед приложением; адрес посетителя берём из X-Forwarded-For.
+      - key: TRUST_PROXY
+        value: "1"
+      # Пересоздавать демо-аккаунт при каждом запуске, чтобы данные были за последние дни.
+      - key: RESET_DEMO
+        value: "1"

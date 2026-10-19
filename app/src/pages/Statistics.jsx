@@ -1,31 +1,45 @@
+// Экран «Статистика»: график калорий за период, итоги дня и тренировки по дням.
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
-import { A } from '../lib/constants.js';
+import { ASSETS } from '../lib/constants.js';
 import { dateLabel, dayMonth, localDate, offsetDate, relativeDay, weekday } from '../lib/dates.js';
 import { formatInt, plural } from '../lib/format.js';
 import { Shell, Notice, Empty } from '../components/ui.jsx';
 import { DaySummary } from '../components/DaySummary.jsx';
 import './Statistics.css';
 
+// Варианты периода в выпадающем списке: количество дней и подпись.
 const periods = [
-  [7, 'Последние 7 дней'],
-  [14, 'Последние 14 дней'],
-  [30, 'Последние 30 дней'],
+  { days: 7, label: 'Последние 7 дней' },
+  { days: 14, label: 'Последние 14 дней' },
+  { days: 30, label: 'Последние 30 дней' },
 ];
 
-function workoutLine(day) {
-  return `${plural(day.exercises, 'упражнение', 'упражнения', 'упражнений')} / ${plural(
-    day.sets,
-    'подход',
-    'подхода',
-    'подходов',
-  )}`;
+function exercisesText(day) {
+  return plural(day.exercises, 'упражнение', 'упражнения', 'упражнений');
 }
 
+function setsText(day) {
+  return plural(day.sets, 'подход', 'подхода', 'подходов');
+}
+
+// Столбчатая диаграмма калорий по дням с пунктирной линией цели.
 function CaloriesChart({ days, goal }) {
-  const top = Math.max(goal || 0, ...days.map((day) => Number(day.calories))) * 1.1 || 1;
-  const height = (value) => `${(Number(value) / top) * 100}%`;
+  // Верх шкалы — самое большое значение (день или цель) плюс 10% запаса.
+  let maxValue = goal || 0;
+  for (const day of days) {
+    if (Number(day.calories) > maxValue) maxValue = Number(day.calories);
+  }
+  const top = maxValue * 1.1 || 1; // || 1 — чтобы не делить на ноль
+
+  // Высота столбика в процентах от высоты графика.
+  function heightPercent(value) {
+    return `${(Number(value) / top) * 100}%`;
+  }
+
+  // За 30 дней подписей слишком много: показываем каждую пятую (через CSS).
   const dense = days.length > 14;
+
   return (
     <figure className={`stats-chart ${dense ? 'stats-chart--dense' : ''}`}>
       <div className="stats-chart-plot">
@@ -35,7 +49,7 @@ function CaloriesChart({ days, goal }) {
           <span />
         </div>
         {goal ? (
-          <div className="stats-chart-goal" style={{ bottom: height(goal) }}>
+          <div className="stats-chart-goal" style={{ bottom: heightPercent(goal) }}>
             <span>
               Цель
               <br />
@@ -46,7 +60,7 @@ function CaloriesChart({ days, goal }) {
         {days.map((day) => (
           <div className="stats-chart-column" key={day.date}>
             {Number(day.calories) > 0 && (
-              <div className="stats-chart-bar" style={{ height: height(day.calories) }}>
+              <div className="stats-chart-bar" style={{ height: heightPercent(day.calories) }}>
                 <span>{formatInt(day.calories)}</span>
               </div>
             )}
@@ -70,23 +84,135 @@ function CaloriesChart({ days, goal }) {
   );
 }
 
+// Один день в недельной полосе тренировок (только для периода 7 дней).
+function WeekDay({ day }) {
+  if (!day.workouts) {
+    return (
+      <li>
+        <strong>{dayMonth(day.date)}</strong>
+        <small>{weekday(day.date)}</small>
+        <b>—</b>
+        <span>Нет тренировок</span>
+      </li>
+    );
+  }
+  return (
+    <li className="is-active">
+      <strong>{dayMonth(day.date)}</strong>
+      <small>{weekday(day.date)}</small>
+      <img src={`${ASSETS}nav-workouts.svg`} alt="" />
+      <span>
+        {exercisesText(day)}
+        <br />
+        {setsText(day)}
+      </span>
+    </li>
+  );
+}
+
+// Блок «Тренировки». За 7 дней на широком экране — полоса по дням недели,
+// в остальных случаях — простой список дней с тренировками.
+function WorkoutsPanel({ days, periodDays }) {
+  const trainedDays = days.filter((day) => day.workouts);
+  const isWeek = periodDays === 7;
+  return (
+    <section className="panel stats-workouts">
+      <div className="stats-workouts-head">
+        <h2>
+          <img src={`${ASSETS}nav-workouts.svg`} alt="" />
+          Тренировки
+        </h2>
+        <a href="/workouts" className="wide-only">
+          → &nbsp;Открыть историю тренировок
+        </a>
+      </div>
+      {isWeek && (
+        <ol className="stats-week wide-only">
+          {days.map((day) => (
+            <WeekDay day={day} key={day.date} />
+          ))}
+        </ol>
+      )}
+      <ul className={`stats-workout-list ${isWeek ? 'narrow-only' : ''}`}>
+        {trainedDays.length === 0 && <li>За этот период тренировок нет</li>}
+        {trainedDays.map((day) => (
+          <li key={day.date}>
+            {dayMonth(day.date)} · {exercisesText(day)} / {setsText(day)}
+          </li>
+        ))}
+      </ul>
+      <a href="/workouts" className="stats-workouts-link narrow-only">
+        → &nbsp;Сохранённые тренировки
+      </a>
+    </section>
+  );
+}
+
+// Есть ли за период хоть одна тренировка или съеденная калория.
+function hasAnyData(days) {
+  for (const day of days) {
+    if (day.workouts || Number(day.calories)) return true;
+  }
+  return false;
+}
+
 export function StatisticsPage() {
-  const [length, setLength] = useState(7);
+  const [periodDays, setPeriodDays] = useState(7);
+  // data: { days: [...по одному на каждый день периода], goals: {...} }
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const to = localDate();
-  const from = offsetDate(to, 1 - length);
+  const from = offsetDate(to, 1 - periodDays);
+
   function reload() {
     setError('');
     setData(null);
     api(`/statistics?from=${from}&to=${to}`)
       .then(setData)
-      .catch((problem) => setError(problem.fields?.period || problem.message));
+      .catch((problem) => {
+        // Сервер может отдельно пожаловаться на неверный период.
+        if (problem.fields && problem.fields.period) setError(problem.fields.period);
+        else setError(problem.message);
+      });
   }
-  useEffect(reload, [length]);
-  const today = data?.days.at(-1);
-  const trained = data?.days.filter((day) => day.workouts) || [];
-  const empty = data && !data.days.some((day) => day.workouts || Number(day.calories));
+  useEffect(reload, [periodDays]);
+
+  let content;
+  if (error) {
+    content = <Notice message={error} retry={reload} />;
+  } else if (!data) {
+    content = <p className="muted">Загружаем статистику…</p>;
+  } else if (!hasAnyData(data.days)) {
+    content = (
+      <Empty
+        title="За этот период данных нет"
+        detail="Запишите тренировку или приём пищи, и здесь появится динамика."
+        action="Открыть дневник питания"
+        to="/nutrition"
+      />
+    );
+  } else {
+    // Последний день периода — сегодня.
+    const today = data.days[data.days.length - 1];
+    let todayTitle = dayMonth(today.date);
+    if (relativeDay(today.date) === 'Сегодня') todayTitle = 'Сегодня в рационе';
+    content = (
+      <>
+        <div className="stats-overview">
+          <section className="panel stats-calories">
+            <h2>
+              <img src={`${ASSETS}nav-food.svg`} alt="" />
+              Калории и КБЖУ
+            </h2>
+            <CaloriesChart days={data.days} goal={data.goals.calories} />
+          </section>
+          <DaySummary className="stats-today" title={todayTitle} day={today} goals={data.goals} />
+        </div>
+        <WorkoutsPanel days={data.days} periodDays={periodDays} />
+      </>
+    );
+  }
+
   return (
     <Shell
       title="Статистика"
@@ -97,12 +223,15 @@ export function StatisticsPage() {
       }
       action={
         <label className="period-select">
-          <img src={`${A}icon-calendar.svg`} alt="" />
+          <img src={`${ASSETS}icon-calendar.svg`} alt="" />
           <span className="sr-only">Период</span>
-          <select value={length} onChange={(event) => setLength(Number(event.target.value))}>
-            {periods.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
+          <select
+            value={periodDays}
+            onChange={(event) => setPeriodDays(Number(event.target.value))}
+          >
+            {periods.map((period) => (
+              <option key={period.days} value={period.days}>
+                {period.label}
               </option>
             ))}
           </select>
@@ -110,85 +239,7 @@ export function StatisticsPage() {
       }
       className="stats-page"
     >
-      {error ? (
-        <Notice message={error} retry={reload} />
-      ) : !data ? (
-        <p className="muted">Загружаем статистику…</p>
-      ) : empty ? (
-        <Empty
-          title="За этот период данных нет"
-          detail="Запишите тренировку или приём пищи, и здесь появится динамика."
-          action="Открыть дневник питания"
-          to="/nutrition"
-        />
-      ) : (
-        <>
-          <div className="stats-overview">
-            <section className="panel stats-calories">
-              <h2>
-                <img src={`${A}nav-food.svg`} alt="" />
-                Калории и КБЖУ
-              </h2>
-              <CaloriesChart days={data.days} goal={data.goals.calories} />
-            </section>
-            <DaySummary
-              className="stats-today"
-              title={
-                relativeDay(today.date) === 'Сегодня' ? 'Сегодня в рационе' : dayMonth(today.date)
-              }
-              day={today}
-              goals={data.goals}
-            />
-          </div>
-          <section className="panel stats-workouts">
-            <div className="stats-workouts-head">
-              <h2>
-                <img src={`${A}nav-workouts.svg`} alt="" />
-                Тренировки
-              </h2>
-              <a href="/workouts" className="wide-only">
-                → &nbsp;Открыть историю тренировок
-              </a>
-            </div>
-            {length === 7 && (
-              <ol className="stats-week wide-only">
-                {data.days.map((day) => (
-                  <li key={day.date} className={day.workouts ? 'is-active' : ''}>
-                    <strong>{dayMonth(day.date)}</strong>
-                    <small>{weekday(day.date)}</small>
-                    {day.workouts ? <img src={`${A}nav-workouts.svg`} alt="" /> : <b>—</b>}
-                    <span>
-                      {day.workouts ? (
-                        <>
-                          {plural(day.exercises, 'упражнение', 'упражнения', 'упражнений')}
-                          <br />
-                          {plural(day.sets, 'подход', 'подхода', 'подходов')}
-                        </>
-                      ) : (
-                        'Нет тренировок'
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            )}
-            <ul className={`stats-workout-list ${length === 7 ? 'narrow-only' : ''}`}>
-              {trained.length ? (
-                trained.map((day) => (
-                  <li key={day.date}>
-                    {dayMonth(day.date)} · {workoutLine(day)}
-                  </li>
-                ))
-              ) : (
-                <li>За этот период тренировок нет</li>
-              )}
-            </ul>
-            <a href="/workouts" className="stats-workouts-link narrow-only">
-              → &nbsp;Сохранённые тренировки
-            </a>
-          </section>
-        </>
-      )}
+      {content}
     </Shell>
   );
 }

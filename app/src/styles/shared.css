@@ -1,5 +1,5 @@
-/* Shared pieces used by several screens. Breakpoints: ≤900px is the tablet
-   layout from the "Адаптив" mockups, ≤700px the phone layout from "Приложение". */
+/* Общие элементы нескольких экранов. Границы: ≤900px — планшет по макетам
+   «Адаптив», ≤700px — телефон по макетам «Приложение». */
 
 @media (max-width: 900px) {
   .wide-only {
@@ -16,7 +16,7 @@
   color: var(--cream);
 }
 
-/* "‹ Тренировки / 27 сентября 2026" above a page title. */
+/* "‹ Тренировки / 27 сентября 2026" над заголовком страницы. */
 .back-link {
   margin-bottom: 14px;
   color: var(--muted);
@@ -36,7 +36,7 @@
   color: var(--cream);
 }
 
-/* Progress bar used by DaySummary. */
+/* Полоска прогресса для DaySummary. */
 .bar {
   flex: 1;
   height: 8px;
@@ -52,7 +52,7 @@
   transition: width 0.7s ease;
 }
 
-/* Calories and macros for one day. */
+/* Калории и БЖУ за день. */
 .day-summary {
   display: grid;
   grid-template-columns: minmax(260px, 1fr) 2fr;
@@ -149,7 +149,7 @@
   }
 }
 
-/* Day picker "‹ 16 октября 2026 ›". */
+/* Выбор дня "‹ 16 октября 2026 ›". */
 .date-stepper {
   display: inline-flex;
   align-items: center;
@@ -196,7 +196,7 @@
   }
 }
 
-/* Icon tile shown next to exercises and meals. */
+/* Иконка рядом с упражнениями и приёмами пищи. */
 .entry-icon {
   display: inline-grid;
   flex: none;
@@ -212,7 +212,7 @@
   opacity: 0.85;
 }
 
-/* Native <dialog> modals: catalog picker and delete confirmation. */
+/* Модальные окна <dialog>: выбор из справочника и подтверждение удаления. */
 body.modal-open {
   overflow: hidden;
 }
@@ -323,7 +323,7 @@ body.modal-open {
   }
 }
 
-/* On a phone the catalog picker is a bottom sheet above the navigation. */
+/* На телефоне окно выбора выезжает снизу, над нижним меню. */
 @media (max-width: 700px) {
   .modal.catalog-dialog {
     inset: auto 0 0;

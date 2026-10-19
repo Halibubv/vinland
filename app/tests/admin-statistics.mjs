@@ -101,9 +101,9 @@ result = await member.request('/api/statistics?from=2026-10-09&to=2026-10-11');
 assert.equal(result.status, 200, JSON.stringify(result.data));
 assert.equal(result.data.days.length, 3);
 assert.deepEqual(result.data.days[0], { date: '2026-10-09', calories: 0, protein: 0,
-  fat: 0, carbs: 0, workouts: 0, sets: 0 });
+  fat: 0, carbs: 0, workouts: 0, exercises: 0, sets: 0 });
 assert.deepEqual(result.data.days[1], { date: '2026-10-10', calories: 300, protein: 15,
-  fat: 7.5, carbs: 30, workouts: 1, sets: 1 });
+  fat: 7.5, carbs: 30, workouts: 1, exercises: 1, sets: 1 });
 assert.deepEqual(result.data.totals, { calories: 300, protein: 15,
   fat: 7.5, carbs: 30, workouts: 1, sets: 1 });
 assert.deepEqual(result.data.goals, { calories: 2400, protein: 180, fat: 80, carbs: 300 });

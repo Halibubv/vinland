@@ -1,23 +1,27 @@
+// Лендинг для гостя: описание возможностей и кнопки входа и регистрации.
+// Все цифры и записи здесь — статичный пример, а не данные пользователя.
 import React, { useEffect } from 'react';
-import { A } from '../lib/constants.js';
+import { ASSETS } from '../lib/constants.js';
 import { Brand, LinkButton, Footer, GuestMobileNav } from '../components/Layout.jsx';
 import { Progress } from '../components/ui.jsx';
 
 export function Landing() {
+  // Блоки с классом .reveal плавно появляются, когда до них докрутили страницу:
+  // IntersectionObserver сообщает, что блок попал в экран, и мы добавляем класс is-visible.
   useEffect(() => {
-    const targets = document.querySelectorAll('.reveal');
     if (!('IntersectionObserver' in window)) return;
-    const observer = new IntersectionObserver(
-      (entries) =>
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible');
-            observer.unobserve(entry.target);
-          }
-        }),
-      { threshold: 0.08 },
-    );
-    targets.forEach((target) => observer.observe(target));
+
+    function handleVisible(entries) {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      }
+    }
+
+    const observer = new IntersectionObserver(handleVisible, { threshold: 0.08 });
+    for (const block of document.querySelectorAll('.reveal')) observer.observe(block);
     return () => observer.disconnect();
   }, []);
   return (
@@ -37,7 +41,7 @@ export function Landing() {
         </header>
         <div className="landing-hero-copy">
           <h1>
-            <img src={`${A}wordmark.svg`} alt="ВИНЛАНД" />
+            <img src={`${ASSETS}wordmark.svg`} alt="ВИНЛАНД" />
           </h1>
           <p>
             Учёт силовых тренировок и дневник
@@ -55,7 +59,7 @@ export function Landing() {
       <section className="feature-strip" aria-label="Возможности">
         <div>
           <span className="feature-icon">
-            <img src={`${A}feature-dumbbell.svg`} alt="" />
+            <img src={`${ASSETS}feature-dumbbell.svg`} alt="" />
           </span>
           <strong>Тренировки</strong>
           <span>
@@ -65,7 +69,7 @@ export function Landing() {
         </div>
         <div>
           <span className="feature-icon">
-            <img src={`${A}icon-food.svg`} alt="" />
+            <img src={`${ASSETS}icon-food.svg`} alt="" />
           </span>
           <strong>Питание и КБЖУ</strong>
           <span>
@@ -76,7 +80,7 @@ export function Landing() {
         </div>
         <div>
           <span className="feature-icon">
-            <img src={`${A}nav-profile.svg`} alt="" />
+            <img src={`${ASSETS}nav-profile.svg`} alt="" />
           </span>
           <strong>Личный кабинет</strong>
           <span>
@@ -106,12 +110,12 @@ export function Landing() {
         </div>
         <img
           className="mobile-device"
-          src={`${A}mobile-device.png`}
+          src={`${ASSETS}mobile-device.png`}
           alt="ВИНЛАНД на устройстве на фоне фьорда"
         />
       </section>
       <section className="landing-product reveal">
-        <img src={`${A}phone-product.png`} alt="Приложение ВИНЛАНД на двух телефонах" />
+        <img src={`${ASSETS}phone-product.png`} alt="Приложение ВИНЛАНД на двух телефонах" />
         <div>
           <span className="eyebrow">ВОЗМОЖНОСТИ</span>
           <h2>
@@ -122,7 +126,7 @@ export function Landing() {
           <ul>
             <li>
               <span className="product-icon">
-                <img src={`${A}feature-dumbbell.svg`} alt="" />
+                <img src={`${ASSETS}feature-dumbbell.svg`} alt="" />
               </span>
               <div>
                 <strong>Запись тренировок</strong>
@@ -134,7 +138,7 @@ export function Landing() {
             </li>
             <li>
               <span className="product-icon">
-                <img src={`${A}icon-food.svg`} alt="" />
+                <img src={`${ASSETS}icon-food.svg`} alt="" />
               </span>
               <div>
                 <strong>Дневник питания с КБЖУ</strong>
@@ -146,7 +150,7 @@ export function Landing() {
             </li>
             <li>
               <span className="product-icon">
-                <img src={`${A}icon-chart.svg`} alt="" />
+                <img src={`${ASSETS}icon-chart.svg`} alt="" />
               </span>
               <div>
                 <strong>Статистика и история</strong>
@@ -158,7 +162,7 @@ export function Landing() {
             </li>
             <li>
               <span className="product-icon">
-                <img src={`${A}icon-sliders.svg`} alt="" />
+                <img src={`${ASSETS}icon-sliders.svg`} alt="" />
               </span>
               <div>
                 <strong>Цели и личный кабинет</strong>
@@ -172,7 +176,7 @@ export function Landing() {
         </div>
       </section>
       <section className="editorial-row reveal">
-        <img src={`${A}landing-photo-2.png`} alt="Атлетка выполняет упражнение со штангой" />
+        <img src={`${ASSETS}landing-photo-2.png`} alt="Атлетка выполняет упражнение со штангой" />
         <div>
           <span className="eyebrow">ТРЕНИРОВКИ</span>
           <h2>
@@ -186,17 +190,17 @@ export function Landing() {
           </p>
           <div className="demo-card">
             <strong>
-              <img src={`${A}feature-dumbbell.svg`} alt="" />
+              <img src={`${ASSETS}feature-dumbbell.svg`} alt="" />
               Тренировка сегодня
             </strong>
             <div className="demo-row">
-              <img src={`${A}squat-photo.png`} alt="" />
+              <img src={`${ASSETS}squat-photo.png`} alt="" />
               <span>
                 Приседания со штангой<small>3 × 8 · 100 кг</small>
               </span>
             </div>
             <div className="demo-row">
-              <img src={`${A}exercise-photo.png`} alt="" />
+              <img src={`${ASSETS}exercise-photo.png`} alt="" />
               <span>
                 Жим лёжа<small>3 × 10 · 80 кг</small>
               </span>
@@ -206,7 +210,7 @@ export function Landing() {
       </section>
       <section className="editorial-row editorial-row--reverse reveal">
         <img
-          src={`${A}landing-photo-6.png`}
+          src={`${ASSETS}landing-photo-6.png`}
           alt="Сбалансированное блюдо с курицей, рисом и овощами"
         />
         <div>
@@ -222,13 +226,13 @@ export function Landing() {
           <div className="demo-card">
             <strong>Обед · 27 сентября 2026</strong>
             <div className="demo-row">
-              <img src={`${A}food-photo.png`} alt="" />
+              <img src={`${ASSETS}food-photo.png`} alt="" />
               <span>
                 Куриная грудка · 200 г<small>330 ккал · Б 62 · Ж 8 · У 0</small>
               </span>
             </div>
             <div className="demo-row">
-              <img src={`${A}food-photo.png`} alt="" />
+              <img src={`${ASSETS}food-photo.png`} alt="" />
               <span>
                 Рис варёный · 250 г<small>320 ккал · Б 6,75 · Ж 0,75 · У 70</small>
               </span>
@@ -257,7 +261,7 @@ export function Landing() {
         </div>
         <div className="panel demo-progress">
           <div>
-            <img src={`${A}icon-flame.svg`} alt="" />
+            <img src={`${ASSETS}icon-flame.svg`} alt="" />
             <span>
               Сегодня в рационе<strong>1 850 / 2 400 ккал</strong>
             </span>

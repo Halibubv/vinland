@@ -1,14 +1,24 @@
 <?php
+// Регистрация, вход и выход, а также ограничение числа неверных попыток входа.
 declare(strict_types=1);
 
 const ACCOUNT_LOGIN_LIMIT = 5;
 const IP_LOGIN_LIMIT = 20;
-const LOGIN_WINDOW_MINUTES = 15;
 
 function client_ip(): string
 {
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-    return is_string($ip) && strlen($ip) <= 45 ? $ip : 'unknown';
+    // За прокси (например, на Render) REMOTE_ADDR — это адрес прокси, общий для всех.
+    // Тогда настоящий адрес посетителя — первый в заголовке X-Forwarded-For.
+    // Включается только явно через TRUST_PROXY=1: без прокси этот заголовок может подделать кто угодно.
+    if (config('TRUST_PROXY', '0') === '1' && isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $addresses = explode(',', (string) $_SERVER['HTTP_X_FORWARDED_FOR']);
+        $ip = trim($addresses[0]);
+    }
+    if (!is_string($ip) || $ip === '' || strlen($ip) > 45) {
+        return 'unknown';
+    }
+    return $ip;
 }
 
 function establish_session(int $userId): void
@@ -36,11 +46,12 @@ function register_account(array $data): never
     $name = text_value($data, 'name', 100);
     $password = password_value($data);
     try {
-        // Role is deliberately omitted: the database default can only create a public user.
+        // Роль специально не передаём: по умолчанию в базе это обычный пользователь.
         $id = query('INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?) RETURNING id', [
             $email, password_hash($password, PASSWORD_DEFAULT), $name,
         ])->fetchColumn();
     } catch (PDOException $error) {
+        // 23505 — код PostgreSQL для нарушения UNIQUE: такой email уже есть.
         if ($error->getCode() === '23505') {
             invalid('email', 'Этот email уже зарегистрирован.');
         }
@@ -50,15 +61,15 @@ function register_account(array $data): never
     respond(['user' => current_user(), 'csrf' => $_SESSION['csrf']], 201);
 }
 
+// Считаем неудачные попытки за последние 15 минут отдельно по email и по IP.
 function too_many_login_attempts(string $email, string $ip): bool
 {
     query("DELETE FROM login_attempts WHERE attempted_at < CURRENT_TIMESTAMP - INTERVAL '15 minutes'");
-    $counts = query("SELECT
-        COUNT(*) FILTER (WHERE email = ?) AS account_attempts,
-        COUNT(*) FILTER (WHERE ip = ?) AS ip_attempts
-        FROM login_attempts WHERE attempted_at >= CURRENT_TIMESTAMP - INTERVAL '15 minutes'", [$email, $ip])->fetch();
-    return (int) $counts['account_attempts'] >= ACCOUNT_LOGIN_LIMIT
-        || (int) $counts['ip_attempts'] >= IP_LOGIN_LIMIT;
+    $accountAttempts = (int) query("SELECT COUNT(*) FROM login_attempts
+        WHERE email = ? AND attempted_at >= CURRENT_TIMESTAMP - INTERVAL '15 minutes'", [$email])->fetchColumn();
+    $ipAttempts = (int) query("SELECT COUNT(*) FROM login_attempts
+        WHERE ip = ? AND attempted_at >= CURRENT_TIMESTAMP - INTERVAL '15 minutes'", [$ip])->fetchColumn();
+    return $accountAttempts >= ACCOUNT_LOGIN_LIMIT || $ipAttempts >= IP_LOGIN_LIMIT;
 }
 
 function record_login_failure(string $email, string $ip): void
@@ -79,7 +90,8 @@ function login_account(array $data): never
         record_login_failure($email, $ip);
         throw new ApiError(401, 'Неверный email или пароль.');
     }
-    // Clear only this account's successful recovery, never failures of other accounts sharing the IP.
+    // После успешного входа чистим попытки только этого аккаунта,
+    // чужие неудачи с того же IP остаются в счёте.
     query('DELETE FROM login_attempts WHERE email = ?', [$email]);
     establish_session((int) $user['id']);
     respond(['user' => current_user(), 'csrf' => $_SESSION['csrf']]);
