@@ -1,11 +1,13 @@
+// Итоги одного дня по питанию: калории и БЖУ в сравнении с целями пользователя.
+// Используется в дневнике питания, профиле и статистике.
 import React from 'react';
-import { A } from '../lib/constants.js';
+import { ASSETS } from '../lib/constants.js';
 import { formatInt, percentOf } from '../lib/format.js';
 
 const macros = [
-  ['Белки', 'protein', 'icon-muscle.svg'],
-  ['Жиры', 'fat', 'icon-drop.svg'],
-  ['Углеводы', 'carbs', 'icon-wheat.svg'],
+  { label: 'Белки', key: 'protein', icon: 'icon-muscle.svg' },
+  { label: 'Жиры', key: 'fat', icon: 'icon-drop.svg' },
+  { label: 'Углеводы', key: 'carbs', icon: 'icon-wheat.svg' },
 ];
 
 function Bar({ value, target }) {
@@ -16,39 +18,51 @@ function Bar({ value, target }) {
   );
 }
 
-// Calories and macros for one day against the user's goals.
+// Цель числом или прочерк, если цель не задана.
+function goalText(goal) {
+  return goal ? formatInt(goal) : '—';
+}
+
+// day — съеденное за день, goals — цели; у обоих поля calories, protein, fat, carbs.
 export function DaySummary({ title, day, goals, className = '' }) {
+  let caloriesPercent = 'Цель не задана';
+  if (goals.calories) caloriesPercent = `${percentOf(day.calories, goals.calories)}%`;
+
   return (
     <section className={`panel day-summary ${className}`}>
       <div className="day-summary-calories">
-        <img src={`${A}icon-flame.svg`} alt="" />
+        <img src={`${ASSETS}icon-flame.svg`} alt="" />
         <div>
           <span>{title}</span>
           <strong>
-            {formatInt(day.calories)} / {goals.calories ? formatInt(goals.calories) : '—'} ккал
+            {formatInt(day.calories)} / {goalText(goals.calories)} ккал
           </strong>
         </div>
       </div>
       <div className="day-summary-bar">
         <Bar value={day.calories} target={goals.calories} />
-        <b>{goals.calories ? `${percentOf(day.calories, goals.calories)}%` : 'Цель не задана'}</b>
+        <b>{caloriesPercent}</b>
       </div>
       <div className="day-summary-macros">
-        {macros.map(([label, key, icon]) => (
-          <div key={key}>
-            <span>
-              <img src={`${A}${icon}`} alt="" />
-              {label}
-            </span>
-            <strong>
-              {formatInt(day[key])} / {goals[key] ? formatInt(goals[key]) : '—'} г
-            </strong>
-            <div className="day-summary-macro-bar">
-              <Bar value={day[key]} target={goals[key]} />
-              <small>{goals[key] ? `${percentOf(day[key], goals[key])}%` : '—'}</small>
+        {macros.map((macro) => {
+          const eaten = day[macro.key];
+          const goal = goals[macro.key];
+          return (
+            <div key={macro.key}>
+              <span>
+                <img src={`${ASSETS}${macro.icon}`} alt="" />
+                {macro.label}
+              </span>
+              <strong>
+                {formatInt(eaten)} / {goalText(goal)} г
+              </strong>
+              <div className="day-summary-macro-bar">
+                <Bar value={eaten} target={goal} />
+                <small>{goal ? `${percentOf(eaten, goal)}%` : '—'}</small>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

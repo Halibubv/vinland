@@ -1,3 +1,5 @@
+/* Дневник питания и «История питания». */
+
 .diary-page .section-title-row {
   align-items: center;
 }
@@ -95,7 +97,7 @@
   font-size: 14px;
 }
 
-/* Link under the day: "История питания" or, in history, "К сегодняшнему дню". */
+/* Ссылка под днём: «История питания», а в истории — «К сегодняшнему дню». */
 .history-link {
   display: flex;
   align-items: center;
@@ -130,7 +132,7 @@
   font-weight: 400;
 }
 
-/* Tablet and phone: each meal type is a card, as in the "Адаптив" and "Приложение" mockups. */
+/* Планшет и телефон: каждый приём пищи — отдельная карточка, как в макетах «Адаптив» и «Приложение». */
 @media (max-width: 900px) {
   .diary-page .section-title-row {
     flex-direction: column;

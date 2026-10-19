@@ -1,29 +1,51 @@
+// Дневник питания за один день: итоги КБЖУ и четыре приёма пищи.
+// Этот же компонент показывает «Историю питания» (см. NutritionHistory.jsx).
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { localDate, parseDate, relativeDay } from '../lib/dates.js';
 import { formatInt, formatNumber, plural } from '../lib/format.js';
-import { A, mealTypes } from '../lib/constants.js';
+import { ASSETS, mealTypes } from '../lib/constants.js';
 import { Shell, Notice } from '../components/ui.jsx';
 import { DateStepper } from '../components/DateStepper.jsx';
 import { DaySummary } from '../components/DaySummary.jsx';
 import { EntryIcon } from '../components/EntryIcon.jsx';
 import './Nutrition.css';
 
-function sum(items, key) {
-  return items.reduce((total, item) => total + Number(item[key]), 0);
-}
-
+// "3 продукта · 450 г"
 function productCount(items) {
-  return `${plural(items.length, 'продукт', 'продукта', 'продуктов')} · ${formatNumber(sum(items, 'quantity_g'))} г`;
+  let grams = 0;
+  for (const item of items) grams += Number(item.quantity_g);
+  return `${plural(items.length, 'продукт', 'продукта', 'продуктов')} · ${formatNumber(grams)} г`;
 }
 
+// "Овсянка, Банан"
+function productNames(meal) {
+  return meal.items.map((item) => item.product_name_snapshot).join(', ');
+}
+
+// "Овсянка 60 г · Банан 120 г"
+function productNamesWithGrams(meal) {
+  return meal.items
+    .map((item) => `${item.product_name_snapshot} ${formatNumber(item.quantity_g)} г`)
+    .join(' · ');
+}
+
+// Один приём пищи (например, «Обед») со всеми записями этого типа за день.
 function MealSlot({ type, label, meals, date }) {
-  const items = meals.flatMap((meal) => meal.items);
-  const calories = sum(meals, 'calories');
-  const last = meals.at(-1);
-  const addHref = last
-    ? `/nutrition/${last.id}?add=1`
-    : `/nutrition/new?date=${date}&type=${type}&add=1`;
+  // Все продукты и калории всех записей этого приёма пищи.
+  const items = [];
+  let calories = 0;
+  for (const meal of meals) {
+    items.push(...meal.items);
+    calories += Number(meal.totals.calories);
+  }
+
+  // «Добавить продукт» дописывает в последнюю запись, а если её нет — создаёт новую.
+  let addHref = `/nutrition/new?date=${date}&type=${type}&add=1`;
+  if (meals.length > 0) {
+    const lastMeal = meals[meals.length - 1];
+    addHref = `/nutrition/${lastMeal.id}?add=1`;
+  }
   return (
     <section className={`meal-slot ${meals.length ? '' : 'is-empty'}`}>
       <header className="meal-slot-head">
@@ -43,12 +65,8 @@ function MealSlot({ type, label, meals, date }) {
           <a href={`/nutrition/${meal.id}`} className="meal-entry" key={meal.id}>
             <EntryIcon meal={type} />
             <span className="meal-entry-text">
-              {meal.items.map((item) => item.product_name_snapshot).join(', ') || 'Без продуктов'}
-              <small className="wide-only">
-                {meal.items
-                  .map((item) => `${item.product_name_snapshot} ${formatNumber(item.quantity_g)} г`)
-                  .join(' · ')}
-              </small>
+              {productNames(meal) || 'Без продуктов'}
+              <small className="wide-only">{productNamesWithGrams(meal)}</small>
               <small className="narrow-only">{productCount(meal.items)}</small>
             </span>
             <strong className="wide-only">{formatInt(meal.totals.calories)} ккал</strong>
@@ -72,34 +90,45 @@ function MealSlot({ type, label, meals, date }) {
   );
 }
 
-// The diary for one day. With `history` it is the "История питания" screen:
-// same day view, opened on a past date, with a way back to today.
+// Начальная дата: из адреса (?date=...), иначе initialDate, иначе сегодня.
+function startDate(initialDate) {
+  const fromAddress = new URLSearchParams(window.location.search).get('date');
+  if (parseDate(fromAddress)) return fromAddress;
+  return initialDate || localDate();
+}
+
+// history = true — экран «История питания»: тот же дневник, но открыт на прошлой
+// дате и со ссылкой назад к сегодняшнему дню.
 export function NutritionPage({ history = false, initialDate }) {
   const path = history ? '/nutrition/history' : '/nutrition';
-  const [date, setDate] = useState(() => {
-    const value = new URLSearchParams(window.location.search).get('date');
-    return parseDate(value) ? value : initialDate || localDate();
-  });
+  const [date, setDate] = useState(() => startDate(initialDate));
   const [meals, setMeals] = useState(null);
   const [statistics, setStatistics] = useState(null);
   const [error, setError] = useState('');
   function reload() {
     setError('');
     setMeals(null);
+    // Записи дня и итоги дня с целями пользователя загружаем одновременно.
     Promise.all([api(`/meals?date=${date}`), api(`/statistics?from=${date}&to=${date}`)])
-      .then(([history, stats]) => {
-        setMeals(history.meals.map((meal) => ({ ...meal, calories: meal.totals.calories })));
-        setStatistics(stats);
+      .then(([mealsData, statisticsData]) => {
+        setMeals(mealsData.meals);
+        setStatistics(statisticsData);
       })
       .catch((problem) => setError(problem.message));
   }
   useEffect(() => {
-    // Keep the chosen day in the address, so reload and "back" return to it.
+    // Запоминаем выбранный день в адресе, чтобы обновление страницы и «Назад» вернули к нему.
     const search = !history && date === localDate() ? '' : `?date=${date}`;
     window.history.replaceState(window.history.state, '', `${path}${search}`);
     reload();
   }, [date]);
-  const day = relativeDay(date);
+
+  let summaryTitle;
+  const dayName = relativeDay(date);
+  if (history) summaryTitle = 'За выбранный день';
+  else if (dayName === 'Сегодня') summaryTitle = 'Сегодня в рационе';
+  else summaryTitle = `${dayName} в рационе`;
+
   return (
     <Shell
       title={history ? 'История питания' : 'Дневник питания'}
@@ -110,7 +139,7 @@ export function NutritionPage({ history = false, initialDate }) {
             className="button button--primary diary-create"
             href={`/nutrition/new?date=${date}&add=1`}
           >
-            <img src={`${A}icon-plus.svg`} alt="" />
+            <img src={`${ASSETS}icon-plus.svg`} alt="" />
             <span className="wide-only">Добавить продукт</span>
             <span className="narrow-only">Создать приём пищи</span>
           </a>
@@ -118,23 +147,11 @@ export function NutritionPage({ history = false, initialDate }) {
       }
       className="diary-page"
     >
-      {error ? (
-        <Notice message={error} retry={reload} />
-      ) : !meals || !statistics ? (
-        <p className="muted">Загружаем дневник…</p>
-      ) : (
+      {error && <Notice message={error} retry={reload} />}
+      {!error && (!meals || !statistics) && <p className="muted">Загружаем дневник…</p>}
+      {!error && meals && statistics && (
         <>
-          <DaySummary
-            title={
-              history
-                ? 'За выбранный день'
-                : day === 'Сегодня'
-                  ? 'Сегодня в рационе'
-                  : `${day} в рационе`
-            }
-            day={statistics.days[0]}
-            goals={statistics.goals}
-          />
+          <DaySummary title={summaryTitle} day={statistics.days[0]} goals={statistics.goals} />
           <div className="meal-slots">
             {Object.entries(mealTypes).map(([type, label]) => (
               <MealSlot
@@ -146,10 +163,10 @@ export function NutritionPage({ history = false, initialDate }) {
               />
             ))}
           </div>
-          {history ? (
+          {history && (
             <>
               <a className="history-link" href="/nutrition">
-                <img src={`${A}icon-calendar.svg`} alt="" />
+                <img src={`${ASSETS}icon-calendar.svg`} alt="" />
                 <span>
                   <strong>К сегодняшнему дню</strong>
                 </span>
@@ -158,9 +175,10 @@ export function NutritionPage({ history = false, initialDate }) {
                 Прошлые итоги сохраняются при изменении справочника продуктов.
               </p>
             </>
-          ) : (
+          )}
+          {!history && (
             <a className="history-link" href="/nutrition/history">
-              <img src={`${A}icon-calendar.svg`} alt="" />
+              <img src={`${ASSETS}icon-calendar.svg`} alt="" />
               <span>
                 <strong>
                   История питания<span className="narrow-only"> — выбрать дату</span>

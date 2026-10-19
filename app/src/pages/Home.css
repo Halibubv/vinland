@@ -1,5 +1,5 @@
-/* Signed-in start page. Desktop, tablet (≤900px) and phone (≤700px)
-   follow the "Главная" mockups. */
+/* Главная страница вошедшего пользователя. Компьютер, планшет (≤900px)
+   и телефон (≤700px) — по макетам «Главная». */
 
 .home-hero {
   position: relative;
@@ -53,7 +53,7 @@
 .home-content {
   padding-bottom: 48px;
 }
-/* A thin rule with a diamond in the middle. */
+/* Тонкая линия с ромбом посередине. */
 .home-ornament {
   display: flex;
   align-items: center;

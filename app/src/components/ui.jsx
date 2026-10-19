@@ -1,7 +1,9 @@
+// Мелкие общие элементы интерфейса: поле формы, полоска прогресса,
+// каркас страницы раздела, сообщение об ошибке и пустое состояние.
 import React, { useState } from 'react';
 import { formatInt, percentOf } from '../lib/format.js';
-import { A } from '../lib/constants.js';
 
+// Поле формы с подписью и текстом ошибки. Для пароля есть кнопка «Показать».
 export function Field({
   label,
   name,
@@ -16,8 +18,10 @@ export function Field({
   placeholder,
   suffix,
 }) {
-  const [visible, setVisible] = useState(false);
-  const inputType = type === 'password' && visible ? 'text' : type;
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  let inputType = type;
+  if (type === 'password' && passwordVisible) inputType = 'text';
+  // ?? '': пустое значение (null из базы) показываем как пустое поле.
   return (
     <label className="field">
       <span>{label}</span>
@@ -40,10 +44,10 @@ export function Field({
           <button
             type="button"
             className="reveal-password"
-            onClick={() => setVisible(!visible)}
-            aria-label={visible ? 'Скрыть пароль' : 'Показать пароль'}
+            onClick={() => setPasswordVisible(!passwordVisible)}
+            aria-label={passwordVisible ? 'Скрыть пароль' : 'Показать пароль'}
           >
-            {visible ? 'Скрыть' : 'Показать'}
+            {passwordVisible ? 'Скрыть' : 'Показать'}
           </button>
         )}
       </div>
@@ -56,6 +60,7 @@ export function Field({
   );
 }
 
+// Полоска «съедено / цель» (используется в демо-блоке на лендинге).
 export function Progress({ label, value, target, unit = 'г' }) {
   const percent = percentOf(value, target);
   return (
@@ -74,7 +79,7 @@ export function Progress({ label, value, target, unit = 'г' }) {
   );
 }
 
-// Back link above the page title: "‹ Тренировки / 27 сентября 2026".
+// Ссылка назад над заголовком страницы: "‹ Тренировки / 27 сентября 2026".
 export function BackLink({ to, label, current }) {
   return (
     <nav className="back-link" aria-label="Навигация по разделу">
@@ -87,6 +92,7 @@ export function BackLink({ to, label, current }) {
   );
 }
 
+// Каркас страницы раздела: полоса-баннер, заголовок, кнопка справа и содержимое.
 export function Shell({ title, subtitle, action, back, children, className = '' }) {
   return (
     <>
@@ -106,6 +112,7 @@ export function Shell({ title, subtitle, action, back, children, className = '' 
   );
 }
 
+// Сообщение об ошибке; если передан retry — с кнопкой «Повторить».
 export function Notice({ message, retry }) {
   return (
     <div className="section-notice" role="alert">
@@ -119,6 +126,7 @@ export function Notice({ message, retry }) {
   );
 }
 
+// Пустой список: заголовок, пояснение и, если есть ссылка to, кнопка действия.
 export function Empty({ title, detail, action, to }) {
   return (
     <div className="empty-state">

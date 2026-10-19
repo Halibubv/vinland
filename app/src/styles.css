@@ -1,3 +1,4 @@
+/* Глобальные стили: цвета и шрифты, лендинг, вход, шапка и общий каркас страниц. */
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@600;700&family=Inter:wght@400;500;600;700&family=Montserrat:wght@600&family=Playfair+Display:wght@400;500&display=swap');
 
 :root {
@@ -190,7 +191,7 @@ h3 {
   border-radius: 8px;
 }
 
-/* Guest landing, composed from the accepted editorial Figma frames. */
+/* Лендинг для гостя, по утверждённым макетам в Figma. */
 .landing {
   overflow: hidden;
 }
@@ -373,7 +374,7 @@ h3 {
   }
 }
 
-/* Shared signed-in shell and dashboard. */
+/* Общий каркас для вошедшего пользователя. */
 .app-header {
   height: 60px;
   display: flex;
@@ -458,7 +459,7 @@ h3 {
   color: var(--muted);
 }
 
-/* Authentication and account. */
+/* Вход, регистрация и аккаунт. */
 .auth-layout {
   display: grid;
   grid-template-columns: minmax(310px, 36%) 1fr;
@@ -666,7 +667,7 @@ h3 {
   .desktop-nav {
     gap: 15px;
   }
-  /* The tablet mockups show only the avatar on the right. */
+  /* В макетах планшета справа только аватар. */
   .header-account > span,
   .header-account .logout,
   .admin-entry-long {
@@ -886,7 +887,7 @@ h3 {
   }
 }
 
-/* Pixel geometry and editorial structure of the approved landing frames. */
+/* Точные размеры и сетка лендинга по утверждённым макетам. */
 .landing h2 {
   font-family: 'Playfair Display', Georgia, serif;
   font-weight: 400;
@@ -1708,7 +1709,7 @@ h3 {
   }
 }
 
-/* Signed-in screens: page frame from <Shell>, notices and empty states. */
+/* Экраны вошедшего пользователя: каркас <Shell>, сообщения и пустые состояния. */
 .section-banner {
   height: 102px;
   background: url('/assets/panorama.png') center/cover no-repeat;
@@ -1826,7 +1827,7 @@ h3 {
   }
 }
 
-/* Visually hidden, still read by screen readers. */
+/* Скрыто с экрана, но читается программами экранного доступа. */
 .sr-only {
   position: absolute;
   width: 1px;
