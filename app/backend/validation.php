@@ -1,4 +1,6 @@
 <?php
+// Проверка данных из форм. Каждая функция либо возвращает чистое значение,
+// либо останавливает запрос с ошибкой 422 и текстом для нужного поля.
 declare(strict_types=1);
 
 function invalid(string $field, string $message): never
@@ -6,21 +8,56 @@ function invalid(string $field, string $message): never
     throw new ApiError(422, 'Проверьте поля формы.', [$field => $message]);
 }
 
+// Длина в символах, а не в байтах. Так кириллица считается правильно без расширения mbstring.
+function text_length(string $value): int
+{
+    return preg_match_all('/./us', $value);
+}
+
+// preg_match('//u') возвращает 1 только для корректной строки UTF-8.
+function is_utf8_text(mixed $value): bool
+{
+    return is_string($value) && preg_match('//u', $value) === 1;
+}
+
 function text_value(array $data, string $field, int $max, bool $required = true): string
 {
     $value = $data[$field] ?? '';
-    if (!is_string($value) || preg_match('//u', $value) !== 1) {
+    if (!is_utf8_text($value)) {
         invalid($field, 'Введите текст.');
     }
     $value = trim($value);
-    // Count Unicode characters without adding the mbstring dependency.
-    $length = preg_match_all('/./us', $value);
-    if (($required && $length === 0) || $length > $max) {
-        invalid($field, $length === 0 ? 'Обязательное поле.' : 'Слишком длинный текст.');
+    $length = text_length($value);
+    if ($required && $length === 0) {
+        invalid($field, 'Обязательное поле.');
+    }
+    if ($length > $max) {
+        invalid($field, 'Слишком длинный текст.');
     }
     return $value;
 }
 
+function optional_text_value(array $data, string $field, int $max): ?string
+{
+    if (!array_key_exists($field, $data) || $data[$field] === null) {
+        return null;
+    }
+    $value = $data[$field];
+    if (!is_utf8_text($value)) {
+        invalid($field, 'Введите текст.');
+    }
+    $value = trim($value);
+    if (text_length($value) > $max) {
+        invalid($field, 'Слишком длинный текст.');
+    }
+    if ($value === '') {
+        return null;
+    }
+    return $value;
+}
+
+// $integer — только целые; $nullable — пустое поле превращается в null;
+// $positive — ноль не допускается.
 function number_value(array $data, string $field, float $max, bool $integer = false,
     bool $nullable = false, bool $positive = false): int|float|null
 {
@@ -32,15 +69,32 @@ function number_value(array $data, string $field, float $max, bool $integer = fa
         invalid($field, 'Введите число.');
     }
     $value = (string) $value;
-    $pattern = $integer ? '/^\d+$/' : '/^\d+(?:\.\d{1,2})?$/';
-    if (!preg_match($pattern, $value)) {
-        invalid($field, $integer ? 'Введите целое неотрицательное число.' : 'Введите неотрицательное число, до двух знаков после точки.');
+    // Проверяем запись числа регулярным выражением: так не пройдут "-1", "1e5" и " 12".
+    if ($integer) {
+        if (!preg_match('/^\d+$/', $value)) {
+            invalid($field, 'Введите целое неотрицательное число.');
+        }
+    } else {
+        if (!preg_match('/^\d+(?:\.\d{1,2})?$/', $value)) {
+            invalid($field, 'Введите неотрицательное число, до двух знаков после точки.');
+        }
     }
     $number = (float) $value;
-    if (!is_finite($number) || $number > $max || ($positive && $number <= 0)) {
-        invalid($field, $positive && $number <= 0 ? 'Значение должно быть больше нуля.' : 'Значение слишком большое.');
+    if ($positive && $number <= 0) {
+        invalid($field, 'Значение должно быть больше нуля.');
     }
-    return $integer ? (int) $number : $number;
+    if (!is_finite($number) || $number > $max) {
+        invalid($field, 'Значение слишком большое.');
+    }
+    if ($integer) {
+        return (int) $number;
+    }
+    return $number;
+}
+
+function id_value(array $data, string $field): int
+{
+    return number_value($data, $field, PHP_INT_MAX, true, false, true);
 }
 
 function date_value(array $data, string $field): string
@@ -49,6 +103,7 @@ function date_value(array $data, string $field): string
     if (!is_string($value)) {
         invalid($field, 'Выберите дату.');
     }
+    // Сравнение с исходной строкой отсекает несуществующие даты вроде 2026-02-30.
     $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
     if (!$date || $date->format('Y-m-d') !== $value || $value < '1900-01-01' || $value > '2100-12-31') {
         invalid($field, 'Введите корректную дату.');
@@ -68,37 +123,15 @@ function email_value(array $data): string
 function password_value(array $data): string
 {
     $value = $data['password'] ?? null;
-    if (!is_string($value) || preg_match('//u', $value) !== 1 || str_contains($value, "\0")) {
+    if (!is_utf8_text($value) || str_contains($value, "\0")) {
         invalid('password', 'Введите пароль.');
     }
+    // bcrypt молча обрезает пароль после 72 байт, поэтому длинные пароли не принимаем.
     $length = strlen($value);
-    // PASSWORD_DEFAULT currently uses bcrypt, which has a strict 72-byte input limit.
-    // Rejecting longer UTF-8 input avoids silent truncation and remains safe if the default changes.
     if ($length < 10 || $length > 72) {
         invalid('password', 'Пароль должен содержать от 10 до 72 байт.');
     }
     return $value;
-}
-
-function optional_text_value(array $data, string $field, int $max): ?string
-{
-    if (!array_key_exists($field, $data) || $data[$field] === null) {
-        return null;
-    }
-    $value = $data[$field];
-    if (!is_string($value) || preg_match('//u', $value) !== 1) {
-        invalid($field, 'Введите текст.');
-    }
-    $value = trim($value);
-    if (preg_match_all('/./us', $value) > $max) {
-        invalid($field, 'Слишком длинный текст.');
-    }
-    return $value === '' ? null : $value;
-}
-
-function id_value(array $data, string $field): int
-{
-    return number_value($data, $field, PHP_INT_MAX, true, false, true);
 }
 
 function meal_type_value(array $data): string
@@ -111,14 +144,19 @@ function meal_type_value(array $data): string
     return $value;
 }
 
+// КБЖУ приёма пищи считаем по сохранённым снимкам, а не по текущему продукту.
 function nutrition_totals(array $items): array
 {
     $totals = ['calories' => 0, 'protein' => 0, 'fat' => 0, 'carbs' => 0];
     foreach ($items as $item) {
-        foreach ($totals as $name => $value) {
-            $totals[$name] += (float) $item[$name . '_snapshot'] * (float) $item['quantity_g'] / 100;
+        foreach ($totals as $name => $sum) {
+            $per100g = (float) $item[$name . '_snapshot'];
+            $totals[$name] = $sum + $per100g * (float) $item['quantity_g'] / 100;
         }
     }
-    // Round only the final sum. The source is the saved snapshot, never the live product.
-    return array_map(fn ($value) => round($value, 2), $totals);
+    // Округляем только итог, чтобы не накапливать ошибку округления.
+    foreach ($totals as $name => $sum) {
+        $totals[$name] = round($sum, 2);
+    }
+    return $totals;
 }

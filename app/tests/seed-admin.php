@@ -1,4 +1,5 @@
 <?php
+// Для HTTP-тестов: создаёт администратора со случайным email и печатает этот email.
 declare(strict_types=1);
 require dirname(__DIR__) . '/backend/config.php';
 require dirname(__DIR__) . '/backend/database.php';

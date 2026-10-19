@@ -1,4 +1,5 @@
 <?php
+// Для HTTP-тестов: создаёт продукт со случайным названием и печатает его id.
 declare(strict_types=1);
 require dirname(__DIR__) . '/backend/config.php';
 require dirname(__DIR__) . '/backend/database.php';

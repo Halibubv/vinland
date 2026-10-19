@@ -1,6 +1,8 @@
 <?php
+// Ответы в JSON, чтение JSON из запроса и проверка CSRF-токена.
 declare(strict_types=1);
 
+// Ошибка, которую можно показать пользователю: код ответа, текст и ошибки по полям формы.
 final class ApiError extends RuntimeException
 {
     public function __construct(public int $status, string $message, public array $fields = [])
@@ -8,6 +10,8 @@ final class ApiError extends RuntimeException
         parent::__construct($message);
     }
 }
+
+const MAX_REQUEST_BYTES = 1024 * 1024;
 
 function respond(array $data, int $status = 200): never
 {
@@ -20,13 +24,15 @@ function respond(array $data, int $status = 200): never
 
 function read_json(): array
 {
-    if (!str_starts_with(strtolower($_SERVER['CONTENT_TYPE'] ?? ''), 'application/json')) {
+    $contentType = strtolower($_SERVER['CONTENT_TYPE'] ?? '');
+    if (!str_starts_with($contentType, 'application/json')) {
         throw new ApiError(415, 'Отправьте данные в формате JSON.');
     }
+    // Читаем на один байт больше лимита, чтобы понять, что тело слишком большое.
     $stream = fopen('php://input', 'rb');
-    $body = stream_get_contents($stream, 1024 * 1024 + 1);
+    $body = stream_get_contents($stream, MAX_REQUEST_BYTES + 1);
     fclose($stream);
-    if (strlen($body) > 1024 * 1024) {
+    if (strlen($body) > MAX_REQUEST_BYTES) {
         throw new ApiError(413, 'Слишком большой запрос.');
     }
     try {
@@ -34,7 +40,7 @@ function read_json(): array
     } catch (JsonException) {
         throw new ApiError(400, 'Некорректный JSON.');
     }
-    // Require an object, including the empty object, rather than a JSON array.
+    // Нужен именно объект {...}, в том числе пустой, а не JSON-массив [...].
     if (!is_array($data) || !str_starts_with(ltrim($body), '{')) {
         throw new ApiError(400, 'Ожидается объект с полями формы.');
     }
