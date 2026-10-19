@@ -73,7 +73,7 @@ export function AuthPage({ mode, onAuth }) {
     <div className="auth-layout">
       <div className="auth-visual">
         <Brand />
-        <img src={`${ASSETS}auth-athlete.png`} alt="Атлет на фоне северных гор" />
+        <img src={`${ASSETS}hero-athlete.png`} alt="Атлет на фоне северных гор" />
       </div>
       <div className="auth-side">
         <div className="auth-top">

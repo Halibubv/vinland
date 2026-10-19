@@ -21,7 +21,7 @@
 }
 
 .admin-page {
-  padding-top: 24px;
+  padding-top: var(--page-top);
   padding-bottom: 48px;
 }
 .admin-caption {
