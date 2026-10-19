@@ -1,0 +1,341 @@
+/* Shared pieces used by several screens. Breakpoints: ≤900px is the tablet
+   layout from the "Адаптив" mockups, ≤700px the phone layout from "Приложение". */
+
+@media (max-width: 900px) {
+  .wide-only {
+    display: none !important;
+  }
+}
+@media (min-width: 901px) {
+  .narrow-only {
+    display: none !important;
+  }
+}
+
+.breadcrumbs a:hover {
+  color: var(--cream);
+}
+
+/* "‹ Тренировки / 27 сентября 2026" above a page title. */
+.back-link {
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.back-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--muted);
+}
+.back-link a span {
+  font-size: 22px;
+  line-height: 1;
+}
+.back-link a:hover {
+  color: var(--cream);
+}
+
+/* Progress bar used by DaySummary. */
+.bar {
+  flex: 1;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: var(--border);
+}
+.bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--cream);
+  transition: width 0.7s ease;
+}
+
+/* Calories and macros for one day. */
+.day-summary {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 2fr;
+  gap: 18px 32px;
+  padding: 20px;
+}
+.day-summary-calories {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.day-summary-calories img {
+  width: 32px;
+  height: 32px;
+}
+.day-summary-calories span {
+  display: block;
+  font-size: 15px;
+}
+.day-summary-calories strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 26px;
+  line-height: 1.1;
+}
+.day-summary-bar,
+.day-summary-macro-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.day-summary-bar b {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.day-summary-macros {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+.day-summary-macros span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.day-summary-macros span img {
+  width: 18px;
+  height: 18px;
+}
+.day-summary-macros strong {
+  display: block;
+  margin: 8px 0 6px;
+  font-size: 20px;
+}
+.day-summary-macro-bar .bar {
+  height: 6px;
+}
+.day-summary-macro-bar small {
+  color: var(--muted);
+  font-size: 11px;
+}
+@media (max-width: 900px) {
+  .day-summary {
+    grid-template-columns: 1fr;
+  }
+  .day-summary-macros {
+    gap: 24px;
+  }
+  .day-summary-macros span img {
+    display: none;
+  }
+  .day-summary-macro-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .day-summary-macro-bar .bar {
+    flex: none;
+  }
+}
+@media (max-width: 700px) {
+  .day-summary-calories strong {
+    font-size: 21px;
+  }
+  .day-summary-macros {
+    gap: 14px;
+  }
+  .day-summary-macros strong {
+    font-size: 13px;
+  }
+}
+
+/* Day picker "‹ 16 октября 2026 ›". */
+.date-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 18px;
+}
+.date-stepper > img {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+}
+.date-stepper > button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--cream);
+  font-size: 20px;
+}
+.date-stepper > button:hover {
+  background: var(--surface2);
+}
+.date-stepper-value {
+  position: relative;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.date-stepper-value:hover,
+.date-stepper-value:focus-within {
+  background: var(--surface2);
+}
+.date-stepper-value input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+@media (max-width: 700px) {
+  .date-stepper {
+    font-size: 15px;
+  }
+}
+
+/* Icon tile shown next to exercises and meals. */
+.entry-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 56px;
+  height: 44px;
+  border-radius: 6px;
+  background: var(--surface2);
+}
+.entry-icon img {
+  width: 22px;
+  height: 22px;
+  opacity: 0.85;
+}
+
+/* Native <dialog> modals: catalog picker and delete confirmation. */
+body.modal-open {
+  overflow: hidden;
+}
+.modal {
+  width: min(520px, calc(100vw - 32px));
+  max-height: min(680px, calc(100vh - 48px));
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--cream);
+}
+.modal::backdrop {
+  background: rgba(5, 12, 16, 0.72);
+}
+.modal h2 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 22px;
+  font-weight: 400;
+}
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.modal-close {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--cream);
+  font-size: 28px;
+}
+.modal-close:hover {
+  background: var(--surface2);
+}
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+.confirm-text {
+  margin-top: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.catalog-dialog {
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 90px #0009;
+}
+.catalog-dialog:not([open]) {
+  display: none;
+}
+.catalog-dialog input[type='search'] {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--cream);
+  font: inherit;
+}
+.catalog-options {
+  display: grid;
+  gap: 6px;
+  max-height: 460px;
+  margin-top: 12px;
+  overflow-y: auto;
+}
+.catalog-options button {
+  display: grid;
+  gap: 4px;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--cream);
+  font: inherit;
+  text-align: left;
+}
+.catalog-options button:hover,
+.catalog-options button:focus-visible {
+  border-color: var(--cream);
+  background: var(--surface);
+}
+.catalog-options strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.catalog-options small {
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .modal {
+    padding: 18px;
+  }
+  .modal-actions .button {
+    flex: 1;
+  }
+}
+
+/* On a phone the catalog picker is a bottom sheet above the navigation. */
+@media (max-width: 700px) {
+  .modal.catalog-dialog {
+    inset: auto 0 0;
+    width: 100%;
+    max-width: none;
+    max-height: 82vh;
+    margin: 0;
+    padding: 20px 18px calc(20px + env(safe-area-inset-bottom));
+    border-width: 1px 0 0;
+    border-radius: 16px 16px 0 0;
+  }
+  .catalog-options {
+    max-height: none;
+  }
+}

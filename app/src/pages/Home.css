@@ -1,0 +1,306 @@
+/* Signed-in start page. Desktop, tablet (≤900px) and phone (≤700px)
+   follow the "Главная" mockups. */
+
+.home-hero {
+  position: relative;
+  min-height: 360px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(13, 26, 33, 0.98) 0%,
+      rgba(13, 26, 33, 0.95) 30%,
+      rgba(13, 26, 33, 0.35) 65%,
+      rgba(13, 26, 33, 0.05) 100%
+    ),
+    url('/assets/hero-athlete.png') right 39% / auto 140% no-repeat;
+}
+.home-hero-copy {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 56px 16px 64px;
+}
+.home-hero h1 {
+  margin: 0 0 10px;
+  font-family: 'Cormorant SC', Georgia, serif;
+  font-size: 72px;
+  line-height: 0.9;
+}
+.home-hero p {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 28px;
+  line-height: 1.25;
+}
+.home-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.home-hero-actions .button {
+  gap: 14px;
+  min-width: 258px;
+  min-height: 52px;
+  font-size: 16px;
+}
+.home-hero-actions img {
+  width: 22px;
+  height: 22px;
+}
+.home-hero-actions .button--primary img {
+  filter: brightness(0.15);
+}
+
+.home-content {
+  padding-bottom: 48px;
+}
+/* A thin rule with a diamond in the middle. */
+.home-ornament {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 22px;
+  margin-bottom: 18px;
+}
+.home-ornament::before,
+.home-ornament::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.home-ornament {
+  background: linear-gradient(45deg, transparent 42%, #81949a 42% 58%, transparent 58%) center /
+    12px 12px no-repeat;
+}
+.home-content h2 {
+  margin: 0 0 8px;
+  font-family: 'Cormorant SC', Georgia, serif;
+  font-size: 52px;
+  line-height: 1.1;
+}
+.home-lead {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.home-useful {
+  display: grid;
+  grid-template-columns: minmax(250px, 372px) minmax(260px, 1fr) minmax(280px, 1fr);
+  align-items: start;
+  gap: 36px;
+}
+.home-useful > img {
+  width: 100%;
+  height: 210px;
+  border-radius: 5px;
+  object-fit: cover;
+}
+.home-feature > span {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.home-feature h3 {
+  margin: 10px 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1.25;
+}
+.home-feature p {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.home-feature a {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 16px;
+}
+.home-feature a span {
+  font-size: 22px;
+}
+.home-feature a:hover {
+  text-decoration: underline;
+}
+
+.home-guides {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.home-guides li + li {
+  border-top: 1px solid var(--border);
+}
+.home-guides a {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+}
+.home-guide-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+.home-guide-icon img {
+  width: 22px;
+  height: 22px;
+}
+.home-guide-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.home-guide-text small {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.home-guide-text strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.home-guide-text > span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.home-guides b {
+  font-size: 24px;
+  font-weight: 400;
+}
+.home-guides a:hover strong {
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .home-hero {
+    min-height: 350px;
+    background:
+      linear-gradient(
+        90deg,
+        rgba(13, 26, 33, 0.85) 0%,
+        rgba(13, 26, 33, 0.5) 50%,
+        rgba(13, 26, 33, 0.1) 100%
+      ),
+      url('/assets/hero-athlete.png') 70% center / cover no-repeat;
+  }
+  .home-hero-copy {
+    padding: 64px 16px 26px;
+  }
+  .home-hero h1 {
+    font-size: 64px;
+    line-height: 1.2;
+  }
+  .home-hero p {
+    font-size: 22px;
+  }
+  .home-hero-actions {
+    gap: 12px;
+  }
+  .home-hero-actions .button {
+    min-width: 250px;
+    min-height: 48px;
+  }
+  .home-hero-actions img {
+    display: none;
+  }
+  .home-ornament {
+    display: none;
+  }
+  .home-content {
+    padding-top: 34px;
+  }
+  .home-content h2 {
+    font-size: 40px;
+  }
+  .home-lead {
+    font-size: 16px;
+  }
+  .home-useful {
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: 24px;
+  }
+  .home-useful > img {
+    height: 208px;
+  }
+  .home-guides {
+    grid-column: 1 / -1;
+    margin-top: -6px;
+    border-top: 1px solid var(--border);
+  }
+  .home-guides a {
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px 0;
+  }
+  .home-guide-icon {
+    width: auto;
+    height: auto;
+    border: 0;
+  }
+  .home-guide-text strong {
+    font-size: 16px;
+    font-weight: 400;
+  }
+}
+
+@media (max-width: 700px) {
+  .home-hero {
+    min-height: 0;
+    background:
+      linear-gradient(180deg, rgba(13, 26, 33, 0.35) 0%, rgba(13, 26, 33, 0.7) 60%, var(--bg) 100%),
+      url('/assets/hero-athlete.png') 72% top / cover no-repeat;
+  }
+  .home-hero-copy {
+    padding: 180px 20px 10px;
+  }
+  .home-hero h1 {
+    font-size: 44px;
+  }
+  .home-hero p {
+    margin-bottom: 18px;
+    font-size: 17px;
+  }
+  .home-hero-actions {
+    flex-direction: column;
+  }
+  .home-hero-actions .button {
+    width: 100%;
+    min-width: 0;
+    font-size: 15px;
+  }
+  .home-content {
+    padding: 48px 20px 100px;
+  }
+  .home-content h2 {
+    font-size: 38px;
+  }
+  .home-lead {
+    font-size: 14px;
+  }
+  .home-useful {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .home-useful > img {
+    height: 196px;
+  }
+  .home-feature h3 {
+    font-size: 24px;
+  }
+  .home-guides {
+    margin-top: 0;
+  }
+}

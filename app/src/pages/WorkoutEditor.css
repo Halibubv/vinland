@@ -1,0 +1,348 @@
+/* New / edited workout. Desktop: exercises separated by rules, sets in a table,
+   actions in one row. Tablet and phone (≤900px): each exercise is a card with
+   "Выше / Ниже" buttons, actions stacked full width. */
+
+.workout-form-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.workout-form input,
+.workout-form textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--cream);
+  font: inherit;
+  font-size: 15px;
+}
+.workout-form textarea {
+  min-height: 80px;
+  padding: 10px 16px;
+  resize: vertical;
+}
+.workout-form input:focus,
+.workout-form textarea:focus {
+  border-color: var(--cream);
+  outline: 0;
+}
+
+.workout-form-intro {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  align-items: end;
+  gap: 16px 26px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+}
+.workout-form-intro .date-stepper {
+  min-height: 44px;
+  margin-left: -6px;
+}
+
+.workout-exercises {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.workout-exercise {
+  padding: 18px 0 24px;
+  border-bottom: 1px solid var(--border);
+}
+.workout-exercise-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.workout-exercise-handle {
+  color: var(--muted);
+}
+.workout-exercise-head h3 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.workout-exercise-head h3 button {
+  max-width: 100%;
+  padding: 4px 6px;
+  margin-left: -6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--cream);
+  font: inherit;
+  text-align: left;
+}
+.workout-exercise-head h3 button:hover {
+  background: var(--surface2);
+}
+.workout-exercise-order {
+  display: flex;
+  gap: 8px;
+}
+.workout-exercise-order button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: none;
+  color: var(--cream);
+  font-size: 13px;
+}
+.workout-exercise-order button:hover:not(:disabled) {
+  border-color: var(--cream);
+}
+.workout-exercise-order button:disabled {
+  opacity: 0.4;
+}
+.workout-exercise-remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--error);
+  font-size: 13px;
+}
+.workout-exercise-remove:hover {
+  background: rgba(221, 129, 125, 0.08);
+}
+.workout-exercise-remove img {
+  width: 18px;
+  height: 18px;
+}
+.workout-exercise-empty {
+  margin: 0 0 8px 66px;
+}
+
+/* Set table: number, repetitions, weight, remove. */
+.workout-sets-edit {
+  margin-left: 66px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+}
+.workout-sets-edit-head,
+.workout-set-row {
+  display: grid;
+  grid-template-columns: minmax(60px, 0.8fr) 1fr 1fr 36px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px 0 14px;
+}
+.workout-sets-edit-head {
+  min-height: 34px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.workout-set-row {
+  min-height: 30px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  border-top: 1px solid var(--border);
+  font-size: 14px;
+}
+.workout-form .workout-set-row input {
+  min-height: 26px;
+  padding: 0 14px;
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: 14px;
+}
+.workout-set-remove {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  font-size: 18px;
+}
+.workout-set-remove:hover {
+  background: var(--surface2);
+  color: var(--cream);
+}
+
+.workout-add-set,
+.workout-exercise-notes summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin: 14px 0 0 66px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  font-size: 15px;
+  cursor: pointer;
+}
+.workout-add-set:hover,
+.workout-exercise-notes summary:hover {
+  color: var(--cream);
+}
+.workout-add-set img,
+.workout-exercise-notes summary img {
+  width: 18px;
+  height: 18px;
+}
+.workout-exercise-notes summary {
+  margin-top: 6px;
+  font-size: 13px;
+  list-style: none;
+}
+.workout-exercise-notes summary::-webkit-details-marker {
+  display: none;
+}
+.workout-exercise-notes[open] {
+  display: grid;
+  gap: 12px;
+}
+.workout-exercise-notes label {
+  display: grid;
+  gap: 6px;
+  margin-left: 66px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.workout-form .section-notice {
+  margin-top: 20px;
+}
+.workout-form-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 28px;
+}
+.workout-form-footer .button--primary {
+  min-width: 270px;
+}
+.workout-add-exercise {
+  gap: 14px;
+  margin-left: auto;
+}
+.workout-add-exercise img {
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 900px) {
+  .workout-form-intro {
+    grid-template-columns: 1fr;
+    padding-bottom: 20px;
+    border-bottom: 0;
+  }
+  .workout-exercises {
+    display: grid;
+    gap: 20px;
+  }
+  .workout-exercise {
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+  }
+  .workout-exercise-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 14px 12px;
+  }
+  .workout-exercise-head h3 {
+    font-size: 21px;
+  }
+  .workout-exercise-order,
+  .workout-exercise-remove {
+    grid-column: 1 / -1;
+  }
+  .workout-exercise-order button {
+    flex: 1;
+    min-height: 44px;
+    font-weight: 600;
+  }
+  .workout-exercise-remove {
+    justify-self: start;
+    margin-left: -8px;
+    font-size: 14px;
+  }
+  .workout-exercise-empty,
+  .workout-sets-edit,
+  .workout-add-set,
+  .workout-exercise-notes summary,
+  .workout-exercise-notes label {
+    margin-left: 0;
+  }
+  .workout-sets-edit {
+    border: 0;
+    background: none;
+  }
+  .workout-sets-edit-head,
+  .workout-set-row {
+    grid-template-columns: minmax(40px, 1fr) minmax(0, 1fr) minmax(0, 1fr) 30px;
+    padding: 0;
+    border: 0;
+  }
+  .workout-sets-edit-head {
+    min-height: 0;
+    margin-bottom: 8px;
+  }
+  .workout-set-row {
+    margin-bottom: 8px;
+  }
+  .workout-form .workout-set-row input {
+    min-height: 40px;
+    background: var(--bg);
+    font-size: 15px;
+  }
+  .workout-add-set {
+    margin-left: -6px;
+    color: var(--cream);
+    font-size: 16px;
+  }
+  .workout-exercise-notes summary {
+    margin-left: -6px;
+  }
+  .workout-form-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .workout-form-footer .button--primary {
+    min-width: 0;
+  }
+  .workout-add-exercise {
+    position: relative;
+    order: -1;
+    margin: 0;
+  }
+  .workout-add-exercise img {
+    position: absolute;
+    left: 18px;
+  }
+}
+
+@media (max-width: 700px) {
+  .workout-editor-page {
+    padding-bottom: 100px;
+  }
+  .workout-exercise {
+    padding: 18px;
+  }
+  .workout-exercise-head h3 {
+    font-size: 18px;
+  }
+  .workout-sets-edit-head,
+  .workout-set-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 24px;
+    gap: 8px;
+  }
+}

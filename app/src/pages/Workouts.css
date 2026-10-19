@@ -1,0 +1,298 @@
+.workouts-page .section-title-row {
+  align-items: center;
+}
+.workouts-add {
+  gap: 10px;
+}
+.workouts-add img {
+  width: 20px;
+  height: 20px;
+  filter: brightness(0.15);
+}
+
+.workouts-filter {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.workouts-month {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+}
+.workouts-month strong {
+  min-width: 170px;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+}
+.workouts-month button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--cream);
+  font-size: 22px;
+}
+.workouts-month button:hover {
+  background: var(--surface2);
+}
+.workouts-days {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1px;
+}
+.workouts-days button {
+  min-width: 24px;
+  height: 30px;
+  padding: 0 3px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--cream);
+  font-size: 12px;
+}
+.workouts-days button:disabled {
+  color: var(--muted);
+  opacity: 0.45;
+  cursor: default;
+}
+.workouts-days button.has-workout {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.workouts-days button.has-workout:hover {
+  border-color: var(--border);
+}
+.workouts-days button.selected {
+  height: 32px;
+  padding: 0 10px;
+  border-color: var(--cream);
+  background: var(--cream);
+  color: var(--bg);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.workouts-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0 8px;
+}
+.workouts-heading h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 500;
+}
+.workouts-heading span {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 260px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Desktop: a timeline of rows. */
+.workout-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.workout-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 40px 135px minmax(0, 1fr) 190px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.workout-card:hover h3 a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.workout-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 7px;
+  border-left: 1px solid var(--border);
+}
+.workout-card:first-child::before {
+  top: 22px;
+}
+.workout-card-dot {
+  position: relative;
+  width: 15px;
+  height: 15px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.workout-card-date {
+  font-size: 16px;
+  font-weight: 500;
+}
+.workout-card-date small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 400;
+}
+.workout-card-body h3 {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 500;
+}
+/* The title link covers the whole card. */
+.workout-card-body h3 a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.workout-card-body p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.workout-card-exercises {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.workout-card-exercises li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-radius: 4px;
+  background: var(--surface);
+}
+.workout-card-exercises .entry-icon {
+  width: 80px;
+  height: 52px;
+  border-radius: 4px 0 0 4px;
+}
+.workout-card-exercises span {
+  display: grid;
+  gap: 2px;
+  font-size: 16px;
+}
+.workout-card-exercises small {
+  color: var(--muted);
+  font-size: 13px;
+}
+.workout-card-open {
+  justify-self: end;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Tablet and phone: full-width cards, only days with records in the filter. */
+@media (max-width: 900px) {
+  .workouts-page .section-title-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+  }
+  .workouts-add {
+    position: relative;
+    width: 100%;
+  }
+  .workouts-add img {
+    position: absolute;
+    left: 18px;
+  }
+  .workouts-filter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 0;
+    border: 0;
+  }
+  .workouts-month {
+    gap: 8px;
+  }
+  .workouts-month img {
+    width: 22px;
+    height: 22px;
+    margin-right: 6px;
+  }
+  .workouts-month strong {
+    min-width: 0;
+    font-size: 16px;
+    font-weight: 400;
+  }
+  .workouts-days {
+    gap: 8px;
+  }
+  .workouts-days button:disabled:not(.selected) {
+    display: none;
+  }
+  .workouts-days button,
+  .workouts-days button.has-workout,
+  .workouts-days button.selected {
+    min-width: 40px;
+    height: 36px;
+    border-color: var(--border);
+    font-size: 14px;
+    text-decoration: none;
+  }
+  .workouts-days button.selected {
+    border-color: var(--cream);
+  }
+  .workout-list {
+    display: grid;
+    gap: 20px;
+    margin-top: 24px;
+  }
+  .workout-card {
+    grid-template-columns: 1fr;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+  }
+  .workout-card::before,
+  .workout-card-dot {
+    display: none;
+  }
+  .workout-card-date {
+    margin-bottom: 10px;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 400;
+  }
+  .workout-card-body h3 {
+    font-size: 22px;
+  }
+  .workout-card-exercises {
+    grid-template-columns: 1fr;
+  }
+  .workout-card-exercises li {
+    background: none;
+  }
+  .workout-card-exercises .entry-icon {
+    border-radius: 4px;
+  }
+  .workout-card-open {
+    justify-self: start;
+    margin-top: 14px;
+    color: var(--cream);
+  }
+}
+@media (max-width: 700px) {
+  .workouts-month strong span {
+    display: none !important;
+  }
+}
