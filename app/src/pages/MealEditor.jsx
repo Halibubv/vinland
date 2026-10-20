@@ -153,6 +153,8 @@ export function MealEditor({ id }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  // Запись не найдена (или чужая): кнопка «Повторить» тут не поможет.
+  const [notFound, setNotFound] = useState(false);
   // Увеличение счётчика заново запускает загрузку (кнопка «Повторить»).
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -185,7 +187,10 @@ export function MealEditor({ id }) {
         // ?add=1 в адресе — сразу открыть окно выбора продукта.
         if (new URLSearchParams(window.location.search).get('add')) setPicking(true);
       })
-      .catch((problem) => setLoadError(problem.message))
+      .catch((problem) => {
+        setLoadError(problem.message);
+        setNotFound(problem.status === 404);
+      })
       .finally(() => setLoading(false));
   }, [id, loadAttempt]);
 
@@ -244,7 +249,8 @@ export function MealEditor({ id }) {
       const body = { meal_date: form.meal_date, meal_type: form.meal_type, items };
       if (id) await api(`/meals/${id}`, { method: 'PUT', body });
       else await api('/meals', { method: 'POST', body });
-      navigate(backHref);
+      // replace: «Назад» из дневника не вернёт к уже сохранённой форме.
+      navigate(backHref, { replace: true });
     } catch (problem) {
       setError(errorText(problem));
       setBusy(false);
@@ -255,7 +261,7 @@ export function MealEditor({ id }) {
     setBusy(true);
     try {
       await api(`/meals/${id}`, { method: 'DELETE' });
-      navigate(backHref);
+      navigate(backHref, { replace: true });
     } catch (problem) {
       setError(problem.message);
       setBusy(false);
@@ -266,15 +272,24 @@ export function MealEditor({ id }) {
   let saveLabel = id ? 'Сохранить изменения' : 'Сохранить в дневник';
   if (busy) saveLabel = 'Сохраняем…';
 
+  // Пока сохранённый приём пищи не загружен (или не найден), в форме ещё
+  // значения по умолчанию — «Завтрак» и сегодня. Их в заголовке не показываем.
+  let title = 'Новый приём пищи';
+  let subtitle = dateLabel(form.meal_date);
+  if (id) {
+    const loaded = !loading && !loadError;
+    title = loaded ? mealTypes[form.meal_type] : 'Приём пищи';
+    subtitle = loaded ? subtitle : '';
+  }
+
   return (
-    <Shell
-      title={id ? mealTypes[form.meal_type] : 'Новый приём пищи'}
-      subtitle={dateLabel(form.meal_date)}
-      className="meal-editor-page"
-    >
+    <Shell title={title} subtitle={subtitle} className="meal-editor-page">
       {loading && <p className="muted">Загружаем продукты…</p>}
       {!loading && loadError && (
-        <Notice message={loadError} retry={() => setLoadAttempt(loadAttempt + 1)} />
+        <Notice
+          message={loadError}
+          retry={notFound ? null : () => setLoadAttempt(loadAttempt + 1)}
+        />
       )}
       {!loading && !loadError && (
         <form className="meal-form" onSubmit={save} noValidate>

@@ -155,6 +155,8 @@ const exerciseIds = Object.fromEntries(
 
 // --- Workout: picker, sets, order -------------------------------------------
 await open(user, '/workouts/new');
+await user.getByRole('button', { name: 'Сохранить тренировку' }).click();
+await user.getByText('Добавьте хотя бы одно упражнение.').waitFor();
 await user.getByLabel('Заметка (необязательно)').fill('Порядок А затем Б');
 await user.getByRole('button', { name: 'Добавить упражнение' }).click();
 const picker = user.getByRole('dialog', { name: 'Выберите упражнение' });
@@ -179,6 +181,11 @@ await user.getByRole('button', { name: 'Сохранить тренировку'
 await user.waitForURL(/\/workouts\/\d+$/);
 const workoutId = Number(user.url().split('/').pop());
 await user.getByRole('heading', { name: new RegExp(exerciseB) }).waitFor();
+// The saved form replaced its history entry: Back does not reopen the filled form.
+await user.goBack({ waitUntil: 'networkidle' });
+assert.ok(!user.url().endsWith('/workouts/new'), `Back after save opened ${user.url()}`);
+await user.goForward({ waitUntil: 'networkidle' });
+await user.waitForURL(new RegExp(`/workouts/${workoutId}$`));
 
 let [, saved] = await api(user, `/workouts/${workoutId}`);
 assert.deepEqual(
@@ -305,15 +312,41 @@ await other.getByText('Справочники доступны только ад
 assert.equal((await api(other, '/admin/products'))[0], 403);
 await open(other, `/workouts/${workoutId}`);
 await other.getByText('Тренировка не найдена.').waitFor();
+assert.equal(await other.getByRole('button', { name: 'Повторить' }).count(), 0, 'No retry on 404');
 await open(other, `/nutrition/${mealId}`);
 await other.getByText('Приём пищи не найден.').waitFor();
 
 // --- Expired session sends the user to the login screen ------------------------
 await open(user, '/workouts/new');
+await user.getByRole('button', { name: 'Добавить упражнение' }).click();
+await picker.getByRole('button', { name: new RegExp(exerciseB) }).click();
 await user.context().clearCookies();
 await user.getByRole('button', { name: 'Сохранить тренировку' }).click();
 await user.getByRole('heading', { name: 'Вход' }).waitFor();
-await signIn(user, userA);
+// After signing in again the user is back on the page they were working on.
+await user.getByLabel('Email', { exact: true }).fill(userA);
+await user.locator('input[name="password"]').fill(password);
+await user.getByRole('button', { name: 'Войти', exact: true }).click();
+await user.waitForURL(base + '/workouts/new');
+
+// A guest who opens a private page signs in and lands on that page, not on the home page.
+const returning = await newPage();
+await open(returning, '/statistics');
+await returning.getByLabel('Email', { exact: true }).fill(userA);
+await returning.locator('input[name="password"]').fill(password);
+await returning.getByRole('button', { name: 'Войти', exact: true }).click();
+await returning.getByRole('heading', { name: 'Статистика' }).waitFor();
+assert.equal(returning.url(), base + '/statistics');
+await returning.context().close();
+// An address of another site in ?next= is ignored.
+const redirected = await newPage();
+await open(redirected, '/login?next=//example.com/');
+await redirected.getByLabel('Email', { exact: true }).fill(userA);
+await redirected.locator('input[name="password"]').fill(password);
+await redirected.getByRole('button', { name: 'Войти', exact: true }).click();
+await redirected.getByRole('heading', { name: /Добрый день/ }).waitFor();
+assert.equal(redirected.url(), base + '/');
+await redirected.context().close();
 
 // --- Deleting with the confirmation dialog -----------------------------------------
 await open(user, `/workouts/${workoutId}`);
@@ -341,6 +374,7 @@ await browser.close();
 assert.deepEqual(problems, [], 'browser errors');
 console.log(
   'UI checks passed: guest pages, private files, registration, profile goals, catalogs, ' +
-    'workout and meal CRUD, history snapshots, statistics, rights, expired session, deletion, ' +
+    'workout and meal CRUD, history snapshots, statistics, rights, expired session, return ' +
+    'after login, Back after save, deletion, ' +
     'no overflow at 834/390.',
 );

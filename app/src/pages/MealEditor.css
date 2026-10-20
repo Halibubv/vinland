@@ -19,9 +19,6 @@
   color: var(--muted);
   font-size: 13px;
 }
-.meal-form-when .date-stepper {
-  margin-left: -6px;
-}
 .meal-type-choice {
   display: flex;
   flex-wrap: wrap;

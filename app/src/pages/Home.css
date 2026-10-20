@@ -5,6 +5,10 @@
   position: relative;
   min-height: 360px;
   background:
+    /* Фото высотой 140% блока (504px) получается шириной около 900px и стоит
+       справа. На широком мониторе слева от него остаётся пустое место —
+       первый градиент плавно уводит левый край фото в цвет фона. */
+    linear-gradient(90deg, var(--bg) calc(100% - 900px), transparent calc(100% - 640px)),
     linear-gradient(
       90deg,
       rgba(13, 26, 33, 0.98) 0%,
@@ -15,9 +19,7 @@
     url('/assets/hero-athlete.png') right 39% / auto 140% no-repeat;
 }
 .home-hero-copy {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 56px 16px 64px;
+  padding: 56px var(--page-inline) 64px;
 }
 .home-hero h1 {
   margin: 0 0 10px;
@@ -53,13 +55,15 @@
 .home-content {
   padding-bottom: 48px;
 }
-/* Тонкая линия с ромбом посередине. */
+/* Тонкая линия с двойным ромбом посередине: две линии (::before и ::after)
+   и картинка ромба по центру между ними. */
 .home-ornament {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 40px;
   height: 22px;
   margin-bottom: 18px;
+  background: url('/assets/ornament-diamond.svg') center / 24px 16px no-repeat;
 }
 .home-ornament::before,
 .home-ornament::after {
@@ -67,10 +71,6 @@
   flex: 1;
   height: 1px;
   background: var(--border);
-}
-.home-ornament {
-  background: linear-gradient(45deg, transparent 42%, #81949a 42% 58%, transparent 58%) center /
-    12px 12px no-repeat;
 }
 .home-content h2 {
   margin: 0 0 8px;
@@ -197,7 +197,8 @@
       url('/assets/hero-athlete.png') 70% center / cover no-repeat;
   }
   .home-hero-copy {
-    padding: 64px 16px 26px;
+    padding-top: 64px;
+    padding-bottom: 26px;
   }
   .home-hero h1 {
     font-size: 64px;
@@ -264,7 +265,8 @@
       url('/assets/hero-athlete.png') 72% top / cover no-repeat;
   }
   .home-hero-copy {
-    padding: 180px 20px 10px;
+    padding-top: 180px;
+    padding-bottom: 10px;
   }
   .home-hero h1 {
     font-size: 44px;
@@ -282,7 +284,8 @@
     font-size: 15px;
   }
   .home-content {
-    padding: 48px 20px 100px;
+    padding-top: 48px;
+    padding-bottom: 100px;
   }
   .home-content h2 {
     font-size: 38px;

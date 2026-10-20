@@ -65,6 +65,10 @@ result = await owner.request('/api/products');
 assert.equal(result.status, 200);
 const product = result.data.products.find((row) => Number(row.id) === productId);
 assert.ok(product, 'Seeded product must be available');
+// A meal needs at least one product.
+result = await owner.request('/api/meals', 'POST', { meal_date: '2026-10-10', meal_type: 'lunch', items: [] });
+assert.equal(result.status, 422);
+assert.equal(result.data.fields.items, 'Добавьте хотя бы один продукт.');
 result = await owner.request('/api/meals', 'POST', initial);
 assert.equal(result.status, 201, JSON.stringify(result.data));
 const mealId = Number(result.data.meal.id);
@@ -117,7 +121,7 @@ for (const method of ['GET', 'PUT', 'DELETE']) {
   assert.equal(result.status, 404, `${method} must not reveal another user's meal`);
 }
 result = await other.request('/api/meals', 'POST', {
-  meal_date: '2026-10-12', meal_type: 'breakfast', items: [],
+  meal_date: '2026-10-12', meal_type: 'breakfast', items: [{ product_id: productId, quantity_g: 50 }],
 });
 assert.equal(result.status, 201);
 const otherMealId = Number(result.data.meal.id);
@@ -128,7 +132,12 @@ assert.equal(result.status, 422, 'Foreign meal item ID must fail');
 result = await other.request(`/api/meals/${otherMealId}`);
 assert.equal(result.status, 200);
 assert.equal(result.data.meal.meal_date, '2026-10-12', 'Foreign item failure must roll back meal changes');
-assert.equal(result.data.meal.items.length, 0, 'Foreign item must not be copied');
+assert.equal(result.data.meal.items.length, 1, 'Foreign item must not be copied');
+assert.equal(Number(result.data.meal.items[0].quantity_g), 50, 'Own item stays unchanged');
+result = await other.request(`/api/meals/${otherMealId}`, 'PUT', {
+  meal_date: '2026-10-12', meal_type: 'breakfast', items: [],
+});
+assert.equal(result.status, 422, 'Edit must not remove every product');
 
 result = await owner.request(`/api/meals/${mealId}`, 'DELETE');
 assert.equal(result.status, 200);

@@ -24,6 +24,8 @@ html {
 body {
   margin: 0;
   min-width: 320px;
+  /* Длинное слово без пробелов (название, заметка) переносится, а не растягивает страницу. */
+  overflow-wrap: anywhere;
 }
 button,
 input {
@@ -142,9 +144,8 @@ h3 {
   text-decoration: underline;
 }
 .content {
-  max-width: 1200px;
-  margin: auto;
-  padding: 0 16px;
+  padding-left: var(--page-inline);
+  padding-right: var(--page-inline);
 }
 .site-footer {
   display: flex;
@@ -152,7 +153,7 @@ h3 {
   justify-content: space-between;
   gap: 20px;
   min-height: 72px;
-  padding: 20px max(26px, calc((100vw - 1228px) / 2));
+  padding: 20px var(--page-inline);
   border-top: 1px solid var(--border);
   color: var(--muted);
   font-size: 11px;
@@ -194,6 +195,8 @@ h3 {
 /* Лендинг для гостя, по утверждённым макетам в Figma. */
 .landing {
   overflow: hidden;
+  /* В макете текст лендинга стоит на 36px правее логотипа в шапке. */
+  --landing-inline: calc(var(--page-inline) + 36px);
 }
 .landing-hero {
   position: relative;
@@ -235,10 +238,8 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: 1360px;
   min-height: 76px;
-  padding: 12px 40px;
-  margin: auto;
+  padding: 12px var(--page-inline);
 }
 .guest-header > div {
   display: flex;
@@ -257,31 +258,6 @@ h3 {
 }
 .landing-hero-copy > p:not(.eyebrow) {
   color: var(--muted);
-}
-.feature-strip {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0;
-  border-bottom: 1px solid var(--border);
-}
-.feature-strip > div {
-  display: grid;
-  align-items: start;
-  border-right: 1px solid var(--border);
-}
-.feature-strip > div:last-child {
-  border-right: 0;
-}
-.feature-strip img {
-  grid-row: span 2;
-  width: 22px;
-  height: 22px;
-  object-fit: contain;
-}
-.feature-strip span {
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.5;
 }
 .landing h2 {
   font-size: clamp(34px, 4vw, 52px);
@@ -377,11 +353,15 @@ h3 {
 /* Общий каркас для вошедшего пользователя. */
 .app-header {
   height: 60px;
-  display: flex;
+  /* Три колонки: логотип | меню | аккаунт. Крайние колонки равной ширины,
+     поэтому меню стоит по центру и не сдвигается у админа, у которого справа
+     есть лишняя ссылка «Администрирование». minmax(max-content, 1fr) — колонка
+     не уже своего содержимого: на планшете логотип не наезжает на меню. */
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 20px;
-  padding: 0 36px;
+  padding: 0 var(--page-inline);
   background: var(--bg);
   position: relative;
   z-index: 10;
@@ -419,8 +399,16 @@ h3 {
 .header-account {
   display: flex;
   align-items: center;
+  justify-self: end;
   gap: 12px;
   font-size: 14px;
+}
+/* Длинное имя обрезаем многоточием, чтобы оно не растягивало шапку. */
+.header-account > span {
+  max-width: 160px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .avatar {
   display: inline-flex;
@@ -435,6 +423,8 @@ h3 {
   font-size: 14px;
 }
 .logout {
+  /* Без отступов кнопки — текст доходит до правого края, как контент ниже. */
+  padding: 0;
   font-size: 11px;
   color: var(--muted);
 }
@@ -475,7 +465,8 @@ h3 {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  /* Атлет стоит в правой части широкого фото — кадрируем по нему. */
+  object-position: 76% center;
 }
 .auth-visual > .brand {
   position: absolute;
@@ -661,9 +652,6 @@ h3 {
 }
 
 @media (max-width: 980px) {
-  .app-header {
-    padding: 0 24px;
-  }
   .desktop-nav {
     gap: 15px;
   }
@@ -693,9 +681,10 @@ h3 {
   body {
     padding-bottom: 0;
   }
+  /* Меню уходит вниз экрана — в шапке остаются логотип и аватар. */
   .app-header {
+    grid-template-columns: 1fr auto;
     height: 58px;
-    padding: 0 18px;
   }
   .app-header .brand {
     font-size: 18px;
@@ -753,7 +742,8 @@ h3 {
     gap: 18px;
   }
   .guest-header {
-    padding: 12px 18px;
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
   .guest-header .brand {
     font-size: 18px;
@@ -765,16 +755,6 @@ h3 {
   }
   .landing-hero-copy h1 {
     font-size: 64px;
-  }
-  .feature-strip {
-    grid-template-columns: 1fr;
-  }
-  .feature-strip > div {
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .feature-strip > div:last-child {
-    border: 0;
   }
   .landing-showcase {
     align-items: flex-start;
@@ -895,6 +875,8 @@ h3 {
 .landing-hero {
   height: 360px;
   min-height: 360px;
+  /* Тонкая линия между фото главного экрана и следующим блоком, как у остальных секций. */
+  border-bottom: 1px solid var(--border);
 }
 .hero-photo {
   background-size: 100% auto;
@@ -902,7 +884,7 @@ h3 {
 }
 .landing-hero-copy {
   position: absolute;
-  left: 76px;
+  left: var(--landing-inline);
   top: 92px;
   margin: 0;
   max-width: 620px;
@@ -936,44 +918,6 @@ h3 {
 .landing-hero-copy .button--outline {
   min-width: 136px;
 }
-.feature-strip {
-  height: 110px;
-  padding: 22px 76px;
-  border: 0;
-  background: var(--bg);
-}
-.feature-strip > div {
-  grid-template-columns: 48px 1fr;
-  column-gap: 20px;
-  padding: 0 20px;
-  align-content: center;
-}
-.feature-strip > div:first-child {
-  padding-left: 0;
-}
-.feature-strip .feature-icon {
-  grid-row: span 2;
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-}
-.feature-strip .feature-icon img {
-  width: 22px;
-  height: 22px;
-}
-.feature-strip strong {
-  align-self: end;
-  font-size: 16px;
-  font-weight: 500;
-}
-.feature-strip > div > span:last-child {
-  align-self: start;
-  font-size: 13px;
-  line-height: 1.35;
-}
 .landing-showcase {
   height: 440px;
   min-height: 440px;
@@ -987,7 +931,7 @@ h3 {
 .showcase-copy {
   position: absolute;
   top: 92px;
-  left: 76px;
+  left: var(--landing-inline);
   max-width: 388px;
 }
 .showcase-copy h2 {
@@ -1007,12 +951,12 @@ h3 {
   min-width: 128px;
 }
 .landing-product {
-  height: 560px;
+  /* Только min-height: если текст длиннее, блок растёт, а не налезает на следующий. */
   min-height: 560px;
   grid-template-columns: 480px minmax(0, 580px);
   justify-content: space-between;
   gap: 40px;
-  padding: 80px 76px;
+  padding: 80px var(--landing-inline);
   border-top: 1px solid var(--border);
 }
 .landing-product > img {
@@ -1070,16 +1014,16 @@ h3 {
 }
 .editorial-row,
 .editorial-row--reverse {
-  height: 514px;
   min-height: 514px;
-  grid-template-columns: 560px 1fr;
+  /* Фото 560px как в макете 1280; на широком экране оно растёт на столько же,
+     на сколько растут поля страницы, и текст не уезжает от фото. */
+  grid-template-columns: calc(560px + var(--page-inline) - var(--gutter)) 1fr;
   border-top: 1px solid var(--border);
   background: var(--bg);
 }
 .editorial-row--reverse {
-  height: 542px;
   min-height: 542px;
-  grid-template-columns: 1fr 560px;
+  grid-template-columns: 1fr calc(560px + var(--page-inline) - var(--gutter));
 }
 .editorial-row > img,
 .editorial-row--reverse > img {
@@ -1088,11 +1032,11 @@ h3 {
 }
 .editorial-row > div {
   align-self: stretch;
-  padding: 64px 76px 54px 72px;
+  padding: 64px var(--landing-inline) 54px 72px;
   max-width: none;
 }
 .editorial-row--reverse > div {
-  padding: 64px 72px 54px 76px;
+  padding: 64px 72px 54px var(--landing-inline);
 }
 .editorial-row h2 {
   font-size: 34px;
@@ -1166,7 +1110,7 @@ h3 {
   display: flex;
   flex-direction: column;
   gap: 32px;
-  padding: 64px 76px;
+  padding: 64px var(--landing-inline);
   border-top: 1px solid var(--border);
 }
 .stats-heading {
@@ -1242,7 +1186,7 @@ h3 {
 }
 .landing-steps {
   min-height: 380px;
-  padding: 48px 76px;
+  padding: 48px var(--landing-inline);
   border-top: 1px solid var(--border);
 }
 .landing-steps h2 {
@@ -1270,7 +1214,7 @@ h3 {
 .landing-cta {
   height: 440px;
   min-height: 440px;
-  padding: 80px 76px;
+  padding: 80px var(--landing-inline);
   background:
     linear-gradient(
       90deg,
@@ -1321,7 +1265,7 @@ h3 {
 .landing .site-footer {
   align-items: flex-start;
   min-height: 180px;
-  padding: 32px 76px;
+  padding: 32px var(--landing-inline);
 }
 .footer-brand {
   display: flex;
@@ -1343,14 +1287,14 @@ h3 {
   display: none;
 }
 
+/* Планшет: текст лендинга на одной линии с логотипом в шапке. */
 @media (max-width: 1100px) and (min-width: 701px) {
-  .feature-strip,
   .landing-product,
   .landing-stats,
   .landing-steps,
   .landing-cta {
-    padding-left: 40px;
-    padding-right: 40px;
+    padding-left: var(--page-inline);
+    padding-right: var(--page-inline);
   }
   .landing-product {
     grid-template-columns: 40% 55%;
@@ -1368,21 +1312,21 @@ h3 {
   }
   .editorial-row > div,
   .editorial-row--reverse > div {
-    padding-left: 40px;
-    padding-right: 40px;
-  }
-  .showcase-copy {
-    left: 40px;
+    padding-left: var(--page-inline);
+    padding-right: var(--page-inline);
   }
   .landing-hero-copy {
-    left: 40px;
+    left: var(--page-inline);
   }
   .demo-card {
     margin-top: 16px;
   }
+  /* Текст сверху, картинка с устройством снизу (место под неё — padding-bottom),
+     поэтому кнопки не наезжают на картинку. */
   .landing-showcase {
-    height: 540px;
-    min-height: 540px;
+    height: auto;
+    min-height: 0;
+    padding-bottom: 310px;
     background: none;
     background-color: var(--bg);
   }
@@ -1396,12 +1340,13 @@ h3 {
     background: url('/assets/device-showcase.png') 67% center/auto 310px no-repeat;
   }
   .showcase-copy {
-    top: 42px;
-    max-width: 530px;
+    position: static;
+    max-width: none;
+    padding: 40px var(--page-inline) 32px;
   }
   .landing .site-footer {
-    padding-left: 40px;
-    padding-right: 40px;
+    padding-left: var(--page-inline);
+    padding-right: var(--page-inline);
   }
 }
 
@@ -1433,24 +1378,6 @@ h3 {
   }
   .landing-hero-copy .button--outline {
     min-width: 0;
-  }
-  .feature-strip {
-    height: auto;
-    padding: 10px 20px;
-  }
-  .feature-strip > div {
-    grid-template-columns: 44px 1fr;
-    padding: 14px 0;
-  }
-  .feature-strip .feature-icon {
-    width: 40px;
-    height: 40px;
-  }
-  .feature-strip strong {
-    font-size: 14px;
-  }
-  .feature-strip > div > span:last-child {
-    font-size: 12px;
   }
   .landing-showcase {
     background: none;
@@ -1711,20 +1638,19 @@ h3 {
 
 /* Экраны вошедшего пользователя: каркас <Shell>, сообщения и пустые состояния. */
 .section-banner {
-  height: 102px;
+  height: var(--banner-height);
   background: url('/assets/panorama.png') center/cover no-repeat;
 }
 .section-content {
-  max-width: none;
   min-height: 490px;
-  padding: 20px 40px 44px;
+  padding: var(--page-top) var(--page-inline) var(--space-xl);
 }
 .section-title-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 18px;
+  margin-bottom: var(--space-m);
 }
 .section-title-row h1 {
   margin: 0 0 4px;
@@ -1799,18 +1725,10 @@ h3 {
     display: none;
   }
 }
-@media (max-width: 980px) {
-  .section-content {
-    padding-left: 30px;
-    padding-right: 30px;
-  }
-}
 @media (max-width: 700px) {
-  .section-banner {
-    height: 80px;
-  }
+  /* Снизу место под нижнее меню телефона. */
   .section-content {
-    padding: 18px 20px 95px;
+    padding-bottom: 95px;
   }
   .section-title-row {
     flex-wrap: wrap;

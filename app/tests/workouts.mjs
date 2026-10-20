@@ -75,6 +75,15 @@ assert.equal(result.response.status, 422);
 result = await request('/api/workouts');
 assert.equal(result.data.workouts.length, countBeforeFailedWrite, 'Failed transaction must not leave a workout');
 
+// A workout needs at least one exercise, both when created and when edited.
+result = await request('/api/workouts', 'POST', { workout_date: '2026-10-11', notes: null, exercises: [] });
+assert.equal(result.response.status, 422);
+assert.equal(result.data.fields.exercises, 'Добавьте хотя бы одно упражнение.');
+result = await request(`/api/workouts/${workoutId}`, 'PUT', { workout_date: '2026-10-11', notes: null, exercises: [] });
+assert.equal(result.response.status, 422, 'Edit must not remove every exercise');
+result = await request(`/api/workouts/${workoutId}`);
+assert.equal(result.data.workout.exercises.length, 2, 'Rejected edit keeps the exercises');
+
 result = await request(`/api/workouts/${workoutId}`, 'PUT', {
   workout_date: '2026-10-10', notes: 'Переставлено',
   exercises: [initialPayload.exercises[1], initialPayload.exercises[0]],

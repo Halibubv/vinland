@@ -2,10 +2,16 @@
 
 const decimalFormat = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
 const integerFormat = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
+const weightFormat = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
 
 // Граммы и килограммы — не больше одного знака после запятой: "94,2 г", "62,5 кг".
 export function formatNumber(value) {
   return decimalFormat.format(Number(value) || 0);
+}
+
+// Вес в тренировке — как ввели, до двух знаков: "61,25 кг" (блины по 1,25 кг).
+export function formatWeight(value) {
+  return weightFormat.format(Number(value) || 0);
 }
 
 // Калории и цели — целыми числами: "2 400 ккал".
@@ -64,6 +70,6 @@ export function setsSummary(sets = []) {
   if (!allSame) return plural(sets.length, 'подход', 'подхода', 'подходов');
 
   let weight = '';
-  if (Number(first.weight_kg)) weight = ` · ${formatNumber(first.weight_kg)} кг`;
+  if (Number(first.weight_kg)) weight = ` · ${formatWeight(first.weight_kg)} кг`;
   return `${sets.length} × ${formatInt(first.repetitions)}${weight}`;
 }

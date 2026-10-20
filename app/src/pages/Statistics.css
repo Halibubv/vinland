@@ -139,8 +139,13 @@
 }
 .stats-chart-bar span {
   position: absolute;
+  /* Число над столбиком — поверх пунктира цели и на фоне панели,
+     чтобы линия не перечёркивала цифры. */
+  z-index: 2;
   bottom: calc(100% + 4px);
   left: 50%;
+  padding: 0 3px;
+  background: var(--surface);
   transform: translateX(-50%);
   font-size: 12px;
   white-space: nowrap;
@@ -183,7 +188,7 @@
 
 /* Карточка «Тренировки». */
 .stats-workouts {
-  margin-top: 14px;
+  margin-top: var(--space-m);
   padding: 20px 24px;
 }
 .stats-workouts-head {
@@ -213,6 +218,12 @@
 }
 .stats-week li {
   display: grid;
+  /* Строки: дата, день недели, значок (24px — как иконка, и прочерк тоже
+     в этой высоте), подпись. Одинаковые строки во всех днях, поэтому
+     дни недели и подписи стоят на одной линии по всей неделе. */
+  grid-template-rows: auto auto 24px auto;
+  align-content: start;
+  align-items: center;
   justify-items: center;
   gap: 8px;
   color: var(--muted);

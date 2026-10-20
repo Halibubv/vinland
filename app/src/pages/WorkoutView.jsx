@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { dateLabel } from '../lib/dates.js';
-import { formatNumber } from '../lib/format.js';
+import { formatWeight } from '../lib/format.js';
 import { go as navigate } from '../lib/router.js';
 import { ASSETS } from '../lib/constants.js';
 import { Shell, Notice, BackLink } from '../components/ui.jsx';
@@ -27,7 +27,7 @@ function SetsTable({ sets }) {
             <tr>
               <td>{set.set_number}</td>
               <td>{set.repetitions}</td>
-              <td>{formatNumber(set.weight_kg)}</td>
+              <td>{formatWeight(set.weight_kg)}</td>
             </tr>
             {set.notes && (
               <tr className="workout-set-note">
@@ -69,6 +69,8 @@ function WorkoutDetails({ workout }) {
 export function WorkoutView({ id }) {
   const [workout, setWorkout] = useState(null);
   const [error, setError] = useState('');
+  // Тренировки нет (или она чужая): кнопка «Повторить» тут не поможет.
+  const [notFound, setNotFound] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -76,7 +78,10 @@ export function WorkoutView({ id }) {
     setError('');
     api(`/workouts/${id}`)
       .then((data) => setWorkout(data.workout))
-      .catch((problem) => setError(problem.message));
+      .catch((problem) => {
+        setError(problem.message);
+        setNotFound(problem.status === 404);
+      });
   }
   useEffect(load, [id]);
 
@@ -84,7 +89,8 @@ export function WorkoutView({ id }) {
     setBusy(true);
     try {
       await api(`/workouts/${id}`, { method: 'DELETE' });
-      navigate('/workouts');
+      // Удалённой тренировки больше нет — убираем её страницу из истории.
+      navigate('/workouts', { replace: true });
     } catch (problem) {
       setError(problem.message);
       setBusy(false);
@@ -111,17 +117,13 @@ export function WorkoutView({ id }) {
 
   return (
     <Shell
-      title={
-        <>
-          Тренировка<span className="wide-only"> · {date}</span>
-        </>
-      }
+      title={<>Тренировка{date && <span className="wide-only"> · {date}</span>}</>}
       subtitle={<span className="narrow-only">{date}</span>}
       back={<BackLink to="/workouts" label="Тренировки" current={date} />}
       action={workout && <div className="wide-only">{actions}</div>}
       className="workout-view-page"
     >
-      {error && <Notice message={error} retry={load} />}
+      {error && <Notice message={error} retry={notFound ? null : load} />}
       {!error && !workout && <p className="muted">Загружаем тренировку…</p>}
       {!error && workout && (
         <>

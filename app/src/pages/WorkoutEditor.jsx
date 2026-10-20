@@ -214,6 +214,8 @@ export function WorkoutEditor({ id }) {
   const [catalog, setCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  // Запись не найдена (или чужая): кнопка «Повторить» тут не поможет.
+  const [notFound, setNotFound] = useState(false);
   // Увеличение счётчика заново запускает загрузку (кнопка «Повторить»).
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -233,7 +235,10 @@ export function WorkoutEditor({ id }) {
         setCatalog(exercises.exercises);
         if (existing) setForm(formFromWorkout(existing.workout));
       })
-      .catch((problem) => setLoadError(problem.message))
+      .catch((problem) => {
+        setLoadError(problem.message);
+        setNotFound(problem.status === 404);
+      })
       .finally(() => setLoading(false));
   }, [id, loadAttempt]);
 
@@ -294,6 +299,10 @@ export function WorkoutEditor({ id }) {
 
   async function save(event) {
     event.preventDefault();
+    if (!form.exercises.length) {
+      setError('Добавьте хотя бы одно упражнение.');
+      return;
+    }
     if (form.exercises.some((exercise) => !exercise.exercise_id)) {
       setError('Выберите упражнение для каждой записи.');
       return;
@@ -305,7 +314,8 @@ export function WorkoutEditor({ id }) {
       let result;
       if (id) result = await api(`/workouts/${id}`, { method: 'PUT', body });
       else result = await api('/workouts', { method: 'POST', body });
-      navigate(`/workouts/${result.workout.id}`);
+      // replace: «Назад» со страницы тренировки не вернёт к уже сохранённой форме.
+      navigate(`/workouts/${result.workout.id}`, { replace: true });
     } catch (problem) {
       setError(errorText(problem));
       setBusy(false);
@@ -321,7 +331,10 @@ export function WorkoutEditor({ id }) {
     >
       {loading && <p className="muted">Загружаем форму…</p>}
       {!loading && loadError && (
-        <Notice message={loadError} retry={() => setLoadAttempt(loadAttempt + 1)} />
+        <Notice
+          message={loadError}
+          retry={notFound ? null : () => setLoadAttempt(loadAttempt + 1)}
+        />
       )}
       {!loading && !loadError && (
         <form className="workout-form" onSubmit={save} noValidate>
@@ -347,8 +360,8 @@ export function WorkoutEditor({ id }) {
 
           {!catalog.length && (
             <p className="muted">
-              В справочнике пока нет активных упражнений. Тренировку можно сохранить без них или
-              попросить администратора заполнить справочник.
+              В справочнике пока нет активных упражнений. Чтобы записать тренировку, попросите
+              администратора заполнить справочник.
             </p>
           )}
           <ol className="workout-exercises">
