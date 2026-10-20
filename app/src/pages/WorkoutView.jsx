@@ -69,6 +69,8 @@ function WorkoutDetails({ workout }) {
 export function WorkoutView({ id }) {
   const [workout, setWorkout] = useState(null);
   const [error, setError] = useState('');
+  // Тренировки нет (или она чужая): кнопка «Повторить» тут не поможет.
+  const [notFound, setNotFound] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -76,7 +78,10 @@ export function WorkoutView({ id }) {
     setError('');
     api(`/workouts/${id}`)
       .then((data) => setWorkout(data.workout))
-      .catch((problem) => setError(problem.message));
+      .catch((problem) => {
+        setError(problem.message);
+        setNotFound(problem.status === 404);
+      });
   }
   useEffect(load, [id]);
 
@@ -118,7 +123,7 @@ export function WorkoutView({ id }) {
       action={workout && <div className="wide-only">{actions}</div>}
       className="workout-view-page"
     >
-      {error && <Notice message={error} retry={load} />}
+      {error && <Notice message={error} retry={notFound ? null : load} />}
       {!error && !workout && <p className="muted">Загружаем тренировку…</p>}
       {!error && workout && (
         <>

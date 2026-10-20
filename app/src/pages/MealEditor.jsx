@@ -153,6 +153,8 @@ export function MealEditor({ id }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  // Запись не найдена (или чужая): кнопка «Повторить» тут не поможет.
+  const [notFound, setNotFound] = useState(false);
   // Увеличение счётчика заново запускает загрузку (кнопка «Повторить»).
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -185,7 +187,10 @@ export function MealEditor({ id }) {
         // ?add=1 в адресе — сразу открыть окно выбора продукта.
         if (new URLSearchParams(window.location.search).get('add')) setPicking(true);
       })
-      .catch((problem) => setLoadError(problem.message))
+      .catch((problem) => {
+        setLoadError(problem.message);
+        setNotFound(problem.status === 404);
+      })
       .finally(() => setLoading(false));
   }, [id, loadAttempt]);
 
@@ -281,7 +286,10 @@ export function MealEditor({ id }) {
     <Shell title={title} subtitle={subtitle} className="meal-editor-page">
       {loading && <p className="muted">Загружаем продукты…</p>}
       {!loading && loadError && (
-        <Notice message={loadError} retry={() => setLoadAttempt(loadAttempt + 1)} />
+        <Notice
+          message={loadError}
+          retry={notFound ? null : () => setLoadAttempt(loadAttempt + 1)}
+        />
       )}
       {!loading && !loadError && (
         <form className="meal-form" onSubmit={save} noValidate>

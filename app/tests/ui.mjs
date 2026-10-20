@@ -310,6 +310,7 @@ await other.getByText('Справочники доступны только ад
 assert.equal((await api(other, '/admin/products'))[0], 403);
 await open(other, `/workouts/${workoutId}`);
 await other.getByText('Тренировка не найдена.').waitFor();
+assert.equal(await other.getByRole('button', { name: 'Повторить' }).count(), 0, 'No retry on 404');
 await open(other, `/nutrition/${mealId}`);
 await other.getByText('Приём пищи не найден.').waitFor();
 

@@ -214,6 +214,8 @@ export function WorkoutEditor({ id }) {
   const [catalog, setCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  // Запись не найдена (или чужая): кнопка «Повторить» тут не поможет.
+  const [notFound, setNotFound] = useState(false);
   // Увеличение счётчика заново запускает загрузку (кнопка «Повторить»).
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -233,7 +235,10 @@ export function WorkoutEditor({ id }) {
         setCatalog(exercises.exercises);
         if (existing) setForm(formFromWorkout(existing.workout));
       })
-      .catch((problem) => setLoadError(problem.message))
+      .catch((problem) => {
+        setLoadError(problem.message);
+        setNotFound(problem.status === 404);
+      })
       .finally(() => setLoading(false));
   }, [id, loadAttempt]);
 
@@ -322,7 +327,10 @@ export function WorkoutEditor({ id }) {
     >
       {loading && <p className="muted">Загружаем форму…</p>}
       {!loading && loadError && (
-        <Notice message={loadError} retry={() => setLoadAttempt(loadAttempt + 1)} />
+        <Notice
+          message={loadError}
+          retry={notFound ? null : () => setLoadAttempt(loadAttempt + 1)}
+        />
       )}
       {!loading && !loadError && (
         <form className="workout-form" onSubmit={save} noValidate>
