@@ -9,7 +9,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // --- Страницы интерфейса ---
 // Адреса страниц React-приложения отдают одну и ту же собранную ui/index.html.
-// Только этот список: любые другие адреса (в том числе к backend/ и database/) получат 404 от API.
+// Только этот список отвечает кодом 200; любые другие адреса (в том числе к backend/ и database/) получат 404.
 $pages = [
     '/', '/login', '/register', '/profile',
     '/workouts', '/workouts/new',
@@ -19,15 +19,20 @@ $pages = [
 $isPage = in_array($path, $pages, true)
     || preg_match('#^/(workouts|nutrition)/[1-9][0-9]*$#', $path)
     || preg_match('#^/workouts/[1-9][0-9]*/edit$#', $path);
-if (($method === 'GET' || $method === 'HEAD') && $isPage) {
+function send_ui_page(int $status = 200): never
+{
     $entry = __DIR__ . '/ui/index.html';
     if (!is_file($entry)) {
         throw new ApiError(503, 'Интерфейс ещё не собран. Выполните pnpm run build.');
     }
+    http_response_code($status);
     header('Content-Type: text/html; charset=utf-8');
     header('Cache-Control: no-cache');
     readfile($entry);
     exit;
+}
+if (($method === 'GET' || $method === 'HEAD') && $isPage) {
+    send_ui_page();
 }
 
 // --- Служебные: текущая сессия и проверка, что сервер и база живы ---
@@ -157,5 +162,10 @@ if (preg_match('#^/api/workouts/(\d+)$#', $path, $matches)) {
     }
 }
 
-// Ни один маршрут не подошёл.
+// Ни один маршрут не подошёл. Адрес API получает ошибку в JSON, а страница в браузере —
+// интерфейс с кодом 404: React сам покажет «Страница не найдена» вместо голого JSON.
+$isApi = str_starts_with($path, '/api/');
+if (($method === 'GET' || $method === 'HEAD') && !$isApi) {
+    send_ui_page(404);
+}
 throw new ApiError(404, 'Страница не найдена.');
