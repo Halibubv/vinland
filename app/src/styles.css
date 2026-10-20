@@ -866,6 +866,8 @@ h3 {
 .landing-hero {
   height: 360px;
   min-height: 360px;
+  /* Тонкая линия между фото главного экрана и следующим блоком, как у остальных секций. */
+  border-bottom: 1px solid var(--border);
 }
 .hero-photo {
   background-size: 100% auto;
