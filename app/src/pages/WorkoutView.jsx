@@ -111,11 +111,7 @@ export function WorkoutView({ id }) {
 
   return (
     <Shell
-      title={
-        <>
-          Тренировка<span className="wide-only"> · {date}</span>
-        </>
-      }
+      title={<>Тренировка{date && <span className="wide-only"> · {date}</span>}</>}
       subtitle={<span className="narrow-only">{date}</span>}
       back={<BackLink to="/workouts" label="Тренировки" current={date} />}
       action={workout && <div className="wide-only">{actions}</div>}

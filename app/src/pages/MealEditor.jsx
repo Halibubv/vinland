@@ -266,12 +266,18 @@ export function MealEditor({ id }) {
   let saveLabel = id ? 'Сохранить изменения' : 'Сохранить в дневник';
   if (busy) saveLabel = 'Сохраняем…';
 
+  // Пока сохранённый приём пищи не загружен (или не найден), в форме ещё
+  // значения по умолчанию — «Завтрак» и сегодня. Их в заголовке не показываем.
+  let title = 'Новый приём пищи';
+  let subtitle = dateLabel(form.meal_date);
+  if (id) {
+    const loaded = !loading && !loadError;
+    title = loaded ? mealTypes[form.meal_type] : 'Приём пищи';
+    subtitle = loaded ? subtitle : '';
+  }
+
   return (
-    <Shell
-      title={id ? mealTypes[form.meal_type] : 'Новый приём пищи'}
-      subtitle={dateLabel(form.meal_date)}
-      className="meal-editor-page"
-    >
+    <Shell title={title} subtitle={subtitle} className="meal-editor-page">
       {loading && <p className="muted">Загружаем продукты…</p>}
       {!loading && loadError && (
         <Notice message={loadError} retry={() => setLoadAttempt(loadAttempt + 1)} />
