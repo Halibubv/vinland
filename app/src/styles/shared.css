@@ -16,15 +16,19 @@
   --page-top: 24px;
   /* Высота полосы с горами под шапкой. */
   --banner-height: 102px;
+  /* Шкала отступов. --space-m — расстояние между крупными блоками страницы
+     (в макетах 24px), --space-xl — от последнего блока до подвала. */
   --space-s: 12px;
-  --space-m: 20px;
+  --space-m: 24px;
   --space-l: 32px;
-  --space-xl: 64px;
+  --space-xl: 48px;
 }
 @media (max-width: 900px) {
   :root {
     --gutter: 32px;
     --banner-height: 92px;
+    --space-m: 20px;
+    --space-xl: 40px;
   }
 }
 @media (max-width: 700px) {

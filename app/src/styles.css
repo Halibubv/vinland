@@ -1713,14 +1713,14 @@ h3 {
 }
 .section-content {
   min-height: 490px;
-  padding: var(--page-top) var(--page-inline) 44px;
+  padding: var(--page-top) var(--page-inline) var(--space-xl);
 }
 .section-title-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 18px;
+  margin-bottom: var(--space-m);
 }
 .section-title-row h1 {
   margin: 0 0 4px;

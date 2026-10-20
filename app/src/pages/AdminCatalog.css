@@ -34,7 +34,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-m);
   border-bottom: 1px solid var(--border);
 }
 .admin-tabs > a {

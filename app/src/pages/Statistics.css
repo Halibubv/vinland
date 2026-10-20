@@ -183,7 +183,7 @@
 
 /* Карточка «Тренировки». */
 .stats-workouts {
-  margin-top: 14px;
+  margin-top: var(--space-m);
   padding: 20px 24px;
 }
 .stats-workouts-head {
