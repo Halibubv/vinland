@@ -299,6 +299,10 @@ export function WorkoutEditor({ id }) {
 
   async function save(event) {
     event.preventDefault();
+    if (!form.exercises.length) {
+      setError('Добавьте хотя бы одно упражнение.');
+      return;
+    }
     if (form.exercises.some((exercise) => !exercise.exercise_id)) {
       setError('Выберите упражнение для каждой записи.');
       return;
@@ -356,8 +360,8 @@ export function WorkoutEditor({ id }) {
 
           {!catalog.length && (
             <p className="muted">
-              В справочнике пока нет активных упражнений. Тренировку можно сохранить без них или
-              попросить администратора заполнить справочник.
+              В справочнике пока нет активных упражнений. Чтобы записать тренировку, попросите
+              администратора заполнить справочник.
             </p>
           )}
           <ol className="workout-exercises">

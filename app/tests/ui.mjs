@@ -155,6 +155,8 @@ const exerciseIds = Object.fromEntries(
 
 // --- Workout: picker, sets, order -------------------------------------------
 await open(user, '/workouts/new');
+await user.getByRole('button', { name: 'Сохранить тренировку' }).click();
+await user.getByText('Добавьте хотя бы одно упражнение.').waitFor();
 await user.getByLabel('Заметка (необязательно)').fill('Порядок А затем Б');
 await user.getByRole('button', { name: 'Добавить упражнение' }).click();
 const picker = user.getByRole('dialog', { name: 'Выберите упражнение' });
@@ -316,6 +318,8 @@ await other.getByText('Приём пищи не найден.').waitFor();
 
 // --- Expired session sends the user to the login screen ------------------------
 await open(user, '/workouts/new');
+await user.getByRole('button', { name: 'Добавить упражнение' }).click();
+await picker.getByRole('button', { name: new RegExp(exerciseB) }).click();
 await user.context().clearCookies();
 await user.getByRole('button', { name: 'Сохранить тренировку' }).click();
 await user.getByRole('heading', { name: 'Вход' }).waitFor();

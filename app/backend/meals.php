@@ -30,6 +30,9 @@ function meal_input(array $data): array
             'quantity_g' => number_value($item, 'quantity_g', 999999, false, false, true),
         ];
     }
+    if (count($preparedItems) === 0) {
+        invalid('items', 'Добавьте хотя бы один продукт.');
+    }
     return [
         'meal_date' => date_value($data, 'meal_date'),
         'meal_type' => meal_type_value($data),
