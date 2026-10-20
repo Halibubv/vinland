@@ -15,11 +15,8 @@ RUN pnpm run build
 
 # --- Этап 2: PHP-сервер ---
 FROM php:8.4-cli
-# pdo_pgsql — драйвер PostgreSQL для PDO; libpq-dev нужен для его сборки.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends libpq-dev \
-    && docker-php-ext-install pdo_pgsql \
-    && rm -rf /var/lib/apt/lists/*
+# pdo_mysql — драйвер MySQL для PDO. Дополнительные системные пакеты ему не нужны.
+RUN docker-php-ext-install pdo_mysql
 
 WORKDIR /app
 COPY backend ./backend

@@ -17,14 +17,14 @@ function meal_check(bool $condition, string $name): void
 $suffix = bin2hex(random_bytes(6));
 function meal_test_user(string $suffix, string $name): int
 {
-    return (int) query('INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?) RETURNING id', [
+    return insert('INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)', [
         $name . '-' . $suffix . '@example.test', password_hash('CorrectHorse42', PASSWORD_DEFAULT), $name,
-    ])->fetchColumn();
+    ]);
 }
 $firstUser = meal_test_user($suffix, 'meal-first');
 $secondUser = meal_test_user($suffix, 'meal-second');
-$productId = (int) query('INSERT INTO products (name, calories_per_100g, protein_per_100g, fat_per_100g, carbs_per_100g)
-    VALUES (?, 200, 10, 5, 20) RETURNING id', ['Тестовый продукт ' . $suffix])->fetchColumn();
+$productId = insert('INSERT INTO products (name, calories_per_100g, protein_per_100g, fat_per_100g, carbs_per_100g)
+    VALUES (?, 200, 10, 5, 20)', ['Тестовый продукт ' . $suffix]);
 
 $created = write_meal($firstUser, ['meal_date' => '2026-10-09', 'meal_type' => 'lunch', 'items' => [[
     'id' => null, 'product_id' => $productId, 'quantity_g' => 150,

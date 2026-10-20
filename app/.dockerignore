@@ -7,5 +7,4 @@ var
 tests
 docs
 tools
-.postgres-data
 *.log

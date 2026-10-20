@@ -15,10 +15,10 @@ function history_check(bool $condition, string $name): void
 }
 
 $suffix = bin2hex(random_bytes(6));
-$userId = (int) query('INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?) RETURNING id', [
+$userId = insert('INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)', [
     'history-' . $suffix . '@example.test', password_hash('CorrectHorse42', PASSWORD_DEFAULT), 'История',
-])->fetchColumn();
-$exerciseId = (int) query('INSERT INTO exercises (name) VALUES (?) RETURNING id', ['Историческое упражнение ' . $suffix])->fetchColumn();
+]);
+$exerciseId = insert('INSERT INTO exercises (name) VALUES (?)', ['Историческое упражнение ' . $suffix]);
 $created = write_workout($userId, [
     'workout_date' => '2026-10-09', 'notes' => 'Исходная заметка',
     'exercises' => [[
