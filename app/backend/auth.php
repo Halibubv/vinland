@@ -47,28 +47,28 @@ function register_account(array $data): never
     $password = password_value($data);
     try {
         // Роль специально не передаём: по умолчанию в базе это обычный пользователь.
-        $id = query('INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?) RETURNING id', [
+        $id = insert('INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)', [
             $email, password_hash($password, PASSWORD_DEFAULT), $name,
-        ])->fetchColumn();
+        ]);
     } catch (PDOException $error) {
-        // 23505 — код PostgreSQL для нарушения UNIQUE: такой email уже есть.
-        if ($error->getCode() === '23505') {
+        // 1062 — код ошибки MySQL «Duplicate entry»: такой email уже есть (поле UNIQUE).
+        if (($error->errorInfo[1] ?? null) === 1062) {
             invalid('email', 'Этот email уже зарегистрирован.');
         }
         throw $error;
     }
-    establish_session((int) $id);
+    establish_session($id);
     respond(['user' => current_user(), 'csrf' => $_SESSION['csrf']], 201);
 }
 
 // Считаем неудачные попытки за последние 15 минут отдельно по email и по IP.
 function too_many_login_attempts(string $email, string $ip): bool
 {
-    query("DELETE FROM login_attempts WHERE attempted_at < CURRENT_TIMESTAMP - INTERVAL '15 minutes'");
+    query("DELETE FROM login_attempts WHERE attempted_at < CURRENT_TIMESTAMP - INTERVAL 15 MINUTE");
     $accountAttempts = (int) query("SELECT COUNT(*) FROM login_attempts
-        WHERE email = ? AND attempted_at >= CURRENT_TIMESTAMP - INTERVAL '15 minutes'", [$email])->fetchColumn();
+        WHERE email = ? AND attempted_at >= CURRENT_TIMESTAMP - INTERVAL 15 MINUTE", [$email])->fetchColumn();
     $ipAttempts = (int) query("SELECT COUNT(*) FROM login_attempts
-        WHERE ip = ? AND attempted_at >= CURRENT_TIMESTAMP - INTERVAL '15 minutes'", [$ip])->fetchColumn();
+        WHERE ip = ? AND attempted_at >= CURRENT_TIMESTAMP - INTERVAL 15 MINUTE", [$ip])->fetchColumn();
     return $accountAttempts >= ACCOUNT_LOGIN_LIMIT || $ipAttempts >= IP_LOGIN_LIMIT;
 }
 

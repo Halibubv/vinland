@@ -72,10 +72,10 @@ function workout_payload(int $workoutId, int $userId): array
     return $workout;
 }
 
-// Значение boolean из PostgreSQL может прийти как true или как строка 't'.
+// MySQL хранит BOOLEAN как число: 1 — активно, 0 — отключено.
 function active_catalog_value(mixed $value): bool
 {
-    return $value === true || $value === 1 || $value === '1' || $value === 't';
+    return (int) $value === 1;
 }
 
 // Создаёт тренировку ($workoutId = null) или перезаписывает упражнения существующей.
@@ -88,9 +88,9 @@ function write_workout(int $userId, array $input, ?int $workoutId = null): array
         // Сколько раз каждое упражнение уже было в этой тренировке до правки.
         $countsBefore = [];
         if ($workoutId === null) {
-            $workoutId = (int) query('INSERT INTO workouts (user_id, workout_date, notes) VALUES (?, ?, ?) RETURNING id', [
+            $workoutId = insert('INSERT INTO workouts (user_id, workout_date, notes) VALUES (?, ?, ?)', [
                 $userId, $input['workout_date'], $input['notes'],
-            ])->fetchColumn();
+            ]);
         } else {
             owned_workout($workoutId, $userId, true);
             $rows = query('SELECT exercise_id, COUNT(*) AS occurrences FROM workout_exercises
@@ -122,8 +122,8 @@ function write_workout(int $userId, array $input, ?int $workoutId = null): array
                 invalid('exercises', 'Выберите активное упражнение из справочника.');
             }
 
-            $workoutExerciseId = (int) query('INSERT INTO workout_exercises (workout_id, exercise_id, position, notes)
-                VALUES (?, ?, ?, ?) RETURNING id', [$workoutId, $exerciseId, $position + 1, $exercise['notes']])->fetchColumn();
+            $workoutExerciseId = insert('INSERT INTO workout_exercises (workout_id, exercise_id, position, notes)
+                VALUES (?, ?, ?, ?)', [$workoutId, $exerciseId, $position + 1, $exercise['notes']]);
             foreach ($exercise['sets'] as $setIndex => $set) {
                 query('INSERT INTO workout_sets (workout_exercise_id, set_number, repetitions, weight_kg, notes)
                     VALUES (?, ?, ?, ?, ?)', [$workoutExerciseId, $setIndex + 1, $set['repetitions'], $set['weight_kg'], $set['notes']]);

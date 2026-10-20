@@ -46,18 +46,33 @@ function catalog_item_key(string $kind): string
     return 'product';
 }
 
+// Одна запись справочника по id или null, если такой нет.
+// MySQL хранит is_active как 1 или 0 — в ответе отдаём true или false.
+function catalog_row(string $kind, int $id): ?array
+{
+    $row = query('SELECT ' . catalog_columns($kind) . ' FROM ' . $kind . ' WHERE id = ?', [$id])->fetch();
+    if (!$row) {
+        return null;
+    }
+    $row['is_active'] = (bool) $row['is_active'];
+    return $row;
+}
+
 function admin_catalog(string $kind): never
 {
     $rows = query('SELECT ' . catalog_columns($kind) . ' FROM ' . $kind . ' ORDER BY name, id')->fetchAll();
+    foreach ($rows as &$row) {
+        $row['is_active'] = (bool) $row['is_active'];
+    }
+    unset($row);
     respond([$kind => $rows]);
 }
 
 // Без $id создаёт новую запись, с $id — изменяет существующую.
 function admin_write_catalog(string $kind, array $input, ?int $id = null): never
 {
-    // PDO отправляет false как пустую строку, которую PostgreSQL не примет как boolean,
-    // поэтому передаём текстом 'true' или 'false'.
-    $isActive = $input['is_active'] ? 'true' : 'false';
+    // В MySQL BOOLEAN — это число: 1 (активно) или 0 (отключено).
+    $isActive = $input['is_active'] ? 1 : 0;
     if ($kind === 'exercises') {
         $values = [$input['name'], $input['muscle_group'], $input['description'], $isActive];
         $insertSql = 'INSERT INTO exercises (name, muscle_group, description, is_active) VALUES (?, ?, ?, ?)';
@@ -70,17 +85,16 @@ function admin_write_catalog(string $kind, array $input, ?int $id = null): never
         $updateSql = 'UPDATE products SET name = ?, calories_per_100g = ?, protein_per_100g = ?,
             fat_per_100g = ?, carbs_per_100g = ?, is_active = ? WHERE id = ?';
     }
-    $returning = ' RETURNING ' . catalog_columns($kind);
 
     if ($id === null) {
-        $row = query($insertSql . $returning, $values)->fetch();
-        respond([catalog_item_key($kind) => $row], 201);
+        $newId = insert($insertSql, $values);
+        respond([catalog_item_key($kind) => catalog_row($kind, $newId)], 201);
     }
 
-    $values[] = $id;
-    $row = query($updateSql . $returning, $values)->fetch();
-    if (!$row) {
+    if (!catalog_row($kind, $id)) {
         throw new ApiError(404, 'Запись справочника не найдена.');
     }
-    respond([catalog_item_key($kind) => $row]);
+    $values[] = $id;
+    query($updateSql, $values);
+    respond([catalog_item_key($kind) => catalog_row($kind, $id)]);
 }

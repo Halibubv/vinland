@@ -72,9 +72,9 @@ function write_meal(int $userId, array $input, ?int $mealId = null): array
     try {
         $previousItems = [];
         if ($mealId === null) {
-            $mealId = (int) query('INSERT INTO meals (user_id, meal_date, meal_type) VALUES (?, ?, ?) RETURNING id', [
+            $mealId = insert('INSERT INTO meals (user_id, meal_date, meal_type) VALUES (?, ?, ?)', [
                 $userId, $input['meal_date'], $input['meal_type'],
-            ])->fetchColumn();
+            ]);
         } else {
             owned_meal($mealId, $userId, true);
             $rows = query('SELECT * FROM meal_items WHERE meal_id = ? FOR UPDATE', [$mealId])->fetchAll();

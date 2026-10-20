@@ -64,8 +64,8 @@ if ($existingId) {
     query('DELETE FROM workouts WHERE user_id = ?', [$existingId]);
     query('DELETE FROM users WHERE id = ?', [$existingId]);
 }
-$userId = (int) query('INSERT INTO users (email, password_hash, name, target_calories, target_protein_g, target_fat_g, target_carbs_g)
-    VALUES (?, ?, ?, 2400, 160, 80, 260) RETURNING id', [$email, password_hash($password, PASSWORD_DEFAULT), 'Алексей Смирнов'])->fetchColumn();
+$userId = insert('INSERT INTO users (email, password_hash, name, target_calories, target_protein_g, target_fat_g, target_carbs_g)
+    VALUES (?, ?, ?, 2400, 160, 80, 260)', [$email, password_hash($password, PASSWORD_DEFAULT), 'Алексей Смирнов']);
 
 // Тренировки: сколько дней назад => [название, список упражнений].
 // Упражнение записано как [название, подходов, повторений, вес в кг].
@@ -79,11 +79,11 @@ $workoutPlan = [
     16 => ['Ноги и грудь', [['Приседания со штангой', 3, 8, 95], ['Жим лёжа', 3, 10, 77.5]]],
 ];
 foreach ($workoutPlan as $daysAgo => [$title, $exercises]) {
-    $workoutId = query('INSERT INTO workouts (user_id, workout_date, notes) VALUES (?, ?, ?) RETURNING id',
-        [$userId, date_days_ago($daysAgo), $title])->fetchColumn();
+    $workoutId = insert('INSERT INTO workouts (user_id, workout_date, notes) VALUES (?, ?, ?)',
+        [$userId, date_days_ago($daysAgo), $title]);
     foreach ($exercises as $index => [$name, $setCount, $repetitions, $weight]) {
-        $workoutExerciseId = query('INSERT INTO workout_exercises (workout_id, exercise_id, position) VALUES (?, ?, ?) RETURNING id',
-            [$workoutId, exercise_id_by_name($name), $index + 1])->fetchColumn();
+        $workoutExerciseId = insert('INSERT INTO workout_exercises (workout_id, exercise_id, position) VALUES (?, ?, ?)',
+            [$workoutId, exercise_id_by_name($name), $index + 1]);
         for ($setNumber = 1; $setNumber <= $setCount; $setNumber++) {
             query('INSERT INTO workout_sets (workout_exercise_id, set_number, repetitions, weight_kg) VALUES (?, ?, ?, ?)',
                 [$workoutExerciseId, $setNumber, $repetitions, $weight]);
@@ -107,8 +107,8 @@ for ($daysAgo = 6; $daysAgo >= 0; $daysAgo--) {
         if ($daysAgo === 0 && $mealType === 'snack') {
             continue;
         }
-        $mealId = query('INSERT INTO meals (user_id, meal_date, meal_type) VALUES (?, ?, ?) RETURNING id',
-            [$userId, date_days_ago($daysAgo), $mealType])->fetchColumn();
+        $mealId = insert('INSERT INTO meals (user_id, meal_date, meal_type) VALUES (?, ?, ?)',
+            [$userId, date_days_ago($daysAgo), $mealType]);
         $todaysVariant = $variants[$daysAgo % count($variants)];
         foreach ($todaysVariant as [$productName, $grams]) {
             $product = product_by_name($productName);
