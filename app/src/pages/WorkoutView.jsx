@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { dateLabel } from '../lib/dates.js';
-import { formatNumber } from '../lib/format.js';
+import { formatWeight } from '../lib/format.js';
 import { go as navigate } from '../lib/router.js';
 import { ASSETS } from '../lib/constants.js';
 import { Shell, Notice, BackLink } from '../components/ui.jsx';
@@ -27,7 +27,7 @@ function SetsTable({ sets }) {
             <tr>
               <td>{set.set_number}</td>
               <td>{set.repetitions}</td>
-              <td>{formatNumber(set.weight_kg)}</td>
+              <td>{formatWeight(set.weight_kg)}</td>
             </tr>
             {set.notes && (
               <tr className="workout-set-note">
