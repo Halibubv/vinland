@@ -62,6 +62,10 @@
   font-size: 19px;
   font-weight: 600;
 }
+/* Номер «1.» не сжимается, даже если название очень длинное. */
+.workout-view-exercise h3 span {
+  flex-shrink: 0;
+}
 .workout-view-exercise-note {
   margin: -6px 0 12px;
   color: var(--muted);

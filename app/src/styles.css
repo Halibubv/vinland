@@ -24,6 +24,8 @@ html {
 body {
   margin: 0;
   min-width: 320px;
+  /* Длинное слово без пробелов (название, заметка) переносится, а не растягивает страницу. */
+  overflow-wrap: anywhere;
 }
 button,
 input {
@@ -400,6 +402,13 @@ h3 {
   justify-self: end;
   gap: 12px;
   font-size: 14px;
+}
+/* Длинное имя обрезаем многоточием, чтобы оно не растягивало шапку. */
+.header-account > span {
+  max-width: 160px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .avatar {
   display: inline-flex;
