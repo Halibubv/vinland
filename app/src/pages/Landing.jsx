@@ -56,36 +56,6 @@ export function Landing() {
           </div>
         </div>
       </section>
-      <section className="feature-strip" aria-label="Возможности">
-        <div>
-          <span className="feature-icon">
-            <img src={`${ASSETS}feature-dumbbell.svg`} alt="" />
-          </span>
-          <strong>Тренировки</strong>
-          <span>
-            Удобный учёт упражнений <br />и прогресса в силовых зале.
-          </span>
-        </div>
-        <div>
-          <span className="feature-icon">
-            <img src={`${ASSETS}icon-food.svg`} alt="" />
-          </span>
-          <strong>Питание и КБЖУ</strong>
-          <span>
-            Дневник питания с расчётом <br />
-            калорий, белков, жиров и углеводов.
-          </span>
-        </div>
-        <div>
-          <span className="feature-icon">
-            <img src={`${ASSETS}nav-profile.svg`} alt="" />
-          </span>
-          <strong>Личный кабинет</strong>
-          <span>
-            Вся информация о тренировках <br />и питании всегда под рукой.
-          </span>
-        </div>
-      </section>
       <section className="landing-showcase reveal">
         <div className="showcase-copy">
           <span className="eyebrow">БОЛЬШЕ, ЧЕМ ДНЕВНИК</span>
