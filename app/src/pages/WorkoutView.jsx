@@ -84,7 +84,8 @@ export function WorkoutView({ id }) {
     setBusy(true);
     try {
       await api(`/workouts/${id}`, { method: 'DELETE' });
-      navigate('/workouts');
+      // Удалённой тренировки больше нет — убираем её страницу из истории.
+      navigate('/workouts', { replace: true });
     } catch (problem) {
       setError(problem.message);
       setBusy(false);

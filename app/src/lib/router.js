@@ -14,8 +14,12 @@ export function currentLocation() {
 }
 
 // Перейти на другой экран. App.jsx слушает событие popstate и перерисовывается.
-export function go(path) {
-  if (path !== currentLocation()) {
+// replace: true — заменить текущую запись истории, а не добавить новую. Так после
+// сохранения формы кнопка «Назад» не возвращает к уже отправленной форме.
+export function go(path, { replace = false } = {}) {
+  if (replace) {
+    window.history.replaceState({}, '', path);
+  } else if (path !== currentLocation()) {
     window.history.pushState({}, '', path);
   }
   window.dispatchEvent(new PopStateEvent('popstate'));

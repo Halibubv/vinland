@@ -244,7 +244,8 @@ export function MealEditor({ id }) {
       const body = { meal_date: form.meal_date, meal_type: form.meal_type, items };
       if (id) await api(`/meals/${id}`, { method: 'PUT', body });
       else await api('/meals', { method: 'POST', body });
-      navigate(backHref);
+      // replace: «Назад» из дневника не вернёт к уже сохранённой форме.
+      navigate(backHref, { replace: true });
     } catch (problem) {
       setError(errorText(problem));
       setBusy(false);
@@ -255,7 +256,7 @@ export function MealEditor({ id }) {
     setBusy(true);
     try {
       await api(`/meals/${id}`, { method: 'DELETE' });
-      navigate(backHref);
+      navigate(backHref, { replace: true });
     } catch (problem) {
       setError(problem.message);
       setBusy(false);

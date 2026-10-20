@@ -179,6 +179,11 @@ await user.getByRole('button', { name: 'Сохранить тренировку'
 await user.waitForURL(/\/workouts\/\d+$/);
 const workoutId = Number(user.url().split('/').pop());
 await user.getByRole('heading', { name: new RegExp(exerciseB) }).waitFor();
+// The saved form replaced its history entry: Back does not reopen the filled form.
+await user.goBack({ waitUntil: 'networkidle' });
+assert.ok(!user.url().endsWith('/workouts/new'), `Back after save opened ${user.url()}`);
+await user.goForward({ waitUntil: 'networkidle' });
+await user.waitForURL(new RegExp(`/workouts/${workoutId}$`));
 
 let [, saved] = await api(user, `/workouts/${workoutId}`);
 assert.deepEqual(

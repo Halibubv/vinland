@@ -305,7 +305,8 @@ export function WorkoutEditor({ id }) {
       let result;
       if (id) result = await api(`/workouts/${id}`, { method: 'PUT', body });
       else result = await api('/workouts', { method: 'POST', body });
-      navigate(`/workouts/${result.workout.id}`);
+      // replace: «Назад» со страницы тренировки не вернёт к уже сохранённой форме.
+      navigate(`/workouts/${result.workout.id}`, { replace: true });
     } catch (problem) {
       setError(errorText(problem));
       setBusy(false);
