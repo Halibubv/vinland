@@ -376,9 +376,13 @@ h3 {
 /* Общий каркас для вошедшего пользователя. */
 .app-header {
   height: 60px;
-  display: flex;
+  /* Три колонки: логотип | меню | аккаунт. Крайние колонки равной ширины,
+     поэтому меню стоит по центру и не сдвигается у админа, у которого справа
+     есть лишняя ссылка «Администрирование». minmax(max-content, 1fr) — колонка
+     не уже своего содержимого: на планшете логотип не наезжает на меню. */
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 20px;
   padding: 0 var(--page-inline);
   background: var(--bg);
@@ -418,6 +422,7 @@ h3 {
 .header-account {
   display: flex;
   align-items: center;
+  justify-self: end;
   gap: 12px;
   font-size: 14px;
 }
@@ -434,6 +439,8 @@ h3 {
   font-size: 14px;
 }
 .logout {
+  /* Без отступов кнопки — текст доходит до правого края, как контент ниже. */
+  padding: 0;
   font-size: 11px;
   color: var(--muted);
 }
@@ -690,7 +697,9 @@ h3 {
   body {
     padding-bottom: 0;
   }
+  /* Меню уходит вниз экрана — в шапке остаются логотип и аватар. */
   .app-header {
+    grid-template-columns: 1fr auto;
     height: 58px;
   }
   .app-header .brand {
@@ -934,7 +943,7 @@ h3 {
   min-width: 136px;
 }
 .feature-strip {
-  height: 110px;
+  min-height: 110px;
   padding: 22px var(--landing-inline);
   border: 0;
   background: var(--bg);
@@ -1004,7 +1013,7 @@ h3 {
   min-width: 128px;
 }
 .landing-product {
-  height: 560px;
+  /* Только min-height: если текст длиннее, блок растёт, а не налезает на следующий. */
   min-height: 560px;
   grid-template-columns: 480px minmax(0, 580px);
   justify-content: space-between;
@@ -1067,16 +1076,16 @@ h3 {
 }
 .editorial-row,
 .editorial-row--reverse {
-  height: 514px;
   min-height: 514px;
-  grid-template-columns: 560px 1fr;
+  /* Фото 560px как в макете 1280; на широком экране оно растёт на столько же,
+     на сколько растут поля страницы, и текст не уезжает от фото. */
+  grid-template-columns: calc(560px + var(--page-inline) - var(--gutter)) 1fr;
   border-top: 1px solid var(--border);
   background: var(--bg);
 }
 .editorial-row--reverse {
-  height: 542px;
   min-height: 542px;
-  grid-template-columns: 1fr 560px;
+  grid-template-columns: 1fr calc(560px + var(--page-inline) - var(--gutter));
 }
 .editorial-row > img,
 .editorial-row--reverse > img {
@@ -1340,14 +1349,15 @@ h3 {
   display: none;
 }
 
+/* Планшет: текст лендинга на одной линии с логотипом в шапке. */
 @media (max-width: 1100px) and (min-width: 701px) {
   .feature-strip,
   .landing-product,
   .landing-stats,
   .landing-steps,
   .landing-cta {
-    padding-left: 40px;
-    padding-right: 40px;
+    padding-left: var(--page-inline);
+    padding-right: var(--page-inline);
   }
   .landing-product {
     grid-template-columns: 40% 55%;
@@ -1365,21 +1375,25 @@ h3 {
   }
   .editorial-row > div,
   .editorial-row--reverse > div {
-    padding-left: 40px;
-    padding-right: 40px;
-  }
-  .showcase-copy {
-    left: 40px;
+    padding-left: var(--page-inline);
+    padding-right: var(--page-inline);
   }
   .landing-hero-copy {
-    left: 40px;
+    left: var(--page-inline);
+  }
+  /* Без принудительных переносов строк: колонки узкие, текст переносится сам. */
+  .feature-strip br {
+    display: none;
   }
   .demo-card {
     margin-top: 16px;
   }
+  /* Текст сверху, картинка с устройством снизу (место под неё — padding-bottom),
+     поэтому кнопки не наезжают на картинку. */
   .landing-showcase {
-    height: 540px;
-    min-height: 540px;
+    height: auto;
+    min-height: 0;
+    padding-bottom: 310px;
     background: none;
     background-color: var(--bg);
   }
@@ -1393,12 +1407,13 @@ h3 {
     background: url('/assets/device-showcase.png') 67% center/auto 310px no-repeat;
   }
   .showcase-copy {
-    top: 42px;
-    max-width: 530px;
+    position: static;
+    max-width: none;
+    padding: 40px var(--page-inline) 32px;
   }
   .landing .site-footer {
-    padding-left: 40px;
-    padding-right: 40px;
+    padding-left: var(--page-inline);
+    padding-right: var(--page-inline);
   }
 }
 

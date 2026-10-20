@@ -28,7 +28,8 @@ function WorkoutCard({ workout }) {
     plural(setCount, 'подход', 'подхода', 'подходов'),
   ];
   if (exercises.length > SHOWN_EXERCISES) {
-    counts.push(`показано ${SHOWN_EXERCISES} из ${exercises.length}`);
+    // \u00a0 — неразрывный пробел: «2 из 4» не разрывается на две строки.
+    counts.push(`показано ${SHOWN_EXERCISES}\u00a0из\u00a0${exercises.length}`);
   }
 
   // Заголовок карточки — заметка к тренировке, если она есть.
