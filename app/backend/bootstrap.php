@@ -18,6 +18,9 @@ const SESSION_MAX_SECONDS = 24 * 60 * 60;
 ini_set('display_errors', '0');
 ini_set('session.use_strict_mode', '1');
 ini_set('session.use_only_cookies', '1');
+// По умолчанию PHP может удалить файл сессии уже через 24 минуты простоя,
+// раньше обещанных 30 минут. Храним его не меньше срока простоя.
+ini_set('session.gc_maxlifetime', (string) SESSION_IDLE_SECONDS);
 date_default_timezone_set('Europe/Moscow');
 
 // Флаг secure говорит браузеру отправлять cookie только по HTTPS.
