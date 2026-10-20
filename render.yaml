@@ -1,18 +1,23 @@
 # Blueprint для Render: бесплатный веб-сервис из app/Dockerfile.
-# База — внешняя (Neon), её адрес вводится вручную при создании (sync: false), в Git его нет.
+# База — внешняя (бесплатный MySQL в Aiven). Адрес базы и сертификат вводятся вручную
+# при создании (sync: false), в Git их нет.
 services:
   - type: web
     name: vinland
     runtime: docker
     plan: free
-    # Тот же регион, что у базы в Neon (AWS Europe Central, Франкфурт): так запросы быстрее.
+    # Франкфурт — ближайший к нам регион Render. Регион бесплатной базы Aiven выбирает сам.
     region: frankfurt
     rootDir: app
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /api/health
     envVars:
+      # Service URI из Aiven: mysql://avnadmin:пароль@хост:порт/defaultdb?ssl-mode=REQUIRED
       - key: DATABASE_URL
+        sync: false
+      # Текст CA-сертификата Aiven (файл ca.pem целиком, от -----BEGIN до -----END).
+      - key: DB_SSL_CA
         sync: false
       # Cookie сессии только по HTTPS: на Render сайт открывается через https://.
       - key: SESSION_SECURE
