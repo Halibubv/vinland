@@ -40,9 +40,9 @@ const nutrients = [
   { key: 'carbs_per_100g', column: 'У, г', label: 'Углеводы, г' },
 ];
 
-// PostgreSQL может вернуть логическое значение как true или как строку 't'.
+// Сервер отдаёт is_active как true или false (в MySQL это 1 или 0, см. backend/admin.php).
 function isActive(row) {
-  return row.is_active === true || row.is_active === 't';
+  return row.is_active === true;
 }
 
 // Строка для карточки на телефоне:
