@@ -323,7 +323,30 @@ await picker.getByRole('button', { name: new RegExp(exerciseB) }).click();
 await user.context().clearCookies();
 await user.getByRole('button', { name: 'Сохранить тренировку' }).click();
 await user.getByRole('heading', { name: 'Вход' }).waitFor();
-await signIn(user, userA);
+// After signing in again the user is back on the page they were working on.
+await user.getByLabel('Email', { exact: true }).fill(userA);
+await user.locator('input[name="password"]').fill(password);
+await user.getByRole('button', { name: 'Войти', exact: true }).click();
+await user.waitForURL(base + '/workouts/new');
+
+// A guest who opens a private page signs in and lands on that page, not on the home page.
+const returning = await newPage();
+await open(returning, '/statistics');
+await returning.getByLabel('Email', { exact: true }).fill(userA);
+await returning.locator('input[name="password"]').fill(password);
+await returning.getByRole('button', { name: 'Войти', exact: true }).click();
+await returning.getByRole('heading', { name: 'Статистика' }).waitFor();
+assert.equal(returning.url(), base + '/statistics');
+await returning.context().close();
+// An address of another site in ?next= is ignored.
+const redirected = await newPage();
+await open(redirected, '/login?next=//example.com/');
+await redirected.getByLabel('Email', { exact: true }).fill(userA);
+await redirected.locator('input[name="password"]').fill(password);
+await redirected.getByRole('button', { name: 'Войти', exact: true }).click();
+await redirected.getByRole('heading', { name: /Добрый день/ }).waitFor();
+assert.equal(redirected.url(), base + '/');
+await redirected.context().close();
 
 // --- Deleting with the confirmation dialog -----------------------------------------
 await open(user, `/workouts/${workoutId}`);
@@ -351,6 +374,7 @@ await browser.close();
 assert.deepEqual(problems, [], 'browser errors');
 console.log(
   'UI checks passed: guest pages, private files, registration, profile goals, catalogs, ' +
-    'workout and meal CRUD, history snapshots, statistics, rights, expired session, deletion, ' +
+    'workout and meal CRUD, history snapshots, statistics, rights, expired session, return ' +
+    'after login, Back after save, deletion, ' +
     'no overflow at 834/390.',
 );

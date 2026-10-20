@@ -1,7 +1,7 @@
 // Экран входа и регистрации (mode = 'login' или 'register').
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
-import { go } from '../lib/router.js';
+import { currentLocation, currentPath, go, safeReturnPath } from '../lib/router.js';
 import { ASSETS } from '../lib/constants.js';
 import { Brand, LinkButton, Footer, GuestMobileNav } from '../components/Layout.jsx';
 import { Field } from '../components/ui.jsx';
@@ -22,6 +22,15 @@ function validate(values, isRegister) {
     errors.passwordAgain = 'Пароли не совпадают.';
   }
   return errors;
+}
+
+// Куда вернуться после входа. Гость, открывший, например, /statistics, видит форму
+// входа прямо по этому адресу — туда и возвращаем. На /login?next=... берём next.
+function returnPath() {
+  if (currentPath() === '/login' || currentPath() === '/register') {
+    return safeReturnPath(new URLSearchParams(window.location.search).get('next'));
+  }
+  return safeReturnPath(currentLocation());
 }
 
 export function AuthPage({ mode, onAuth }) {
@@ -57,7 +66,7 @@ export function AuthPage({ mode, onAuth }) {
         body: { name: values.name.trim(), email: values.email.trim(), password: values.password },
       });
       onAuth(data.user);
-      go('/');
+      go(returnPath(), { replace: true });
     } catch (error) {
       // Сервер может вернуть ошибки по полям, например «email уже занят».
       setErrors(error.fields || {});

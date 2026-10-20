@@ -53,3 +53,15 @@ export function interceptLinks() {
   document.addEventListener('click', handleClick);
   return () => document.removeEventListener('click', handleClick);
 }
+
+// Адрес для возврата после входа. Принимаем только свои страницы: путь начинается
+// с одного "/". Адрес "//site.com", а также обратная косая черта или невидимые
+// символы (табуляция, перевод строки) могут увести на чужой сайт — такие не берём.
+// Страницы входа и регистрации и всё неподходящее заменяем главной.
+export function safeReturnPath(value) {
+  if (typeof value !== 'string' || !value.startsWith('/')) return '/';
+  if (value.startsWith('//') || /[\\\u0000-\u001f]/.test(value)) return '/';
+  const path = value.split('?')[0];
+  if (path === '/login' || path === '/register') return '/';
+  return value;
+}

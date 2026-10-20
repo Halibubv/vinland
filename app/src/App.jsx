@@ -94,7 +94,8 @@ export default function App() {
     const handleExpired = () => {
       setSessionError('Сессия истекла. Войдите снова.');
       setUser(null);
-      go('/login');
+      // Запоминаем страницу, чтобы после входа вернуться на неё.
+      go(`/login?next=${encodeURIComponent(currentLocation())}`);
     };
     window.addEventListener('vinland:auth-required', handleExpired);
     return () => window.removeEventListener('vinland:auth-required', handleExpired);
