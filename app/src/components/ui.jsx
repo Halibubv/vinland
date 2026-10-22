@@ -88,7 +88,14 @@ export function BackLink({ to, label, current }) {
         <span aria-hidden="true">‹</span>
         {label}
       </a>
-      {current && <span className="back-link-current"> / {current}</span>}
+      {current && (
+        <>
+          <span className="back-link-sep" aria-hidden="true">
+            /
+          </span>
+          <span className="back-link-current">{current}</span>
+        </>
+      )}
     </nav>
   );
 }

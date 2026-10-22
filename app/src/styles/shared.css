@@ -54,21 +54,37 @@
   color: var(--cream);
 }
 
-/* "‹ Тренировки / 27 сентября 2026" над заголовком страницы. */
+/* "‹ Тренировки / 27 сентября 2026" над заголовком страницы.
+   Вся строка — один flex-ряд с одинаковой высотой строки, поэтому стрелка, ссылка,
+   косая черта и дата стоят на одной линии. */
 .back-link {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 14px;
   color: var(--muted);
   font-size: 14px;
+  line-height: 20px;
 }
 .back-link a {
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   color: var(--muted);
+  font-size: inherit;
+  line-height: inherit;
 }
 .back-link a span {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  margin-top: -2px;
   font-size: 22px;
   line-height: 1;
+}
+.back-link-sep {
+  opacity: 0.6;
 }
 .back-link a:hover {
   color: var(--cream);
