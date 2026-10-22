@@ -8,7 +8,7 @@ import { ASSETS, mealTypes } from '../lib/constants.js';
 import { Shell, Notice } from '../components/ui.jsx';
 import { DateStepper } from '../components/DateStepper.jsx';
 import { DaySummary } from '../components/DaySummary.jsx';
-import { EntryIcon } from '../components/EntryIcon.jsx';
+import { EntryIcon, EntryPhoto } from '../components/EntryIcon.jsx';
 import './Nutrition.css';
 
 // "3 продукта · 450 г"
@@ -63,7 +63,7 @@ function MealSlot({ type, label, meals, date }) {
       <div className="meal-slot-body">
         {meals.map((meal) => (
           <a href={`/nutrition/${meal.id}`} className="meal-entry" key={meal.id}>
-            <EntryIcon meal={type} />
+            <EntryPhoto meal={type} />
             <span className="meal-entry-text">
               {productNames(meal) || 'Без продуктов'}
               <small className="wide-only">{productNamesWithGrams(meal)}</small>
