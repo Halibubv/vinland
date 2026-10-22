@@ -113,6 +113,10 @@ result = await owner.request('/api/meals', 'POST', {
   meal_date: '2026-02-30', meal_type: 'snack', items: [],
 });
 assert.equal(result.status, 422, 'Invalid meal date must fail');
+result = await owner.request('/api/meals', 'POST', {
+  meal_date: '2099-01-01', meal_type: 'snack', items: [{ product_id: productId, quantity_g: 50 }],
+});
+assert.equal(result.status, 422, 'A meal in the future must fail');
 result = await owner.request('/api/meals');
 assert.equal(result.data.meals.length, 1, 'Invalid writes must not leave meals');
 

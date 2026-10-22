@@ -38,7 +38,7 @@ function workout_input(array $data): array
         invalid('exercises', 'Добавьте хотя бы одно упражнение.');
     }
     return [
-        'workout_date' => date_value($data, 'workout_date'),
+        'workout_date' => past_date_value($data, 'workout_date'),
         'notes' => optional_text_value($data, 'notes', 4000),
         'exercises' => $exercises,
     ];

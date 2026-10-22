@@ -81,6 +81,13 @@ assert.equal(result.response.status, 422);
 assert.equal(result.data.fields.exercises, 'Добавьте хотя бы одно упражнение.');
 result = await request(`/api/workouts/${workoutId}`, 'PUT', { workout_date: '2026-10-11', notes: null, exercises: [] });
 assert.equal(result.response.status, 422, 'Edit must not remove every exercise');
+
+// A workout cannot be recorded for a future day.
+result = await request('/api/workouts', 'POST', {
+  workout_date: '2099-01-01', notes: null, exercises: [{ exercise_id: exerciseIds[0], notes: null, sets: [] }],
+});
+assert.equal(result.response.status, 422);
+assert.equal(result.data.fields.workout_date, 'Нельзя записать на будущую дату.');
 result = await request(`/api/workouts/${workoutId}`);
 assert.equal(result.data.workout.exercises.length, 2, 'Rejected edit keeps the exercises');
 
