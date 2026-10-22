@@ -34,7 +34,7 @@ function meal_input(array $data): array
         invalid('items', 'Добавьте хотя бы один продукт.');
     }
     return [
-        'meal_date' => date_value($data, 'meal_date'),
+        'meal_date' => past_date_value($data, 'meal_date'),
         'meal_type' => meal_type_value($data),
         'items' => $preparedItems,
     ];

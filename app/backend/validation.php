@@ -111,6 +111,19 @@ function date_value(array $data, string $field): string
     return $value;
 }
 
+// Дата приёма пищи или тренировки: не позже сегодняшнего дня.
+// Сервер может жить в другом часовом поясе, чем пользователь (у пользователя уже
+// наступило завтра, а на сервере ещё сегодня), поэтому допускаем запас в один день.
+function past_date_value(array $data, string $field): string
+{
+    $value = date_value($data, $field);
+    $latestAllowed = (new DateTimeImmutable('tomorrow'))->format('Y-m-d');
+    if ($value > $latestAllowed) {
+        invalid($field, 'Нельзя записать на будущую дату.');
+    }
+    return $value;
+}
+
 function email_value(array $data): string
 {
     $email = strtolower(text_value($data, 'email', 255));

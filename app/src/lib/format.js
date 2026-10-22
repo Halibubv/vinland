@@ -42,22 +42,6 @@ export function percentOf(value, target) {
   return Math.min(100, Math.round((Number(value) / Number(target)) * 100));
 }
 
-// "2 400 ккал · Б 160 / Ж 80 / У 260 г" или подсказка, если цели не заданы.
-export function goalsSummary(user) {
-  const calories = user.target_calories;
-  const protein = user.target_protein_g;
-  const fat = user.target_fat_g;
-  const carbs = user.target_carbs_g;
-  if (!calories && !protein && !fat && !carbs) return 'Цели не заданы';
-
-  const caloriesText = calories ? formatInt(calories) : '—';
-  return `${caloriesText} ккал · Б ${gramsOrDash(protein)} / Ж ${gramsOrDash(fat)} / У ${gramsOrDash(carbs)} г`;
-}
-
-function gramsOrDash(value) {
-  return value ? formatNumber(value) : '—';
-}
-
 // Краткое описание подходов упражнения: "3 × 8 · 100 кг", если все подходы
 // одинаковые, иначе просто "4 подхода".
 export function setsSummary(sets = []) {

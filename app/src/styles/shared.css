@@ -211,6 +211,11 @@
 .date-stepper > button:hover {
   background: var(--surface2);
 }
+.date-stepper > button:disabled {
+  opacity: 0.35;
+  background: none;
+  cursor: default;
+}
 .date-stepper-value {
   position: relative;
   padding: 4px 6px;

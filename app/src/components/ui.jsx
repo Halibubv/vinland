@@ -2,8 +2,9 @@
 // каркас страницы раздела, сообщение об ошибке и пустое состояние.
 import React, { useState } from 'react';
 import { formatInt, percentOf } from '../lib/format.js';
+import { ASSETS } from '../lib/constants.js';
 
-// Поле формы с подписью и текстом ошибки. Для пароля есть кнопка «Показать».
+// Поле формы с подписью и текстом ошибки. Для пароля есть кнопка-глазок «Показать пароль».
 export function Field({
   label,
   name,
@@ -47,7 +48,7 @@ export function Field({
             onClick={() => setPasswordVisible(!passwordVisible)}
             aria-label={passwordVisible ? 'Скрыть пароль' : 'Показать пароль'}
           >
-            {passwordVisible ? 'Скрыть' : 'Показать'}
+            <img src={`${ASSETS}${passwordVisible ? 'icon-eye-off.svg' : 'icon-eye.svg'}`} alt="" />
           </button>
         )}
       </div>

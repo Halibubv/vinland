@@ -565,12 +565,14 @@ h3 {
   font-size: 11px;
 }
 .reveal-password {
+  display: grid;
+  place-items: center;
+  width: 40px;
   height: 36px;
-  padding: 0 12px;
+  padding: 0;
   background: transparent;
   border: 0;
-  color: var(--muted);
-  font-size: 11px;
+  cursor: pointer;
 }
 .auth-under {
   padding: 12px 0;
@@ -748,6 +750,11 @@ h3 {
   .guest-header .brand {
     font-size: 18px;
   }
+  /* На телефоне в шапке две кнопки, поэтому оставляем только значок логотипа:
+     название и так крупно написано ниже. */
+  .guest-header .brand span {
+    display: none;
+  }
   .guest-header .button {
     min-height: 36px;
     padding: 0 11px;
@@ -875,8 +882,19 @@ h3 {
 .landing-hero {
   height: 360px;
   min-height: 360px;
-  /* Тонкая линия между фото главного экрана и следующим блоком, как у остальных секций. */
-  border-bottom: 1px solid var(--border);
+}
+/* Плавный переход к следующему блоку: низ фото главного экрана уходит в цвет фона,
+   а следующий блок (.landing-showcase::before) начинается с этого же цвета. Так между
+   двумя разными фотографиями нет резкой границы. */
+.landing-hero::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 90px;
+  background: linear-gradient(transparent, var(--bg));
+  pointer-events: none;
 }
 .hero-photo {
   background-size: 100% auto;
@@ -907,23 +925,23 @@ h3 {
   font-size: 24px;
   line-height: 30px;
 }
-.landing-hero-copy .button,
-.showcase-copy .button {
-  border-radius: 16px;
-  min-height: 48px;
-}
-.landing-hero-copy .button--primary {
-  min-width: 220px;
-}
-.landing-hero-copy .button--outline {
-  min-width: 136px;
-}
 .landing-showcase {
   height: 440px;
   min-height: 440px;
   display: block;
   padding: 0;
   background: url('/assets/device-showcase.png') center/cover no-repeat;
+}
+.landing-showcase::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 90px;
+  background: linear-gradient(var(--bg), transparent);
+  z-index: 1;
+  pointer-events: none;
 }
 .mobile-device {
   display: none;
@@ -943,12 +961,6 @@ h3 {
   font-size: 16px;
   line-height: 20px;
   margin: 0 0 20px;
-}
-.showcase-copy .button--primary {
-  min-width: 208px;
-}
-.showcase-copy .button--outline {
-  min-width: 128px;
 }
 .landing-product {
   /* Только min-height: если текст длиннее, блок растёт, а не налезает на следующий. */
@@ -1288,6 +1300,13 @@ h3 {
 }
 
 /* Планшет: текст лендинга на одной линии с логотипом в шапке. */
+/* До 1100px фон блока с планшетом однотонный (картинка стоит ниже текста),
+   поэтому верхний переход там не нужен. */
+@media (max-width: 1100px) {
+  .landing-showcase::before {
+    display: none;
+  }
+}
 @media (max-width: 1100px) and (min-width: 701px) {
   .landing-product,
   .landing-stats,
@@ -1373,12 +1392,6 @@ h3 {
     font-size: 16px;
     line-height: 22px;
   }
-  .landing-hero-copy .button--primary {
-    min-width: 0;
-  }
-  .landing-hero-copy .button--outline {
-    min-width: 0;
-  }
   .landing-showcase {
     background: none;
     background-color: var(--bg);
@@ -1404,10 +1417,6 @@ h3 {
   .showcase-copy p {
     font-size: 14px;
     line-height: 20px;
-  }
-  .showcase-copy .button--primary,
-  .showcase-copy .button--outline {
-    min-width: 0;
   }
   .landing-product {
     height: auto;
@@ -1575,21 +1584,11 @@ h3 {
   .landing .site-footer {
     display: none;
   }
-  .guest-header .button--primary {
-    display: none;
-  }
-  .guest-header .button--outline {
-    display: inline-flex;
-  }
-  .landing-hero-copy .button-row,
-  .showcase-copy .button-row,
   .landing-cta .button-row {
     flex-direction: column;
     gap: 12px;
     width: 100%;
   }
-  .landing-hero-copy .button,
-  .showcase-copy .button,
   .landing-cta .button {
     width: 100%;
   }
@@ -1607,7 +1606,6 @@ h3 {
     height: auto;
     min-height: 0;
     padding: 48px 20px 32px;
-    border-top: 1px solid var(--border);
   }
   .landing-showcase::after {
     display: none;

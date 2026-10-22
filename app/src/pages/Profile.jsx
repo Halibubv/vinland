@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { localDate } from '../lib/dates.js';
-import { formatInt, goalsSummary, setsSummary } from '../lib/format.js';
+import { formatInt, setsSummary } from '../lib/format.js';
 import { ASSETS, mealTypes } from '../lib/constants.js';
 import { initials, Footer } from '../components/Layout.jsx';
 import { Field, Notice } from '../components/ui.jsx';
@@ -227,14 +227,9 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
   }
   useEffect(load, []);
 
-  function openSettings() {
-    setNotice('');
-    setEditing(true);
-  }
-
   function toggleSettings() {
-    if (editing) setEditing(false);
-    else openSettings();
+    setNotice('');
+    setEditing(!editing);
   }
 
   function saved(nextUser) {
@@ -287,13 +282,6 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
               <small>Динамика тренировок и питания</small>
             </span>
           </a>
-          <button type="button" onClick={openSettings}>
-            <img src={`${ASSETS}icon-sliders.svg`} alt="" />
-            <span>
-              Цели КБЖУ
-              <small>{goalsSummary(user)}</small>
-            </span>
-          </button>
           <a href="/workouts">
             <img src={`${ASSETS}icon-calendar.svg`} alt="" />
             <span>

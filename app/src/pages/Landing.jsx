@@ -48,12 +48,6 @@ export function Landing() {
             <br />
             питания с КБЖУ.
           </p>
-          <div className="button-row">
-            <LinkButton to="/register">Создать аккаунт</LinkButton>
-            <LinkButton to="/login" variant="outline">
-              Войти
-            </LinkButton>
-          </div>
         </div>
       </section>
       <section className="landing-showcase reveal">
@@ -68,12 +62,6 @@ export function Landing() {
             ВИНЛАНД помогает сохранять баланс
             <br />и двигаться к своим целям — шаг за шагом.
           </p>
-          <div className="button-row">
-            <LinkButton to="/register">Создать аккаунт</LinkButton>
-            <LinkButton to="/login" variant="outline">
-              Войти
-            </LinkButton>
-          </div>
         </div>
         <img
           className="mobile-device"
