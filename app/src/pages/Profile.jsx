@@ -2,12 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { localDate } from '../lib/dates.js';
-import { formatInt, setsSummary } from '../lib/format.js';
+import { formatInt, pluralWord, setsSummary } from '../lib/format.js';
 import { ASSETS, mealTypes } from '../lib/constants.js';
 import { initials, Footer } from '../components/Layout.jsx';
 import { Field, Notice } from '../components/ui.jsx';
-import { DaySummary } from '../components/DaySummary.jsx';
+import { DayTotals } from '../components/DayTotals.jsx';
 import { EntryPhoto } from '../components/EntryIcon.jsx';
+import { PageHero } from '../components/PageHero.jsx';
 import './Profile.css';
 
 // Поля целей КБЖУ в форме профиля; min, max и step — ограничения поля ввода.
@@ -29,7 +30,7 @@ function formValues(user) {
   return values;
 }
 
-// Цели пользователя в том виде, который ждёт DaySummary.
+// Цели пользователя в том виде, который ждёт DayTotals.
 function userGoals(user) {
   return {
     calories: user.target_calories,
@@ -125,7 +126,7 @@ function ProfileForm({ user, onSaved, onCancel }) {
   );
 }
 
-// Карточка «Тренировка сегодня»: первые три упражнения из сегодняшних тренировок.
+// Карточка «Сегодня в зале»: упражнения из сегодняшних тренировок.
 function TodayWorkout({ workouts }) {
   // Собираем упражнения всех тренировок за сегодня в один список,
   // запоминая, к какой тренировке ведёт ссылка.
@@ -136,21 +137,17 @@ function TodayWorkout({ workouts }) {
     }
   }
   return (
-    <section className="panel profile-card">
-      <h2>
-        <img src={`${ASSETS}nav-workouts.svg`} alt="" />
-        Тренировка сегодня
-      </h2>
-      {exercises.length > 0 &&
-        exercises.slice(0, 3).map((exercise, index) => (
-          <a className="profile-entry" href={`/workouts/${exercise.workoutId}`} key={index}>
-            <EntryPhoto muscleGroup={exercise.muscle_group} />
-            <span className="profile-entry-text">
-              {exercise.exercise_name}
-              <small>{setsSummary(exercise.sets)}</small>
-            </span>
-          </a>
-        ))}
+    <section className="profile-card">
+      <h2 className="section-heading">Сегодня в зале</h2>
+      {exercises.slice(0, 5).map((exercise, index) => (
+        <a className="profile-entry" href={`/workouts/${exercise.workoutId}`} key={index}>
+          <EntryPhoto muscleGroup={exercise.muscle_group} />
+          <span className="profile-entry-text">
+            {exercise.exercise_name}
+            <small>{setsSummary(exercise.sets)}</small>
+          </span>
+        </a>
+      ))}
       {exercises.length === 0 && (
         <p className="profile-empty">
           Сегодня тренировки ещё не было. <a href="/workouts/new">Добавить тренировку →</a>
@@ -163,45 +160,52 @@ function TodayWorkout({ workouts }) {
 // Порядок приёмов пищи за день: завтрак, обед, перекус, ужин.
 const mealOrder = Object.keys(mealTypes);
 
-// Карточка «Питание»: до четырёх сегодняшних приёмов пищи по порядку.
-function TodayMeals({ meals }) {
+// Карточка «Сегодня в рационе»: кольцо калорий, БЖУ и сегодняшние приёмы пищи.
+function TodayMeals({ day, goals, meals }) {
   // Копируем массив, потому что sort меняет его на месте.
   const sorted = [...meals].sort(
     (first, second) => mealOrder.indexOf(first.meal_type) - mealOrder.indexOf(second.meal_type),
   );
   return (
-    <section className="panel profile-card">
-      <h2>
-        <img src={`${ASSETS}nav-food.svg`} alt="" />
-        Питание
-      </h2>
-      {sorted.length > 0 &&
-        sorted.slice(0, 4).map((meal) => {
-          const calories = `${formatInt(meal.totals.calories)} ккал`;
-          const products = meal.items.map((item) => item.product_name_snapshot).join(', ');
-          return (
-            <a className="profile-entry" href={`/nutrition/${meal.id}`} key={meal.id}>
-              <EntryPhoto meal={meal.meal_type} />
-              <span className="profile-entry-text">
-                {mealTypes[meal.meal_type]}
-                <small className="wide-only">{products || 'Без продуктов'}</small>
-                <small className="narrow-only">{calories}</small>
-              </span>
-              <b className="wide-only">{calories}</b>
-            </a>
-          );
-        })}
-      {sorted.length === 0 && (
-        <p className="profile-empty">
-          Сегодня приёмов пищи пока нет. <a href="/nutrition/new">Добавить питание →</a>
-        </p>
-      )}
+    <section className="profile-card">
+      <h2 className="section-heading">Сегодня в рационе</h2>
+      <DayTotals day={day} goals={goals} />
+      <div className="profile-card-list">
+        {sorted.slice(0, 4).map((meal) => (
+          <a className="profile-entry" href={`/nutrition/${meal.id}`} key={meal.id}>
+            <EntryPhoto meal={meal.meal_type} />
+            <span className="profile-entry-text">{mealTypes[meal.meal_type]}</span>
+            <b>{formatInt(meal.totals.calories)} ккал</b>
+          </a>
+        ))}
+        {sorted.length === 0 && (
+          <p className="profile-empty">
+            Сегодня приёмов пищи пока нет. <a href="/nutrition/new">Добавить питание →</a>
+          </p>
+        )}
+      </div>
     </section>
   );
 }
 
+// Крупные цифры в баннере профиля.
+function profileStats(user, today) {
+  const total = today.allWorkouts;
+  let goal = '—';
+  if (user.target_calories) goal = formatInt(user.target_calories);
+  return [
+    {
+      value: formatInt(total),
+      label: `${pluralWord(total, 'тренировка', 'тренировки', 'тренировок')} всего`,
+    },
+    { value: formatInt(today.day.calories), label: 'ккал съедено сегодня' },
+    { value: goal, label: 'ккал в день — цель' },
+  ];
+}
+
 export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
-  // today: { day — итоги питания, workouts — тренировки, meals — приёмы пищи } за сегодня.
+  // today: { day — итоги питания, workouts — тренировки за сегодня,
+  // allWorkouts — сколько тренировок всего, meals — приёмы пищи за сегодня }.
   const [today, setToday] = useState(null);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
@@ -220,6 +224,7 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
         setToday({
           day: statistics.days[0],
           workouts: workouts.workouts.filter((workout) => workout.workout_date === date),
+          allWorkouts: workouts.workouts.length,
           meals: meals.meals,
         }),
       )
@@ -238,22 +243,39 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
     setNotice('Профиль и цели сохранены.');
   }
 
+  // Подпись и кнопки над именем в баннере.
+  const top = (
+    <>
+      <span className="page-hero-eyebrow">Личный кабинет</span>
+      <div className="page-hero-actions">
+        <button
+          className="button button--outline"
+          type="button"
+          onClick={toggleSettings}
+          aria-expanded={editing}
+        >
+          <img src={`${ASSETS}icon-settings.svg`} alt="" />
+          {editing ? 'Закрыть настройки' : 'Настройки профиля'}
+        </button>
+        <button className="profile-logout" type="button" onClick={onLogout} disabled={logoutBusy}>
+          {logoutBusy ? 'Выходим…' : 'Выйти'}
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <>
-      <div className="profile-banner" role="img" aria-label="Северный горный пейзаж" />
-      <main className="content profile-page">
-        <h1 className="profile-title">Личный кабинет</h1>
-        <section className="profile-identity">
-          <div className="avatar profile-avatar">{initials(user.name)}</div>
-          <div className="profile-name">
-            <h2>{user.name}</h2>
-            <p>{user.email}</p>
-          </div>
-          <button className="profile-settings" onClick={toggleSettings} aria-expanded={editing}>
-            <img src={`${ASSETS}icon-settings.svg`} alt="" />
-            {editing ? 'Закрыть настройки' : 'Настройки профиля'}
-          </button>
-        </section>
+      <div className="section-banner" />
+      <main className="content section-content profile-page">
+        <PageHero
+          image={`${ASSETS}hero-profile.jpg`}
+          top={top}
+          media={<div className="profile-avatar">{initials(user.name)}</div>}
+          title={user.name}
+          subtitle={user.email}
+          stats={today && profileStats(user, today)}
+        />
 
         {editing && <ProfileForm user={user} onSaved={saved} onCancel={() => setEditing(false)} />}
         {notice && (
@@ -265,39 +287,30 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
         {error && <Notice message={`Не удалось загрузить показатели: ${error}`} retry={load} />}
         {!error && !today && <p className="muted">Загружаем показатели…</p>}
         {!error && today && (
-          <>
-            <DaySummary title="Сегодня в рационе" day={today.day} goals={userGoals(user)} />
-            <div className="profile-cards">
-              <TodayWorkout workouts={today.workouts} />
-              <TodayMeals meals={today.meals} />
-            </div>
-          </>
+          <div className="profile-cards">
+            <TodayMeals day={today.day} goals={userGoals(user)} meals={today.meals} />
+            <TodayWorkout workouts={today.workouts} />
+          </div>
         )}
 
         <nav className="profile-links" aria-label="Разделы профиля">
           <a href="/statistics">
             <img src={`${ASSETS}icon-chart.svg`} alt="" />
             <span>
-              Статистика
+              <strong>Статистика</strong>
               <small>Динамика тренировок и питания</small>
             </span>
+            <b aria-hidden="true">→</b>
           </a>
           <a href="/workouts">
             <img src={`${ASSETS}icon-calendar.svg`} alt="" />
             <span>
-              Сохранённые тренировки
+              <strong>Тренировки</strong>
               <small>Все выполненные тренировки</small>
             </span>
+            <b aria-hidden="true">→</b>
           </a>
         </nav>
-
-        <button
-          className="button button--outline profile-logout narrow-only"
-          onClick={onLogout}
-          disabled={logoutBusy}
-        >
-          {logoutBusy ? 'Выходим…' : 'Выйти из аккаунта'}
-        </button>
       </main>
       <Footer />
     </>
