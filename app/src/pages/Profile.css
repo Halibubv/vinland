@@ -168,11 +168,10 @@
 
 .profile-links {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
 }
-.profile-links > a,
-.profile-links > button {
+.profile-links > a {
   display: flex;
   align-items: flex-start;
   gap: 24px;
@@ -184,8 +183,7 @@
   font: inherit;
   text-align: left;
 }
-.profile-links > a:hover,
-.profile-links > button:hover {
+.profile-links > a:hover {
   background: var(--surface);
 }
 .profile-links img {
@@ -258,8 +256,7 @@
     grid-template-columns: 1fr;
     gap: 20px;
   }
-  .profile-links > a,
-  .profile-links > button {
+  .profile-links > a {
     display: grid;
     grid-template-columns: auto 1fr;
     align-items: center;
