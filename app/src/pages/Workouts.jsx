@@ -5,7 +5,7 @@ import { ASSETS } from '../lib/constants.js';
 import { dateLabel, dayMonth, monthShift, monthTitle } from '../lib/dates.js';
 import { plural, setsSummary } from '../lib/format.js';
 import { Shell, Notice, Empty } from '../components/ui.jsx';
-import { EntryIcon } from '../components/EntryIcon.jsx';
+import { EntryPhoto } from '../components/EntryIcon.jsx';
 import './Workouts.css';
 
 // Сколько упражнений показывать в карточке, остальные видны на странице тренировки.
@@ -55,7 +55,7 @@ function WorkoutCard({ workout }) {
           <ul className="workout-card-exercises">
             {exercises.slice(0, SHOWN_EXERCISES).map((exercise) => (
               <li key={exercise.id}>
-                <EntryIcon label={exercise.muscle_group} />
+                <EntryPhoto muscleGroup={exercise.muscle_group} />
                 <span>
                   {exercise.exercise_name}
                   <small>{setsSummary(exercise.sets)}</small>

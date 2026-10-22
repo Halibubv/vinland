@@ -7,7 +7,7 @@ import { ASSETS, mealTypes } from '../lib/constants.js';
 import { initials, Footer } from '../components/Layout.jsx';
 import { Field, Notice } from '../components/ui.jsx';
 import { DaySummary } from '../components/DaySummary.jsx';
-import { EntryIcon } from '../components/EntryIcon.jsx';
+import { EntryPhoto } from '../components/EntryIcon.jsx';
 import './Profile.css';
 
 // Поля целей КБЖУ в форме профиля; min, max и step — ограничения поля ввода.
@@ -144,7 +144,7 @@ function TodayWorkout({ workouts }) {
       {exercises.length > 0 &&
         exercises.slice(0, 3).map((exercise, index) => (
           <a className="profile-entry" href={`/workouts/${exercise.workoutId}`} key={index}>
-            <EntryIcon label={exercise.muscle_group} />
+            <EntryPhoto muscleGroup={exercise.muscle_group} />
             <span className="profile-entry-text">
               {exercise.exercise_name}
               <small>{setsSummary(exercise.sets)}</small>
@@ -181,7 +181,7 @@ function TodayMeals({ meals }) {
           const products = meal.items.map((item) => item.product_name_snapshot).join(', ');
           return (
             <a className="profile-entry" href={`/nutrition/${meal.id}`} key={meal.id}>
-              <EntryIcon meal={meal.meal_type} />
+              <EntryPhoto meal={meal.meal_type} />
               <span className="profile-entry-text">
                 {mealTypes[meal.meal_type]}
                 <small className="wide-only">{products || 'Без продуктов'}</small>
