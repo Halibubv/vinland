@@ -1,0 +1,210 @@
+/* Большой баннер <PageHero> и заголовки разделов под ним. */
+
+.page-hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 28px;
+  min-height: 340px;
+  margin-bottom: var(--space-xl);
+  padding: 28px 40px 32px;
+  border: 1px solid var(--surface2);
+  border-radius: 16px;
+  /* Левая часть фото затемнена, чтобы светлый текст хорошо читался. */
+  background:
+    linear-gradient(
+      90deg,
+      rgba(13, 26, 33, 0.94) 0%,
+      rgba(13, 26, 33, 0.65) 42%,
+      rgba(13, 26, 33, 0) 78%
+    ),
+    var(--hero-image) center 60% / cover no-repeat,
+    var(--surface);
+}
+.page-hero-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.page-hero-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+}
+.page-hero-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 28px;
+}
+.page-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 640px;
+}
+.page-hero-eyebrow {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.page-hero h1 {
+  margin: 0;
+  font-family: 'Cormorant SC', Georgia, serif;
+  font-size: 76px;
+  font-weight: 700;
+  line-height: 0.9;
+}
+.page-hero p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+/* Крупные цифры, между ними — ромбик. */
+.page-hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 0;
+  margin: 0;
+}
+.page-hero-stats > div {
+  display: flex;
+  flex-direction: column-reverse;
+}
+.page-hero-stats > div + div {
+  position: relative;
+  padding-left: 56px;
+}
+.page-hero-stats > div + div::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 23px;
+  width: 8px;
+  height: 8px;
+  border: 1px solid #81949a;
+  transform: translateY(-50%) rotate(45deg);
+}
+.page-hero-stats dd {
+  margin: 0;
+  font-family: 'Cormorant SC', Georgia, serif;
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1;
+}
+.page-hero-stats dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Ссылки и кнопки поверх фото. */
+.page-hero-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.page-hero-link:hover {
+  color: var(--cream);
+}
+.page-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.page-hero-actions .button {
+  gap: 8px;
+  min-height: 44px;
+}
+.page-hero .button--outline {
+  background: rgba(13, 26, 33, 0.6);
+}
+.page-hero-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(221, 129, 125, 0.5);
+  border-radius: 8px;
+  background: rgba(13, 26, 33, 0.6);
+  color: var(--error);
+}
+.page-hero-icon-button:hover {
+  background: rgba(221, 129, 125, 0.12);
+}
+.page-hero .date-stepper {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(13, 26, 33, 0.6);
+  font-size: 15px;
+}
+
+/* Заголовок раздела под баннером — тем же шрифтом, что и на главной. */
+.section-heading {
+  margin: 0 0 20px;
+  font-family: 'Cormorant SC', Georgia, serif;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Телефон: баннер во всю ширину экрана, фото затемнено снизу. */
+@media (max-width: 700px) {
+  .page-hero {
+    min-height: 360px;
+    margin: calc(-1 * var(--page-top)) calc(-1 * var(--page-inline)) var(--space-m);
+    padding: 16px 20px 22px;
+    border: 0;
+    border-radius: 0;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(13, 26, 33, 0.15) 0%,
+        rgba(13, 26, 33, 0.55) 50%,
+        var(--bg) 100%
+      ),
+      var(--hero-image) 78% center / cover no-repeat,
+      var(--surface);
+  }
+  .page-hero-main {
+    gap: 20px;
+  }
+  .page-hero-heading {
+    gap: 16px;
+  }
+  .page-hero h1 {
+    font-size: 52px;
+  }
+  .page-hero p {
+    font-size: 15px;
+  }
+  /* На телефоне цифры стоят сеткой по две, без ромбиков. */
+  .page-hero-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .page-hero-stats dd {
+    font-size: 32px;
+  }
+  .page-hero-stats > div + div {
+    padding-left: 0;
+  }
+  .page-hero-stats > div + div::before {
+    display: none;
+  }
+  .section-heading {
+    font-size: 32px;
+  }
+}

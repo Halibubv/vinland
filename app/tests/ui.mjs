@@ -286,7 +286,7 @@ assert.equal(
 await user.unroute(/\/api\/workouts\/\d+$/, failSave);
 await user.getByRole('button', { name: 'Сохранить тренировку' }).click();
 await user.waitForURL(new RegExp(`/workouts/${workoutId}$`));
-await user.getByText('Заметка: Проверка ошибки сохранения').waitFor();
+await user.getByText('«Проверка ошибки сохранения»').waitFor();
 
 for (const width of [834, 390]) {
   await user.setViewportSize({ width, height: 900 });
@@ -350,10 +350,7 @@ await redirected.context().close();
 
 // --- Deleting with the confirmation dialog -----------------------------------------
 await open(user, `/workouts/${workoutId}`);
-await user
-  .locator('.wide-only')
-  .getByRole('button', { name: /Удалить/ })
-  .click();
+await user.getByRole('button', { name: 'Удалить тренировку' }).click();
 await user
   .getByRole('dialog', { name: 'Удалить тренировку?' })
   .getByRole('button', { name: 'Удалить' })

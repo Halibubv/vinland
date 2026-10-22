@@ -2,67 +2,90 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { dateLabel } from '../lib/dates.js';
-import { formatWeight } from '../lib/format.js';
+import { formatInt, formatWeight, pluralWord } from '../lib/format.js';
 import { go as navigate } from '../lib/router.js';
 import { ASSETS } from '../lib/constants.js';
-import { Shell, Notice, BackLink } from '../components/ui.jsx';
+import { Notice } from '../components/ui.jsx';
 import { ConfirmDialog } from '../components/Dialogs.jsx';
+import { PageHero } from '../components/PageHero.jsx';
+import { entryPhotoUrl } from '../components/EntryIcon.jsx';
 import './WorkoutView.css';
 
-// Таблица подходов одного упражнения; заметка к подходу — отдельной строкой под ним.
-function SetsTable({ sets }) {
+// Итоги тренировки для крупных цифр в баннере.
+function workoutStats(workout) {
+  let sets = 0;
+  let repetitions = 0;
+  let lifted = 0; // сколько килограммов поднято всего: повторения × вес
+  for (const exercise of workout.exercises) {
+    for (const set of exercise.sets) {
+      sets += 1;
+      repetitions += Number(set.repetitions);
+      lifted += Number(set.repetitions) * Number(set.weight_kg);
+    }
+  }
+  const exercises = workout.exercises.length;
+  return [
+    { value: exercises, label: pluralWord(exercises, 'упражнение', 'упражнения', 'упражнений') },
+    { value: sets, label: pluralWord(sets, 'подход', 'подхода', 'подходов') },
+    {
+      value: formatInt(repetitions),
+      label: pluralWord(repetitions, 'повторение', 'повторения', 'повторений'),
+    },
+    { value: `${formatInt(lifted)} кг`, label: 'поднято всего' },
+  ];
+}
+
+// Строка над датой: "Тренировка · четверг, 2026".
+function heroEyebrow(workoutDate) {
+  const weekdayName = dateLabel(workoutDate, { weekday: 'long' });
+  const year = workoutDate.slice(0, 4);
+  return `Тренировка · ${weekdayName}, ${year}`;
+}
+
+// Подходы упражнения: полоска показывает повторения относительно лучшего подхода.
+function SetsList({ sets }) {
   if (!sets.length) return <p className="muted workout-view-empty">Подходы не записаны.</p>;
+  let maxRepetitions = 1;
+  for (const set of sets) maxRepetitions = Math.max(maxRepetitions, Number(set.repetitions));
+
   return (
-    <table className="workout-sets">
-      <thead>
-        <tr>
-          <th scope="col">Подход</th>
-          <th scope="col">Повторения</th>
-          <th scope="col">Вес, кг</th>
-        </tr>
-      </thead>
-      <tbody>
-        {sets.map((set) => (
-          <React.Fragment key={set.id}>
-            <tr>
-              <td>{set.set_number}</td>
-              <td>{set.repetitions}</td>
-              <td>{formatWeight(set.weight_kg)}</td>
-            </tr>
-            {set.notes && (
-              <tr className="workout-set-note">
-                <td colSpan="3">{set.notes}</td>
-              </tr>
-            )}
-          </React.Fragment>
-        ))}
-      </tbody>
-    </table>
+    <ul className="workout-sets">
+      {sets.map((set) => (
+        <li key={set.id}>
+          <div className="workout-set">
+            <span className="workout-set-number">Подход {set.set_number}</span>
+            <span className="workout-set-bar" role="presentation">
+              <span style={{ width: `${(Number(set.repetitions) / maxRepetitions) * 100}%` }} />
+            </span>
+            <strong>
+              {set.repetitions} × {formatWeight(set.weight_kg)} кг
+            </strong>
+          </div>
+          {set.notes && <p className="workout-set-note">{set.notes}</p>}
+        </li>
+      ))}
+    </ul>
   );
 }
 
-// Список упражнений тренировки и её заметка.
-function WorkoutDetails({ workout }) {
+// Карточка упражнения: фото по группе мышц с номером, название и подходы.
+function ExerciseCard({ exercise, number }) {
+  const photo = entryPhotoUrl({ muscleGroup: exercise.muscle_group });
   return (
-    <>
-      {workout.notes && <p className="workout-view-note">Заметка: {workout.notes}</p>}
-      <h2 className="workout-view-heading wide-only">Упражнения</h2>
-      {!workout.exercises.length && (
-        <p className="muted workout-view-empty">В этой тренировке нет упражнений.</p>
-      )}
-      <ol className="workout-view-exercises">
-        {workout.exercises.map((exercise, index) => (
-          <li className="workout-view-exercise" key={exercise.id}>
-            <h3>
-              <span>{index + 1}.</span>
-              {exercise.exercise_name}
-            </h3>
-            {exercise.notes && <p className="workout-view-exercise-note">{exercise.notes}</p>}
-            <SetsTable sets={exercise.sets} />
-          </li>
-        ))}
-      </ol>
-    </>
+    <li className="exercise-card">
+      <div className="exercise-card-photo">
+        {photo && <img src={photo} alt="" />}
+        <span aria-hidden="true">{number}</span>
+      </div>
+      <div className="exercise-card-body">
+        <h3>
+          <span className="sr-only">{number}. </span>
+          {exercise.exercise_name}
+        </h3>
+        {exercise.notes && <p className="exercise-card-note">{exercise.notes}</p>}
+        <SetsList sets={exercise.sets} />
+      </div>
+    </li>
   );
 }
 
@@ -99,48 +122,70 @@ export function WorkoutView({ id }) {
   }
 
   const date = workout ? dateLabel(workout.workout_date) : '';
-  // Кнопки показываются справа от заголовка на широком экране и под списком на узком.
-  const actions = (
-    <div className="workout-view-actions">
-      <a className="button button--outline" href={`/workouts/${id}/edit`}>
-        <img src={`${ASSETS}icon-pencil.svg`} alt="" />
-        Редактировать
+
+  // Ссылка назад и кнопки над заголовком баннера.
+  const top = (
+    <>
+      <a className="page-hero-link" href="/workouts">
+        <img src={`${ASSETS}icon-arrow-left.svg`} alt="" />
+        Все тренировки
       </a>
-      <button className="workout-view-delete" type="button" onClick={() => setConfirming(true)}>
-        <img src={`${ASSETS}icon-trash.svg`} alt="" />
-        <span>
-          Удалить<span className="narrow-only"> тренировку</span>
-        </span>
-      </button>
-    </div>
+      <div className="page-hero-actions">
+        <a className="button button--primary" href={`/workouts/${id}/edit`}>
+          <img src={`${ASSETS}icon-pencil-dark.svg`} alt="" />
+          Редактировать
+        </a>
+        <button
+          className="page-hero-icon-button"
+          type="button"
+          aria-label="Удалить тренировку"
+          title="Удалить тренировку"
+          onClick={() => setConfirming(true)}
+        >
+          <img src={`${ASSETS}icon-trash.svg`} alt="" />
+        </button>
+      </div>
+    </>
   );
 
   return (
-    <Shell
-      title={<>Тренировка{date && <span className="wide-only"> · {date}</span>}</>}
-      subtitle={<span className="narrow-only">{date}</span>}
-      back={<BackLink to="/workouts" label="Тренировки" current={date} />}
-      action={workout && <div className="wide-only">{actions}</div>}
-      className="workout-view-page"
-    >
-      {error && <Notice message={error} retry={notFound ? null : load} />}
-      {!error && !workout && <p className="muted">Загружаем тренировку…</p>}
-      {!error && workout && (
-        <>
-          <WorkoutDetails workout={workout} />
-          <div className="narrow-only">{actions}</div>
-        </>
-      )}
-      {confirming && (
-        <ConfirmDialog
-          title="Удалить тренировку?"
-          busy={busy}
-          onConfirm={remove}
-          onClose={() => setConfirming(false)}
-        >
-          Тренировка за {date} и все её подходы будут удалены. Это действие нельзя отменить.
-        </ConfirmDialog>
-      )}
-    </Shell>
+    <>
+      <div className="section-banner" />
+      <main className="content section-content workout-view-page">
+        {error && <Notice message={error} retry={notFound ? null : load} />}
+        {!error && !workout && <p className="muted">Загружаем тренировку…</p>}
+        {!error && workout && (
+          <>
+            <PageHero
+              image={`${ASSETS}hero-workout.jpg`}
+              top={top}
+              eyebrow={heroEyebrow(workout.workout_date)}
+              title={dateLabel(workout.workout_date, { day: 'numeric', month: 'long' })}
+              subtitle={workout.notes && `«${workout.notes}»`}
+              stats={workoutStats(workout)}
+            />
+            <h2 className="section-heading">Упражнения</h2>
+            {!workout.exercises.length && (
+              <p className="muted workout-view-empty">В этой тренировке нет упражнений.</p>
+            )}
+            <ol className="exercise-cards">
+              {workout.exercises.map((exercise, index) => (
+                <ExerciseCard key={exercise.id} exercise={exercise} number={index + 1} />
+              ))}
+            </ol>
+          </>
+        )}
+        {confirming && (
+          <ConfirmDialog
+            title="Удалить тренировку?"
+            busy={busy}
+            onConfirm={remove}
+            onClose={() => setConfirming(false)}
+          >
+            Тренировка за {date} и все её подходы будут удалены. Это действие нельзя отменить.
+          </ConfirmDialog>
+        )}
+      </main>
+    </>
   );
 }

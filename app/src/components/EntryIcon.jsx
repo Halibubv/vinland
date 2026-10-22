@@ -34,13 +34,20 @@ export function EntryIcon({ meal, label }) {
 // Фото у записи: у упражнения — по группе мышц, у приёма пищи — по его типу.
 // Если для группы мышц фото нет (админ добавил новую группу), показываем иконку.
 export function EntryPhoto({ meal, muscleGroup }) {
-  let photo = musclePhotos[muscleGroup];
-  if (meal) photo = `meal-${meal}.jpg`;
+  const photo = entryPhotoUrl({ meal, muscleGroup });
   if (!photo) return <EntryIcon label={muscleGroup} />;
 
   return (
     <span className="entry-icon entry-icon--photo" title={muscleGroup}>
-      <img src={`${ASSETS}entries/${photo}`} alt="" />
+      <img src={photo} alt="" />
     </span>
   );
+}
+
+// Путь к фото записи или null, если подходящего фото нет.
+export function entryPhotoUrl({ meal, muscleGroup }) {
+  let photo = musclePhotos[muscleGroup];
+  if (meal) photo = `meal-${meal}.jpg`;
+  if (!photo) return null;
+  return `${ASSETS}entries/${photo}`;
 }

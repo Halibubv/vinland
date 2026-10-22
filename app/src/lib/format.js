@@ -21,19 +21,17 @@ export function formatInt(value) {
 
 // plural(5, 'подход', 'подхода', 'подходов') → "5 подходов"
 export function plural(count, one, few, many) {
+  return `${formatInt(count)} ${pluralWord(count, one, few, many)}`;
+}
+
+// Только слово в нужной форме: pluralWord(5, 'подход', 'подхода', 'подходов') → "подходов".
+export function pluralWord(count, one, few, many) {
   const lastTwoDigits = Math.abs(Number(count)) % 100;
   const lastDigit = lastTwoDigits % 10;
-  let word;
-  if (lastTwoDigits > 10 && lastTwoDigits < 20) {
-    word = many; // 11–19: "11 подходов"
-  } else if (lastDigit === 1) {
-    word = one;
-  } else if (lastDigit >= 2 && lastDigit <= 4) {
-    word = few;
-  } else {
-    word = many;
-  }
-  return `${formatInt(count)} ${word}`;
+  if (lastTwoDigits > 10 && lastTwoDigits < 20) return many; // 11–19: "11 подходов"
+  if (lastDigit === 1) return one;
+  if (lastDigit >= 2 && lastDigit <= 4) return few;
+  return many;
 }
 
 // Процент выполнения цели, не больше 100. Без цели — 0.
