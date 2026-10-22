@@ -65,12 +65,20 @@ function database_settings(): array
 function ssl_certificate_file(): string
 {
     $value = trim(config('DB_SSL_CA'));
-    if ($value === '' || !str_starts_with($value, '-----BEGIN')) {
+    if ($value === '' || is_file($value)) {
         return $value;
     }
-    $file = sys_get_temp_dir() . '/vinland-db-ca-' . md5($value) . '.pem';
+
+    // Иначе это текст сертификата. При копировании в настройки хостинга могут
+    // пропасть переносы строк или первая строка -----BEGIN CERTIFICATE-----,
+    // поэтому оставляем только сам код сертификата и собираем файл заново.
+    $code = preg_replace('/-----[A-Z ]+-----/', '', $value);
+    $code = preg_replace('/[^A-Za-z0-9+\/=]/', '', $code);
+    $text = "-----BEGIN CERTIFICATE-----\n" . chunk_split($code, 64, "\n") . "-----END CERTIFICATE-----\n";
+
+    $file = sys_get_temp_dir() . '/vinland-db-ca-' . md5($text) . '.pem';
     if (!is_file($file)) {
-        file_put_contents($file, $value . "\n");
+        file_put_contents($file, $text);
     }
     return $file;
 }
