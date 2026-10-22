@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { ASSETS } from '../lib/constants.js';
 import { Brand, LinkButton, Footer, GuestMobileNav } from '../components/Layout.jsx';
 import { Progress } from '../components/ui.jsx';
+import { HeroSnow } from '../components/HeroSnow.jsx';
 
 export function Landing() {
   // Блоки с классом .reveal плавно появляются, когда до них докрутили страницу:
@@ -27,27 +28,57 @@ export function Landing() {
   return (
     <div className="landing">
       <section className="landing-hero">
+        {/* Фон: фото на весь экран, поверх него плывущий туман, свет заката, снег,
+            снизу затемнение и редкие мерцающие «звёзды». */}
         <div className="hero-photo" aria-hidden="true" />
-        <div className="hero-shade" />
-        <div className="hero-fog" aria-hidden="true" />
+        <div className="hero-fog hero-fog--high" aria-hidden="true" />
+        <div className="hero-fog hero-fog--low" aria-hidden="true" />
+        <div className="hero-sun" aria-hidden="true" />
+        <HeroSnow />
+        <div className="hero-shade" aria-hidden="true" />
+        <div className="hero-stars" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
         <header className="guest-header">
           <Brand />
-          <div>
-            <LinkButton to="/login" variant="outline">
+          <nav aria-label="Разделы лендинга">
+            <a href="#features">Возможности</a>
+            <a href="#workouts">Тренировки</a>
+            <a href="#nutrition">Питание</a>
+            <a href="#progress">Статистика</a>
+            <a className="hero-login" href="/login">
               Войти
-            </LinkButton>
-            <LinkButton to="/register">Создать аккаунт</LinkButton>
-          </div>
+            </a>
+          </nav>
         </header>
         <div className="landing-hero-copy">
+          <div className="hero-ornament" aria-hidden="true">
+            <span />✦<span />
+          </div>
           <h1>
             <img src={`${ASSETS}wordmark.svg`} alt="ВИНЛАНД" />
           </h1>
           <p>
-            Учёт силовых тренировок и дневник
-            <br />
-            питания с КБЖУ.
+            Учёт силовых тренировок и дневник питания с КБЖУ. <br />
+            Записывай, сравнивай и двигайся к цели шаг за шагом.
           </p>
+          <a className="hero-cta" href="/register">
+            Создать аккаунт
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M4 12h15M13.5 5.5 20 12l-6.5 6.5"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </a>
         </div>
       </section>
       <section className="landing-showcase reveal">
@@ -69,7 +100,7 @@ export function Landing() {
           alt="ВИНЛАНД на устройстве на фоне фьорда"
         />
       </section>
-      <section className="landing-product reveal">
+      <section className="landing-product reveal" id="features">
         <img src={`${ASSETS}phone-product.png`} alt="Приложение ВИНЛАНД на двух телефонах" />
         <div>
           <span className="eyebrow">ВОЗМОЖНОСТИ</span>
@@ -130,7 +161,7 @@ export function Landing() {
           </ul>
         </div>
       </section>
-      <section className="editorial-row reveal">
+      <section className="editorial-row reveal" id="workouts">
         <img src={`${ASSETS}landing-photo-2.png`} alt="Атлетка выполняет упражнение со штангой" />
         <div>
           <span className="eyebrow">ТРЕНИРОВКИ</span>
@@ -163,7 +194,7 @@ export function Landing() {
           </div>
         </div>
       </section>
-      <section className="editorial-row editorial-row--reverse reveal">
+      <section className="editorial-row editorial-row--reverse reveal" id="nutrition">
         <img
           src={`${ASSETS}landing-photo-6.png`}
           alt="Сбалансированное блюдо с курицей, рисом и овощами"
@@ -199,7 +230,7 @@ export function Landing() {
           </div>
         </div>
       </section>
-      <section className="landing-stats reveal">
+      <section className="landing-stats reveal" id="progress">
         <div className="stats-heading">
           <div>
             <span className="eyebrow">ПРОГРЕСС И СТАТИСТИКА</span>

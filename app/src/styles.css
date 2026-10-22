@@ -198,66 +198,304 @@ h3 {
   /* В макете текст лендинга стоит на 36px правее логотипа в шапке. */
   --landing-inline: calc(var(--page-inline) + 36px);
 }
+
+/* Главный баннер лендинга: на весь экран, фото на фоне, текст и кнопка внизу по центру. */
 .landing-hero {
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100svh;
+  background: linear-gradient(180deg, #0d1017 0%, #141826 45%, #1c2233 100%);
 }
 .hero-photo,
+.hero-fog,
+.hero-sun,
+.hero-snow,
 .hero-shade,
-.hero-fog {
+.hero-stars {
   position: absolute;
   inset: 0;
   z-index: -1;
-}
-.hero-photo {
-  background: url('/assets/hero-athlete.png') center 43% / cover no-repeat;
-}
-.hero-shade {
-  background: linear-gradient(
-    90deg,
-    rgba(13, 26, 33, 0.96),
-    rgba(13, 26, 33, 0.6) 48%,
-    rgba(13, 26, 33, 0.05)
-  );
-}
-.hero-fog {
-  z-index: 0;
   pointer-events: none;
-  opacity: 0.22;
-  background: radial-gradient(
-    ellipse 50% 25% at 20% 75%,
-    rgba(180, 199, 203, 0.28),
-    transparent 75%
-  );
-  animation: fog-drift 12s ease-in-out infinite alternate;
 }
+/* Фото медленно приближается и отдаляется — баннер выглядит «живым», как видео. */
+.hero-photo {
+  background: url('/assets/hero-athlete.png') 65% 30% / cover no-repeat;
+  animation: hero-zoom 24s ease-in-out infinite alternate;
+}
+@keyframes hero-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08) translateX(-1%);
+  }
+}
+/* Туман: картинка бесшовная по ширине (1600px), поэтому её можно бесконечно
+   сдвигать вбок — стык не виден. Два слоя едут с разной скоростью. */
+.hero-fog {
+  background: url('/assets/hero-fog.webp') 0 0 / 1600px 100% repeat-x;
+  animation: hero-fog-move 90s linear infinite;
+}
+.hero-fog--high {
+  top: 12%;
+  bottom: auto;
+  height: 38%;
+  opacity: 0.35;
+}
+.hero-fog--low {
+  top: auto;
+  bottom: 18%;
+  height: 34%;
+  opacity: 0.3;
+  animation-duration: 60s;
+  animation-direction: reverse;
+}
+@keyframes hero-fog-move {
+  from {
+    background-position-x: 0;
+  }
+  to {
+    background-position-x: -1600px;
+  }
+}
+/* Свет заката справа: мягкое пятно, которое медленно разгорается и гаснет. */
+.hero-sun {
+  background: radial-gradient(
+    circle at 88% 40%,
+    rgba(255, 190, 120, 0.35) 0%,
+    rgba(255, 170, 100, 0.12) 18%,
+    transparent 40%
+  );
+  mix-blend-mode: screen;
+  animation: hero-sun-glow 7s ease-in-out infinite alternate;
+}
+@keyframes hero-sun-glow {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.hero-snow {
+  width: 100%;
+  height: 100%;
+}
+/* Верх фото чистый, затемняется только низ и края. Последний цвет — фон страницы,
+   поэтому баннер плавно переходит в следующий блок. */
+.hero-shade {
+  background:
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      transparent 40%,
+      rgba(13, 26, 33, 0.9) 85%,
+      var(--bg) 100%
+    ),
+    radial-gradient(ellipse 90% 70% at 50% 45%, transparent 45%, rgba(8, 12, 20, 0.55) 100%);
+}
+/* Шесть маленьких светящихся точек. */
+.hero-stars span {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #e8ddc4;
+  opacity: 0.4;
+  animation: hero-twinkle 3s ease-in-out infinite alternate;
+}
+/* Звёзды мерцают, каждая со своей задержкой. */
+@keyframes hero-twinkle {
+  to {
+    opacity: 0.05;
+  }
+}
+.hero-stars span:nth-child(2n) {
+  animation-delay: -1.2s;
+}
+.hero-stars span:nth-child(3n) {
+  animation-duration: 4.5s;
+}
+.hero-stars span:nth-child(1) {
+  top: 14%;
+  left: 14%;
+  width: 3px;
+  height: 3px;
+  opacity: 0.5;
+  box-shadow: 0 0 6px 1px rgba(232, 214, 160, 0.5);
+}
+.hero-stars span:nth-child(2) {
+  top: 28%;
+  right: 18%;
+  box-shadow: 0 0 5px 1px rgba(232, 214, 160, 0.4);
+}
+.hero-stars span:nth-child(3) {
+  top: 49%;
+  left: 10%;
+  opacity: 0.35;
+}
+.hero-stars span:nth-child(4) {
+  top: 60%;
+  right: 12%;
+  width: 3px;
+  height: 3px;
+  opacity: 0.3;
+  box-shadow: 0 0 6px 1px rgba(232, 214, 160, 0.35);
+}
+.hero-stars span:nth-child(5) {
+  top: 21%;
+  left: 33%;
+  opacity: 0.3;
+}
+.hero-stars span:nth-child(6) {
+  top: 40%;
+  right: 33%;
+  opacity: 0.45;
+}
+
+/* Шапка баннера: логотип слева, ссылки на разделы и «Войти» справа. */
 .guest-header {
-  position: relative;
-  z-index: 2;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  min-height: 76px;
-  padding: 12px var(--page-inline);
-}
-.guest-header > div {
-  display: flex;
   gap: 16px;
+  padding: clamp(16px, 3vw, 32px) var(--page-inline);
 }
-.guest-header .button {
-  border-radius: 16px;
+.guest-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(16px, 2.8vw, 40px);
+  font-size: 13px;
+  letter-spacing: 0.02em;
 }
+.guest-header nav a {
+  color: #fff;
+  text-decoration: none;
+}
+.guest-header nav a:hover {
+  color: var(--cream);
+}
+/* «Стеклянная» кнопка: полупрозрачный фон с размытием того, что под ней. */
+.guest-header .hero-login {
+  padding: 10px 26px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+}
+.guest-header .hero-login:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+
+/* Текст баннера прижат к низу (margin-top: auto). */
 .landing-hero-copy {
-  z-index: 1;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(140px, 22vh, 220px) clamp(20px, 8vw, 120px) clamp(56px, 9vh, 90px);
+  text-align: center;
+}
+/* При открытии страницы текст баннера по очереди всплывает снизу. */
+.landing-hero-copy > * {
+  animation: hero-rise 1s ease-out both;
+}
+.landing-hero-copy > :nth-child(2) {
+  animation-delay: 0.2s;
+}
+.landing-hero-copy > :nth-child(3) {
+  animation-delay: 0.4s;
+}
+.landing-hero-copy > :nth-child(4) {
+  animation-delay: 0.6s;
+}
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+.hero-ornament {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: clamp(20px, 3vh, 32px);
+  color: #e2b862;
+  font-size: 18px;
+}
+.hero-ornament span {
+  width: 48px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e2b862);
+}
+.hero-ornament span:last-child {
+  background: linear-gradient(90deg, #e2b862, transparent);
 }
 .landing-hero-copy h1 {
-  font-family: 'Cormorant SC', Georgia, serif;
-  font-size: clamp(58px, 7.5vw, 102px);
-  letter-spacing: 0.03em;
+  width: clamp(240px, 40vw, 520px);
+  margin: 0 0 20px;
+  line-height: 0;
 }
-.landing-hero-copy > p:not(.eyebrow) {
-  color: var(--muted);
+.landing-hero-copy h1 img {
+  width: 100%;
+  height: auto;
+}
+.landing-hero-copy p {
+  margin: 0 0 36px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 15px;
+  line-height: 1.7;
+}
+/* Единственная кнопка баннера: белая «таблетка» со стрелкой. */
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 34px;
+  border-radius: 999px;
+  background: #fff;
+  color: #000;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: transform 0.2s;
+}
+.hero-cta:hover {
+  transform: translateY(-1px);
+}
+
+/* На телефоне ссылки на разделы прячем, остаётся только «Войти». */
+@media (max-width: 700px) {
+  .guest-header nav a:not(.hero-login) {
+    display: none;
+  }
+  .landing-hero-copy p br {
+    display: none;
+  }
+  /* Снизу экрана на телефоне висит панель навигации — кнопка не должна под неё уходить. */
+  .landing-hero-copy {
+    padding-bottom: 96px;
+  }
+  .hero-photo {
+    background-position: 70% 30%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-photo,
+  .hero-fog,
+  .hero-sun,
+  .hero-stars span,
+  .landing-hero-copy > * {
+    animation: none;
+  }
 }
 .landing h2 {
   font-size: clamp(34px, 4vw, 52px);
@@ -340,14 +578,6 @@ h3 {
 .reveal.is-visible {
   opacity: 1;
   transform: none;
-}
-@keyframes fog-drift {
-  from {
-    transform: translateX(-5%);
-  }
-  to {
-    transform: translateX(12%);
-  }
 }
 
 /* Общий каркас для вошедшего пользователя. */
@@ -743,26 +973,6 @@ h3 {
   .landing .site-footer nav {
     gap: 18px;
   }
-  .guest-header {
-    padding-top: 12px;
-    padding-bottom: 12px;
-  }
-  .guest-header .brand {
-    font-size: 18px;
-  }
-  /* На телефоне в шапке две кнопки, поэтому оставляем только значок логотипа:
-     название и так крупно написано ниже. */
-  .guest-header .brand span {
-    display: none;
-  }
-  .guest-header .button {
-    min-height: 36px;
-    padding: 0 11px;
-    font-size: 11px;
-  }
-  .landing-hero-copy h1 {
-    font-size: 64px;
-  }
   .landing-showcase {
     align-items: flex-start;
     background-position: center;
@@ -815,9 +1025,6 @@ h3 {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
-  }
-  .hero-fog {
-    animation: none;
   }
   .reveal,
   .reveal.is-visible {
@@ -878,52 +1085,6 @@ h3 {
 .landing h2 {
   font-family: 'Playfair Display', Georgia, serif;
   font-weight: 400;
-}
-.landing-hero {
-  height: 360px;
-  min-height: 360px;
-}
-/* Плавный переход к следующему блоку: низ фото главного экрана уходит в цвет фона,
-   а следующий блок (.landing-showcase::before) начинается с этого же цвета. Так между
-   двумя разными фотографиями нет резкой границы. */
-.landing-hero::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 90px;
-  background: linear-gradient(transparent, var(--bg));
-  pointer-events: none;
-}
-.hero-photo {
-  background-size: 100% auto;
-  background-position: center -50px;
-}
-.landing-hero-copy {
-  position: absolute;
-  left: var(--landing-inline);
-  top: 92px;
-  margin: 0;
-  max-width: 620px;
-}
-.landing-hero-copy h1 {
-  width: 570px;
-  max-width: 100%;
-  height: auto;
-  margin: 0 0 14px;
-  line-height: 0;
-}
-.landing-hero-copy h1 img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-.landing-hero-copy > p:not(.eyebrow) {
-  max-width: 580px;
-  margin: 0 0 18px;
-  font-size: 24px;
-  line-height: 30px;
 }
 .landing-showcase {
   height: 440px;
@@ -1334,9 +1495,6 @@ h3 {
     padding-left: var(--page-inline);
     padding-right: var(--page-inline);
   }
-  .landing-hero-copy {
-    left: var(--page-inline);
-  }
   .demo-card {
     margin-top: 16px;
   }
@@ -1370,28 +1528,6 @@ h3 {
 }
 
 @media (max-width: 700px) {
-  .hero-photo {
-    background-size: auto 100%;
-    background-position: 66% 0;
-  }
-  .hero-shade {
-    background: linear-gradient(90deg, rgba(13, 26, 33, 0.9) 0%, rgba(13, 26, 33, 0.45) 90%);
-  }
-  .landing-hero-copy {
-    left: 20px;
-    right: 20px;
-    max-width: none;
-    margin: 0;
-  }
-  .landing-hero-copy h1 {
-    width: 100%;
-    max-width: 350px;
-    margin-bottom: 12px;
-  }
-  .landing-hero-copy > p:not(.eyebrow) {
-    font-size: 16px;
-    line-height: 22px;
-  }
   .landing-showcase {
     background: none;
     background-color: var(--bg);
@@ -1591,13 +1727,6 @@ h3 {
   }
   .landing-cta .button {
     width: 100%;
-  }
-  .landing-hero-copy {
-    top: 226px;
-  }
-  .landing-hero {
-    height: 565px;
-    min-height: 565px;
   }
   .landing-showcase {
     display: flex;
