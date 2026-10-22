@@ -350,6 +350,115 @@ h3 {
   }
 }
 
+/* Анимация главного баннера: фото медленно «дышит», как при наезде камеры,
+   над ним плывут два слоя тумана и падает редкий снег, а логотип и подпись
+   появляются по очереди при открытии страницы. */
+.hero-photo {
+  animation:
+    hero-photo-in 1.6s ease-out both,
+    hero-camera 18s ease-in-out 1.6s infinite alternate;
+  will-change: transform;
+}
+.hero-fog {
+  opacity: 0.55;
+}
+.hero-fog::before,
+.hero-fog::after {
+  content: '';
+  position: absolute;
+  inset: 0 -30%;
+  background: radial-gradient(
+    ellipse 35% 30% at 30% 80%,
+    rgba(180, 199, 203, 0.22),
+    transparent 70%
+  );
+  animation: fog-drift 9s ease-in-out infinite alternate-reverse;
+}
+.hero-fog::after {
+  background: radial-gradient(
+    ellipse 45% 22% at 70% 90%,
+    rgba(180, 199, 203, 0.18),
+    transparent 70%
+  );
+  animation-duration: 15s;
+  animation-direction: alternate;
+}
+/* Снег — три слоя точек разного размера, которые сдвигаются вниз с разной скоростью. */
+.hero-snow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.75;
+  background-image:
+    radial-gradient(circle at 20px 30px, rgba(230, 240, 242, 0.9) 1.2px, transparent 2px),
+    radial-gradient(circle at 90px 120px, rgba(230, 240, 242, 0.8) 1px, transparent 1.8px),
+    radial-gradient(circle at 150px 60px, rgba(230, 240, 242, 0.7) 1.6px, transparent 2.6px),
+    radial-gradient(circle at 60px 170px, rgba(230, 240, 242, 0.7) 1px, transparent 1.8px),
+    radial-gradient(circle at 130px 200px, rgba(230, 240, 242, 0.5) 2.2px, transparent 3.4px);
+  background-size:
+    180px 220px,
+    180px 220px,
+    240px 260px,
+    240px 260px,
+    320px 300px;
+  animation: hero-snow-fall 16s linear infinite;
+}
+.landing-hero-copy h1 {
+  animation: hero-copy-in 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s both;
+}
+.landing-hero-copy > p:not(.eyebrow) {
+  animation: hero-copy-in 1s cubic-bezier(0.2, 0.7, 0.2, 1) 0.8s both;
+}
+@keyframes hero-photo-in {
+  from {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+@keyframes hero-camera {
+  from {
+    transform: scale(1.04) translate(0, 0);
+  }
+  to {
+    transform: scale(1.1) translate(-1.5%, -1%);
+  }
+}
+@keyframes hero-snow-fall {
+  from {
+    background-position:
+      0 0,
+      0 0,
+      0 0,
+      0 0,
+      0 0;
+  }
+  to {
+    background-position:
+      40px 220px,
+      -30px 220px,
+      60px 520px,
+      -40px 520px,
+      80px 900px;
+  }
+}
+@keyframes hero-copy-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
 /* Общий каркас для вошедшего пользователя. */
 .app-header {
   height: 60px;
@@ -816,8 +925,16 @@ h3 {
   html {
     scroll-behavior: auto;
   }
-  .hero-fog {
+  .hero-photo,
+  .hero-fog,
+  .hero-fog::before,
+  .hero-fog::after,
+  .landing-hero-copy h1,
+  .landing-hero-copy > p:not(.eyebrow) {
     animation: none;
+  }
+  .hero-snow {
+    display: none;
   }
   .reveal,
   .reveal.is-visible {

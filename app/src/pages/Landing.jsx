@@ -30,6 +30,7 @@ export function Landing() {
         <div className="hero-photo" aria-hidden="true" />
         <div className="hero-shade" />
         <div className="hero-fog" aria-hidden="true" />
+        <div className="hero-snow" aria-hidden="true" />
         <header className="guest-header">
           <Brand />
           <div>
