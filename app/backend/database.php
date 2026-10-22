@@ -12,6 +12,8 @@ function database(): PDO
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             // Настоящие подготовленные запросы: числа из базы приходят числами, а не строками.
             PDO::ATTR_EMULATE_PREPARES => false,
+            // Если база не отвечает 10 секунд, сразу ошибка, а не долгое зависание.
+            PDO::ATTR_TIMEOUT => 10,
         ];
         // Облачные MySQL (например, Aiven) принимают подключение только по SSL.
         if ($settings['ssl_ca'] !== '') {
