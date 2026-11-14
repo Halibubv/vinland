@@ -1,6 +1,7 @@
 // Мелкие общие элементы интерфейса: поле формы, полоска прогресса,
 // каркас страницы раздела, сообщение об ошибке и пустое состояние.
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { formatInt, percentOf } from '../lib/format.js';
 import { ASSETS } from '../lib/constants.js';
 
@@ -84,10 +85,10 @@ export function Progress({ label, value, target, unit = 'г' }) {
 export function BackLink({ to, label, current }) {
   return (
     <nav className="back-link" aria-label="Навигация по разделу">
-      <a href={to}>
+      <Link to={to}>
         <span aria-hidden="true">‹</span>
         {label}
-      </a>
+      </Link>
       {current && <span className="back-link-current"> / {current}</span>}
     </nav>
   );
@@ -134,9 +135,9 @@ export function Empty({ title, detail, action, to }) {
       <h2>{title}</h2>
       <p>{detail}</p>
       {to && (
-        <a className="button button--primary" href={to}>
+        <Link className="button button--primary" to={to}>
           {action}
-        </a>
+        </Link>
       )}
     </div>
   );

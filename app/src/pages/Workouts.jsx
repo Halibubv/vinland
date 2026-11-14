@@ -1,5 +1,6 @@
 // Экран «Тренировки»: список сохранённых тренировок за месяц с фильтром по дню.
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { ASSETS } from '../lib/constants.js';
 import { dateLabel, dayMonth, monthShift, monthTitle } from '../lib/dates.js';
@@ -48,7 +49,7 @@ function WorkoutCard({ workout }) {
       </div>
       <div className="workout-card-body">
         <h3>
-          <a href={`/workouts/${workout.id}`}>{title}</a>
+          <Link to={`/workouts/${workout.id}`}>{title}</Link>
         </h3>
         <p>{counts.join(' · ')}</p>
         {exercises.length > 0 && (
@@ -112,10 +113,10 @@ export function WorkoutsPage() {
       title="Тренировки"
       subtitle="История и записи тренировок"
       action={
-        <a className="button button--primary workouts-add" href="/workouts/new">
+        <Link className="button button--primary workouts-add" to="/workouts/new">
           <img src={`${ASSETS}icon-plus.svg`} alt="" />
           Добавить тренировку
-        </a>
+        </Link>
       }
       className="workouts-page"
     >

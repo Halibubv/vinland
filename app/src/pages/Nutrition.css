@@ -24,8 +24,14 @@
 /* Четыре карточки: завтрак, обед, перекус, ужин. */
 .meal-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
+}
+/* Планшет: две колонки (2 × 2), чтобы «Ужин» не оставался один в ряду. */
+@media (max-width: 1000px) {
+  .meal-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 .meal-card {
   display: flex;

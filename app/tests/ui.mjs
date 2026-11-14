@@ -126,7 +126,9 @@ await user.getByRole('button', { name: 'Сохранить изменения' }
 await user.getByText('Профиль и цели сохранены.').waitFor();
 assert.equal((await api(user, '/profile'))[1].user.target_calories, 2400);
 await user.reload({ waitUntil: 'networkidle' });
-await user.getByText('2 400 ккал · Б 180 / Ж 80 / У 240 г').waitFor();
+// Цель по калориям видна в баннере профиля, а цели БЖУ — в полосках «Сегодня в рационе».
+await user.locator('.page-hero-stats').getByText('2 400', { exact: true }).waitFor();
+await user.locator('.macro-bars').getByText('0 / 180 г').waitFor();
 
 // --- Admin creates catalog entries -----------------------------------------
 const admin = await newPage();

@@ -1,6 +1,7 @@
 // Дневник питания за один день: итоги КБЖУ и четыре приёма пищи.
 // Этот же компонент показывает «Историю питания» (см. NutritionHistory.jsx).
 import React, { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { localDate, parseDate, relativeDay } from '../lib/dates.js';
 import { formatInt, formatNumber } from '../lib/format.js';
@@ -41,7 +42,7 @@ function MealCard({ type, label, meals, date }) {
       </div>
       <div className="meal-card-body">
         {meals.map((meal) => (
-          <a href={`/nutrition/${meal.id}`} className="meal-card-entry" key={meal.id}>
+          <Link to={`/nutrition/${meal.id}`} className="meal-card-entry" key={meal.id}>
             {meal.items.map((item) => (
               <span key={item.id}>
                 {item.product_name_snapshot}
@@ -49,33 +50,32 @@ function MealCard({ type, label, meals, date }) {
               </span>
             ))}
             {!meal.items.length && <span>Без продуктов</span>}
-          </a>
+          </Link>
         ))}
         {!meals.length && <p className="meal-card-empty">Пока ничего не добавлено</p>}
-        <a className="meal-card-add" href={addHref}>
+        <Link className="meal-card-add" to={addHref}>
           <img src={`${ASSETS}icon-plus.svg`} alt="" />
           Добавить продукт
-        </a>
+        </Link>
       </div>
     </section>
   );
 }
 
-function startDate(initialDate) {
-  const fromAddress = new URLSearchParams(window.location.search).get('date');
-  if (parseDate(fromAddress)) return fromAddress;
-  return initialDate || localDate();
-}
-
-export function NutritionPage({ history = false, initialDate }) {
-  const path = history ? '/nutrition/history' : '/nutrition';
-  const [date, setDate] = useState(() => startDate(initialDate));
+// history — экран «История питания» (его открывает NutritionHistory.jsx).
+export function NutritionPage({ history = false }) {
+  // Выбранный день хранится в адресе: /nutrition?date=2026-11-10.
+  // Так его можно обновить (F5) или отправить ссылкой, а без даты — это сегодня.
+  const [searchParams, setSearchParams] = useSearchParams();
+  let date = searchParams.get('date');
+  if (!parseDate(date)) date = localDate();
   const [meals, setMeals] = useState(null);
   const [statistics, setStatistics] = useState(null);
   const [error, setError] = useState('');
   function reload() {
     setError('');
-    setMeals(null);
+    // Старые данные не стираем: пока грузится новый день, на экране остаётся прежний,
+    // и страница не «прыгает».
     Promise.all([api(`/meals?date=${date}`), api(`/statistics?from=${date}&to=${date}`)])
       .then(([mealsData, statisticsData]) => {
         setMeals(mealsData.meals);
@@ -83,21 +83,28 @@ export function NutritionPage({ history = false, initialDate }) {
       })
       .catch((problem) => setError(problem.message));
   }
-  useEffect(() => {
-    const search = !history && date === localDate() ? '' : `?date=${date}`;
-    window.history.replaceState(window.history.state, '', `${path}${search}`);
-    reload();
-  }, [date]);
+  // Загружаем дневник при открытии и каждый раз, когда меняется день.
+  useEffect(reload, [date]);
+
+  // Стрелки и календарь меняют дату в адресе. replace: не копим каждый день
+  // в истории браузера, чтобы «Назад» сразу уводил со страницы.
+  function changeDate(newDate) {
+    if (newDate === localDate() && !history) setSearchParams({}, { replace: true });
+    else setSearchParams({ date: newDate }, { replace: true });
+  }
 
   const loaded = !error && meals && statistics;
 
   const top = (
     <>
-      <DateStepper value={date} onChange={setDate} label="Дата дневника" />
-      <a className="button button--primary diary-create" href={`/nutrition/new?date=${date}&add=1`}>
+      <DateStepper value={date} onChange={changeDate} label="Дата дневника" />
+      <Link
+        className="button button--primary diary-create"
+        to={`/nutrition/new?date=${date}&add=1`}
+      >
         <img src={`${ASSETS}icon-plus.svg`} alt="" />
         Добавить продукт
-      </a>
+      </Link>
     </>
   );
 
@@ -137,27 +144,27 @@ export function NutritionPage({ history = false, initialDate }) {
             </div>
             {history && (
               <>
-                <a className="history-link" href="/nutrition">
+                <Link className="history-link" to="/nutrition">
                   <img src={`${ASSETS}icon-calendar.svg`} alt="" />
                   <span>
                     <strong>К сегодняшнему дню</strong>
                   </span>
                   <b aria-hidden="true">→</b>
-                </a>
+                </Link>
                 <p className="diary-note">
                   Прошлые итоги сохраняются при изменении справочника продуктов.
                 </p>
               </>
             )}
             {!history && (
-              <a className="history-link" href="/nutrition/history">
+              <Link className="history-link" to="/nutrition/history">
                 <img src={`${ASSETS}icon-calendar.svg`} alt="" />
                 <span>
                   <strong>История питания</strong>
                   <small>Прошлые дни доступны по дате</small>
                 </span>
                 <b aria-hidden="true">→</b>
-              </a>
+              </Link>
             )}
           </>
         )}

@@ -1,6 +1,7 @@
 // Лендинг для гостя: описание возможностей и кнопки входа и регистрации.
 // Все цифры и записи здесь — статичный пример, а не данные пользователя.
 import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { ASSETS } from '../lib/constants.js';
 import { Brand, LinkButton, Footer, GuestMobileNav } from '../components/Layout.jsx';
 import { Progress } from '../components/ui.jsx';
@@ -51,9 +52,9 @@ export function Landing() {
             <a href="#workouts">Тренировки</a>
             <a href="#nutrition">Питание</a>
             <a href="#progress">Статистика</a>
-            <a className="hero-login" href="/login">
+            <Link className="hero-login" to="/login">
               Войти
-            </a>
+            </Link>
           </nav>
         </header>
         <div className="landing-hero-copy">
@@ -67,7 +68,7 @@ export function Landing() {
             Учёт силовых тренировок и дневник питания с КБЖУ. <br />
             Записывай, сравнивай и двигайся к цели шаг за шагом.
           </p>
-          <a className="hero-cta" href="/register">
+          <Link className="hero-cta" to="/register">
             Создать аккаунт
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
@@ -78,7 +79,7 @@ export function Landing() {
                 strokeLinejoin="round"
               />
             </svg>
-          </a>
+          </Link>
         </div>
       </section>
       <section className="landing-showcase reveal">

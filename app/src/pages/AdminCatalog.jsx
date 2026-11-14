@@ -1,10 +1,11 @@
 // Администрирование справочников упражнений и продуктов (только для роли admin).
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { formatNumber } from '../lib/format.js';
 import { ASSETS } from '../lib/constants.js';
 import { Notice, Empty } from '../components/ui.jsx';
-import { useModal } from '../components/Dialogs.jsx';
+import { Modal } from '../components/Dialogs.jsx';
 import './AdminCatalog.css';
 
 // Тексты и пустая форма для каждого из двух справочников.
@@ -61,7 +62,6 @@ function rowSummary(kind, row) {
 
 // Окно добавления или редактирования записи. entry = null — новая запись.
 function EntryDialog({ kind, entry, onSaved, onClose }) {
-  const modal = useModal(onClose);
   const [form, setForm] = useState(() => {
     if (entry) return { ...entry, is_active: isActive(entry) };
     return kinds[kind].empty;
@@ -97,7 +97,7 @@ function EntryDialog({ kind, entry, onSaved, onClose }) {
   let saveLabel = entry ? 'Сохранить изменения' : 'Добавить';
   if (busy) saveLabel = 'Сохраняем…';
   return (
-    <dialog {...modal} className="modal admin-dialog" aria-label={title}>
+    <Modal title={title} className="admin-dialog" onClose={onClose}>
       <div className="modal-head">
         <h2>{title}</h2>
         <button type="button" className="modal-close" onClick={onClose} aria-label="Закрыть">
@@ -173,7 +173,7 @@ function EntryDialog({ kind, entry, onSaved, onClose }) {
           </button>
         </div>
       </form>
-    </dialog>
+    </Modal>
   );
 }
 
@@ -247,18 +247,18 @@ export function AdminCatalog({ kind, user }) {
             <p className="admin-caption narrow-only">Администратор · Справочники</p>
             <nav className="admin-tabs" aria-label="Справочники">
               {Object.entries(kinds).map(([key, item]) => (
-                <a
+                <Link
                   key={key}
-                  href={`/admin/${key}`}
+                  to={`/admin/${key}`}
                   className={kind === key ? 'selected' : ''}
                   aria-current={kind === key ? 'page' : undefined}
                 >
                   {item.tab}
-                </a>
+                </Link>
               ))}
-              <a href="/" className="admin-back wide-only">
+              <Link to="/" className="admin-back wide-only">
                 ← В пользовательское приложение
-              </a>
+              </Link>
             </nav>
 
             <section className="admin-panel">

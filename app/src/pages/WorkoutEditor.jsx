@@ -1,8 +1,8 @@
 // Создание и редактирование тренировки: дата, заметка, упражнения и их подходы.
 import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, errorText } from '../lib/api.js';
 import { dateLabel, localDate } from '../lib/dates.js';
-import { go as navigate } from '../lib/router.js';
 import { ASSETS } from '../lib/constants.js';
 import { Shell, Notice, BackLink } from '../components/ui.jsx';
 import { DateStepper } from '../components/DateStepper.jsx';
@@ -209,7 +209,10 @@ function ExerciseEditor({ exercise, index, count, catalog, onChange, onMove, onR
 }
 
 // id есть — редактируем сохранённую тренировку, нет — создаём новую.
-export function WorkoutEditor({ id }) {
+export function WorkoutEditor() {
+  // На /workouts/:id/edit id есть, на /workouts/new его нет (undefined).
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ workout_date: localDate(), notes: '', exercises: [] });
   const [catalog, setCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -385,9 +388,9 @@ export function WorkoutEditor({ id }) {
             <button className="button button--primary" type="submit" disabled={busy}>
               {busy ? 'Сохраняем…' : 'Сохранить тренировку'}
             </button>
-            <a className="button button--outline" href={backHref}>
+            <Link className="button button--outline" to={backHref}>
               Отмена
-            </a>
+            </Link>
             <button
               className="button button--outline workout-add-exercise"
               type="button"

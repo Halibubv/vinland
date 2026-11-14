@@ -1,6 +1,6 @@
 // Общие части разметки: логотип, шапка с меню, нижнее меню на телефоне и подвал.
 import React from 'react';
-import { currentPath } from '../lib/router.js';
+import { Link, useLocation } from 'react-router-dom';
 import { ASSETS } from '../lib/constants.js';
 
 // Пункты главного меню.
@@ -31,26 +31,26 @@ export function initials(name = '') {
 
 export function Brand() {
   return (
-    <a className="brand" href="/" aria-label="ВИНЛАНД — главная">
+    <Link className="brand" to="/" aria-label="ВИНЛАНД — главная">
       <img src={`${ASSETS}logo-v.svg`} alt="" />
       <span>ВИНЛАНД</span>
-    </a>
+    </Link>
   );
 }
 
 // Ссылка, оформленная как кнопка.
 export function LinkButton({ to, children, variant = 'primary', className = '' }) {
   return (
-    <a className={`button button--${variant} ${className}`} href={to}>
+    <Link className={`button button--${variant} ${className}`} to={to}>
       {children}
-    </a>
+    </Link>
   );
 }
 
 // Шапка для вошедшего пользователя. На узком экране меню из шапки
 // скрывается (через CSS) и вместо него показывается нижняя панель .mobile-nav.
 export function AppHeader({ user, onLogout, busy }) {
-  const path = currentPath();
+  const path = useLocation().pathname;
   const firstName = user.name.split(' ')[0];
   return (
     <>
@@ -60,9 +60,9 @@ export function AppHeader({ user, onLogout, busy }) {
           {navigation.map((item) => {
             const active = isActive(item.to, path);
             return (
-              <a
+              <Link
                 key={item.to}
-                href={item.to}
+                to={item.to}
                 className={active ? 'active' : ''}
                 aria-current={active ? 'page' : undefined}
               >
@@ -71,20 +71,20 @@ export function AppHeader({ user, onLogout, busy }) {
                 <span className="roll-link">
                   <span data-text={item.label}>{item.label}</span>
                 </span>
-              </a>
+              </Link>
             );
           })}
         </nav>
         <div className="header-account">
           {user.role === 'admin' && (
-            <a className="admin-entry" href="/admin/exercises" title="Администрирование">
+            <Link className="admin-entry" to="/admin/exercises" title="Администрирование">
               <span className="admin-entry-long">Администрирование</span>
               <span className="admin-entry-short">Админ</span>
-            </a>
+            </Link>
           )}
-          <a href="/profile" className="avatar" aria-label="Открыть профиль">
+          <Link to="/profile" className="avatar" aria-label="Открыть профиль">
             {initials(user.name)}
-          </a>
+          </Link>
           <span>{firstName}</span>
           <button className="text-button logout" onClick={onLogout} disabled={busy}>
             Выйти
@@ -95,15 +95,15 @@ export function AppHeader({ user, onLogout, busy }) {
         {navigation.map((item) => {
           const active = isActive(item.to, path);
           return (
-            <a
+            <Link
               key={item.to}
-              href={item.to}
+              to={item.to}
               className={active ? 'active' : ''}
               aria-current={active ? 'page' : undefined}
             >
               <img src={`${ASSETS}${item.icon}`} alt="" />
               <span>{item.label}</span>
-            </a>
+            </Link>
           );
         })}
       </nav>
@@ -122,14 +122,14 @@ export function Footer({ guest = false }) {
         <span>ВИНЛАНД · Тренировки и питание</span>
       </div>
       <nav aria-label="Нижняя навигация">
-        <a href="/">Главная</a>
-        {guest && <a href="/login">Войти</a>}
-        {guest && <a href="/register">Создать аккаунт</a>}
+        <Link to="/">Главная</Link>
+        {guest && <Link to="/login">Войти</Link>}
+        {guest && <Link to="/register">Создать аккаунт</Link>}
         {!guest &&
           sectionLinks.map((item) => (
-            <a key={item.to} href={item.to}>
+            <Link key={item.to} to={item.to}>
               {item.label}
-            </a>
+            </Link>
           ))}
       </nav>
     </footer>
@@ -143,14 +143,14 @@ export function GuestMobileNav() {
       {navigation.map((item) => {
         const isHome = item.to === '/';
         return (
-          <a
+          <Link
             key={item.to}
-            href={isHome ? '/' : '/login'}
+            to={isHome ? '/' : '/login'}
             aria-label={isHome ? item.label : `${item.label} — войти`}
           >
             <img src={`${ASSETS}${item.icon}`} alt="" />
             <span>{item.label}</span>
-          </a>
+          </Link>
         );
       })}
     </nav>

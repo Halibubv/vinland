@@ -1,7 +1,7 @@
 // Экран входа и регистрации (mode = 'login' или 'register').
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
-import { currentLocation, currentPath, go, safeReturnPath } from '../lib/router.js';
 import { ASSETS } from '../lib/constants.js';
 import { Brand, LinkButton, Footer, GuestMobileNav } from '../components/Layout.jsx';
 import { Field } from '../components/ui.jsx';
@@ -22,15 +22,6 @@ function validate(values, isRegister) {
     errors.passwordAgain = 'Пароли не совпадают.';
   }
   return errors;
-}
-
-// Куда вернуться после входа. Гость, открывший, например, /statistics, видит форму
-// входа прямо по этому адресу — туда и возвращаем. На /login?next=... берём next.
-function returnPath() {
-  if (currentPath() === '/login' || currentPath() === '/register') {
-    return safeReturnPath(new URLSearchParams(window.location.search).get('next'));
-  }
-  return safeReturnPath(currentLocation());
 }
 
 export function AuthPage({ mode, onAuth }) {
@@ -65,8 +56,8 @@ export function AuthPage({ mode, onAuth }) {
         method: 'POST',
         body: { name: values.name.trim(), email: values.email.trim(), password: values.password },
       });
+      // App.jsx сам откроет нужную страницу, когда узнает пользователя.
       onAuth(data.user);
-      go(returnPath(), { replace: true });
     } catch (error) {
       // Сервер может вернуть ошибки по полям, например «email уже занят».
       setErrors(error.fields || {});
@@ -155,7 +146,7 @@ export function AuthPage({ mode, onAuth }) {
             {register && 'После регистрации будет создан пользовательский аккаунт.'}
             {!register && (
               <>
-                Нет аккаунта? <a href="/register">Регистрация →</a>
+                Нет аккаунта? <Link to="/register">Регистрация →</Link>
               </>
             )}
           </div>

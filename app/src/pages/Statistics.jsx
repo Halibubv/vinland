@@ -1,5 +1,6 @@
 // Экран «Статистика»: график калорий за период, итоги дня и тренировки по дням.
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { ASSETS } from '../lib/constants.js';
 import { dateLabel, dayMonth, localDate, offsetDate, relativeDay, weekday } from '../lib/dates.js';
@@ -122,9 +123,9 @@ function WorkoutsPanel({ days, periodDays }) {
           <img src={`${ASSETS}nav-workouts.svg`} alt="" />
           Тренировки
         </h2>
-        <a href="/workouts" className="wide-only">
+        <Link to="/workouts" className="wide-only">
           → &nbsp;Открыть историю тренировок
-        </a>
+        </Link>
       </div>
       {isWeek && (
         <ol className="stats-week wide-only">
@@ -141,9 +142,9 @@ function WorkoutsPanel({ days, periodDays }) {
           </li>
         ))}
       </ul>
-      <a href="/workouts" className="stats-workouts-link narrow-only">
+      <Link to="/workouts" className="stats-workouts-link narrow-only">
         → &nbsp;Сохранённые тренировки
-      </a>
+      </Link>
     </section>
   );
 }
@@ -218,7 +219,7 @@ export function StatisticsPage() {
       title="Статистика"
       subtitle={
         <span className="breadcrumbs">
-          <a href="/profile">Профиль</a> / Статистика
+          <Link to="/profile">Профиль</Link> / Статистика
         </span>
       }
       action={

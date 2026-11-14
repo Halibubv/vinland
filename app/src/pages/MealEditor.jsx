@@ -1,9 +1,9 @@
 // Создание и редактирование приёма пищи: дата, тип, список продуктов с граммами.
 import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api, errorText } from '../lib/api.js';
 import { dateLabel, localDate, parseDate } from '../lib/dates.js';
 import { formatInt, formatNumber } from '../lib/format.js';
-import { go as navigate } from '../lib/router.js';
 import { ASSETS, mealTypes } from '../lib/constants.js';
 import { Shell, Notice } from '../components/ui.jsx';
 import { CatalogDialog, ConfirmDialog } from '../components/Dialogs.jsx';
@@ -71,10 +71,9 @@ function describeProduct(product) {
 }
 
 // Пустая форма. Дату и тип можно передать в адресе: /nutrition/new?date=...&type=lunch.
-function initialForm() {
-  const query = new URLSearchParams(window.location.search);
-  const date = query.get('date');
-  const type = query.get('type');
+function initialForm(searchParams) {
+  const date = searchParams.get('date');
+  const type = searchParams.get('type');
   return {
     meal_date: parseDate(date) ? date : localDate(),
     meal_type: mealTypes[type] ? type : 'breakfast',
@@ -148,8 +147,12 @@ function MealItem({ item, onGramsChange, onRemove }) {
 }
 
 // id есть — редактируем сохранённый приём пищи, нет — создаём новый.
-export function MealEditor({ id }) {
-  const [form, setForm] = useState(initialForm);
+export function MealEditor() {
+  // На /nutrition/:id id есть, на /nutrition/new его нет (undefined).
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [form, setForm] = useState(() => initialForm(searchParams));
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -185,7 +188,7 @@ export function MealEditor({ id }) {
           });
         }
         // ?add=1 в адресе — сразу открыть окно выбора продукта.
-        if (new URLSearchParams(window.location.search).get('add')) setPicking(true);
+        if (searchParams.get('add')) setPicking(true);
       })
       .catch((problem) => {
         setLoadError(problem.message);
@@ -331,9 +334,9 @@ export function MealEditor({ id }) {
             <button className="button button--primary" type="submit" disabled={busy}>
               {saveLabel}
             </button>
-            <a className="button button--outline" href={backHref}>
+            <Link className="button button--outline" to={backHref}>
               Отмена
-            </a>
+            </Link>
             {id && (
               <button
                 className="button button--danger"

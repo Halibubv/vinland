@@ -1,10 +1,11 @@
 // Личный кабинет: имя и цели КБЖУ, итоги сегодняшнего дня и ссылки на разделы.
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { localDate } from '../lib/dates.js';
 import { formatInt, pluralWord, setsSummary } from '../lib/format.js';
 import { ASSETS, mealTypes } from '../lib/constants.js';
-import { initials, Footer } from '../components/Layout.jsx';
+import { initials } from '../components/Layout.jsx';
 import { Field, Notice } from '../components/ui.jsx';
 import { DayTotals } from '../components/DayTotals.jsx';
 import { EntryPhoto } from '../components/EntryIcon.jsx';
@@ -140,17 +141,17 @@ function TodayWorkout({ workouts }) {
     <section className="profile-card">
       <h2 className="section-heading">Сегодня в зале</h2>
       {exercises.slice(0, 5).map((exercise, index) => (
-        <a className="profile-entry" href={`/workouts/${exercise.workoutId}`} key={index}>
+        <Link className="profile-entry" to={`/workouts/${exercise.workoutId}`} key={index}>
           <EntryPhoto muscleGroup={exercise.muscle_group} />
           <span className="profile-entry-text">
             {exercise.exercise_name}
             <small>{setsSummary(exercise.sets)}</small>
           </span>
-        </a>
+        </Link>
       ))}
       {exercises.length === 0 && (
         <p className="profile-empty">
-          Сегодня тренировки ещё не было. <a href="/workouts/new">Добавить тренировку →</a>
+          Сегодня тренировки ещё не было. <Link to="/workouts/new">Добавить тренировку →</Link>
         </p>
       )}
     </section>
@@ -172,15 +173,15 @@ function TodayMeals({ day, goals, meals }) {
       <DayTotals day={day} goals={goals} />
       <div className="profile-card-list">
         {sorted.slice(0, 4).map((meal) => (
-          <a className="profile-entry" href={`/nutrition/${meal.id}`} key={meal.id}>
+          <Link className="profile-entry" to={`/nutrition/${meal.id}`} key={meal.id}>
             <EntryPhoto meal={meal.meal_type} />
             <span className="profile-entry-text">{mealTypes[meal.meal_type]}</span>
             <b>{formatInt(meal.totals.calories)} ккал</b>
-          </a>
+          </Link>
         ))}
         {sorted.length === 0 && (
           <p className="profile-empty">
-            Сегодня приёмов пищи пока нет. <a href="/nutrition/new">Добавить питание →</a>
+            Сегодня приёмов пищи пока нет. <Link to="/nutrition/new">Добавить питание →</Link>
           </p>
         )}
       </div>
@@ -294,25 +295,24 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
         )}
 
         <nav className="profile-links" aria-label="Разделы профиля">
-          <a href="/statistics">
+          <Link to="/statistics">
             <img src={`${ASSETS}icon-chart.svg`} alt="" />
             <span>
               <strong>Статистика</strong>
               <small>Динамика тренировок и питания</small>
             </span>
             <b aria-hidden="true">→</b>
-          </a>
-          <a href="/workouts">
+          </Link>
+          <Link to="/workouts">
             <img src={`${ASSETS}icon-calendar.svg`} alt="" />
             <span>
               <strong>Тренировки</strong>
               <small>Все выполненные тренировки</small>
             </span>
             <b aria-hidden="true">→</b>
-          </a>
+          </Link>
         </nav>
       </main>
-      <Footer />
     </>
   );
 }

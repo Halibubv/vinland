@@ -1,9 +1,9 @@
 // Просмотр одной сохранённой тренировки (только чтение). Редактирование — на /workouts/:id/edit.
 import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { dateLabel } from '../lib/dates.js';
 import { formatInt, formatWeight, pluralWord } from '../lib/format.js';
-import { go as navigate } from '../lib/router.js';
 import { ASSETS } from '../lib/constants.js';
 import { Notice } from '../components/ui.jsx';
 import { ConfirmDialog } from '../components/Dialogs.jsx';
@@ -89,7 +89,10 @@ function ExerciseCard({ exercise, number }) {
   );
 }
 
-export function WorkoutView({ id }) {
+export function WorkoutView() {
+  // id тренировки берём из адреса /workouts/:id.
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [workout, setWorkout] = useState(null);
   const [error, setError] = useState('');
   // Тренировки нет (или она чужая): кнопка «Повторить» тут не поможет.
@@ -126,15 +129,15 @@ export function WorkoutView({ id }) {
   // Ссылка назад и кнопки над заголовком баннера.
   const top = (
     <>
-      <a className="page-hero-link" href="/workouts">
+      <Link className="page-hero-link" to="/workouts">
         <img src={`${ASSETS}icon-arrow-left.svg`} alt="" />
         Все тренировки
-      </a>
+      </Link>
       <div className="page-hero-actions">
-        <a className="button button--primary" href={`/workouts/${id}/edit`}>
+        <Link className="button button--primary" to={`/workouts/${id}/edit`}>
           <img src={`${ASSETS}icon-pencil-dark.svg`} alt="" />
           Редактировать
-        </a>
+        </Link>
         <button
           className="page-hero-icon-button"
           type="button"

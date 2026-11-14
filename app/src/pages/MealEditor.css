@@ -19,14 +19,16 @@
   color: var(--muted);
   font-size: 13px;
 }
+/* Четыре кнопки одинаковой ширины в один ряд — и на телефоне тоже. */
 .meal-type-choice {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 .meal-type-choice button {
   min-height: 40px;
-  padding: 0 16px;
+  padding: 0 8px;
+  white-space: nowrap;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: none;
@@ -146,6 +148,10 @@
 }
 
 @media (max-width: 700px) {
+  /* На телефоне четыре кнопки не помещаются в ряд — ставим их 2 × 2. */
+  .meal-type-choice {
+    grid-template-columns: repeat(2, 1fr);
+  }
   .meal-item {
     grid-template-columns: 1fr;
   }

@@ -1,7 +1,7 @@
 // Главная страница для вошедшего пользователя: приветствие, две главные кнопки и блок «Полезное».
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { ASSETS } from '../lib/constants.js';
-import { Footer } from '../components/Layout.jsx';
 import './Home.css';
 
 // Короткие подсказки в блоке «Полезное», каждая ведёт в свой раздел.
@@ -35,14 +35,14 @@ export function Home({ user }) {
           </h1>
           <p>Сегодня — новый шаг в пути.</p>
           <div className="home-hero-actions">
-            <a className="button button--primary" href="/workouts/new">
+            <Link className="button button--primary" to="/workouts/new">
               <img src={`${ASSETS}nav-workouts.svg`} alt="" />
               Записать тренировку
-            </a>
-            <a className="button button--outline" href="/nutrition/new">
+            </Link>
+            <Link className="button button--outline" to="/nutrition/new">
               <img src={`${ASSETS}nav-food.svg`} alt="" />
               Добавить питание
-            </a>
+            </Link>
           </div>
         </div>
       </section>
@@ -64,15 +64,15 @@ export function Home({ user }) {
               Разбираем ключевые принципы, технику и частые ошибки, чтобы приседания были
               эффективными и безопасными.
             </p>
-            <a href="/workouts">
+            <Link to="/workouts">
               <span aria-hidden="true">→</span>
               Открыть тренировки
-            </a>
+            </Link>
           </article>
           <ul className="home-guides">
             {guides.map((guide) => (
               <li key={guide.to}>
-                <a href={guide.to}>
+                <Link to={guide.to}>
                   {/* На широком экране — иконка темы, на узком — значок книги. */}
                   <span className="home-guide-icon">
                     <img className="wide-only" src={`${ASSETS}${guide.icon}`} alt="" />
@@ -86,13 +86,12 @@ export function Home({ user }) {
                   <b className="wide-only" aria-hidden="true">
                     →
                   </b>
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
         </div>
       </main>
-      <Footer />
     </>
   );
 }

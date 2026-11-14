@@ -1,22 +1,20 @@
 // Модальные окна: выбор из справочника и подтверждение удаления.
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-// Открывает стандартный <dialog> как модальное окно: остальная страница
-// недоступна, Escape закрывает окно, а фокус потом возвращается на кнопку,
-// которая его открыла. Возвращает свойства, которые нужно передать в <dialog>.
-export function useModal(onClose) {
-  const ref = useRef(null);
-
+// Модальное окно на стандартном теге <dialog>: остальная страница недоступна,
+// Escape и клик по затемнённому фону закрывают окно, а фокус потом
+// возвращается на кнопку, которая его открыла. Одновременно открыто только одно окно.
+export function Modal({ title, className, onClose, children }) {
   useEffect(() => {
-    const dialog = ref.current;
+    const dialog = document.getElementById('modal');
     const opener = document.activeElement;
     dialog.showModal();
-    // autoFocus из React срабатывает раньше showModal(), поэтому фокус
-    // ставим сами на элемент с атрибутом data-autofocus.
+    // Ставим курсор в элемент с атрибутом data-autofocus (поле поиска, кнопка «Отмена»).
     const autofocusElement = dialog.querySelector('[data-autofocus]');
     if (autofocusElement) autofocusElement.focus();
     document.body.classList.add('modal-open');
 
+    // Окно убрали со страницы: возвращаем прокрутку и фокус.
     return () => {
       document.body.classList.remove('modal-open');
       if (opener && opener.focus) opener.focus();
@@ -31,22 +29,31 @@ export function useModal(onClose) {
 
   function handleMouseDown(event) {
     // Клик по затемнённому фону попадает в сам <dialog>, а не в его содержимое.
-    if (event.target === ref.current) onClose();
+    if (event.target.id === 'modal') onClose();
   }
 
-  return { ref, onCancel: handleCancel, onMouseDown: handleMouseDown };
+  return (
+    <dialog
+      id="modal"
+      className={`modal ${className}`}
+      aria-label={title}
+      onCancel={handleCancel}
+      onMouseDown={handleMouseDown}
+    >
+      {children}
+    </dialog>
+  );
 }
 
 // Поиск и выбор записи из справочника (упражнения или продукты).
 // describe(item) — необязательная строка-подсказка под названием.
 export function CatalogDialog({ title, items, describe, onChoose, onClose }) {
-  const modal = useModal(onClose);
   const [query, setQuery] = useState('');
   const search = query.trim().toLocaleLowerCase('ru-RU');
   const found = items.filter((item) => item.name.toLocaleLowerCase('ru-RU').includes(search));
 
   return (
-    <dialog {...modal} className="modal catalog-dialog" aria-label={title}>
+    <Modal title={title} className="catalog-dialog" onClose={onClose}>
       <div className="modal-head">
         <h2>{title}</h2>
         <button type="button" className="modal-close" onClick={onClose} aria-label="Закрыть">
@@ -72,7 +79,7 @@ export function CatalogDialog({ title, items, describe, onChoose, onClose }) {
           </button>
         ))}
       </div>
-    </dialog>
+    </Modal>
   );
 }
 
@@ -85,9 +92,8 @@ export function ConfirmDialog({
   onConfirm,
   onClose,
 }) {
-  const modal = useModal(onClose);
   return (
-    <dialog {...modal} className="modal confirm-dialog" aria-label={title}>
+    <Modal title={title} className="confirm-dialog" onClose={onClose}>
       <h2>{title}</h2>
       <div className="confirm-text">{children}</div>
       <div className="modal-actions">
@@ -98,6 +104,6 @@ export function ConfirmDialog({
           Отмена
         </button>
       </div>
-    </dialog>
+    </Modal>
   );
 }

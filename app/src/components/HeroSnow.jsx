@@ -1,6 +1,6 @@
 // Падающий снег поверх фото на главном баннере. Рисуем на <canvas>:
 // каждый кадр стираем холст и рисуем снежинки чуть ниже, чем в прошлый раз.
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 
 const FLAKE_COUNT = 90;
 
@@ -18,13 +18,11 @@ function makeFlake(width, height) {
 }
 
 export function HeroSnow() {
-  const canvasRef = useRef(null);
-
   useEffect(() => {
     // Если в системе включено «уменьшить движение», снег не запускаем.
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const canvas = canvasRef.current;
+    const canvas = document.getElementById('hero-snow');
     const context = canvas.getContext('2d');
     let flakes = [];
     let frameId;
@@ -69,5 +67,5 @@ export function HeroSnow() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="hero-snow" aria-hidden="true" />;
+  return <canvas id="hero-snow" className="hero-snow" aria-hidden="true" />;
 }

@@ -1,6 +1,7 @@
 // Экран «История питания»: открывает дневник на последнем дне до сегодняшнего,
 // в котором есть записи. Сам дневник рисует NutritionPage.
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { localDate, offsetDate, parseDate } from '../lib/dates.js';
 import { Shell, Notice } from '../components/ui.jsx';
@@ -18,28 +19,28 @@ function lastDayBefore(meals, today) {
 }
 
 export function NutritionHistory() {
-  // Если дата уже есть в адресе (?date=...), сразу открываем её.
-  const requested = new URLSearchParams(window.location.search).get('date');
-  const [date, setDate] = useState(parseDate(requested) ? requested : null);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [error, setError] = useState('');
+  // Если дата уже есть в адресе (?date=...), сразу показываем этот день.
+  const hasDate = Boolean(parseDate(searchParams.get('date')));
 
   function findLastDay() {
     setError('');
     const today = localDate();
     api('/meals')
       .then((data) => {
-        const lastDay = lastDayBefore(data.meals, today);
         // Записей в прошлом нет — показываем вчерашний день.
-        setDate(lastDay || offsetDate(today, -1));
+        const day = lastDayBefore(data.meals, today) || offsetDate(today, -1);
+        setSearchParams({ date: day }, { replace: true });
       })
       .catch((problem) => setError(problem.message));
   }
 
   useEffect(() => {
-    if (!date) findLastDay();
+    if (!hasDate) findLastDay();
   }, []);
 
-  if (date) return <NutritionPage history initialDate={date} />;
+  if (hasDate) return <NutritionPage history />;
 
   return (
     <Shell title="История питания">
