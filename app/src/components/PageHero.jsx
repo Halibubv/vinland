@@ -1,6 +1,7 @@
 // Большой баннер вверху страниц тренировки, питания и профиля:
 // фото на фоне, слева крупный заголовок, снизу или справа — дополнения.
 import React from 'react';
+import { RiseText } from './RiseText.jsx';
 import '../styles/page-hero.css';
 
 // image — путь к фото; top — строка над заголовком (ссылка назад, кнопки);
@@ -15,7 +16,10 @@ export function PageHero({ image, top, eyebrow, title, subtitle, media, aside, s
           {media}
           <div className="page-hero-text">
             {eyebrow && <span className="page-hero-eyebrow">{eyebrow}</span>}
-            <h1>{title}</h1>
+            {/* key={title}: при смене заголовка (другой день) буквы всплывают заново. */}
+            <h1 key={title}>
+              <RiseText text={title} />
+            </h1>
             {subtitle && <p>{subtitle}</p>}
           </div>
         </div>

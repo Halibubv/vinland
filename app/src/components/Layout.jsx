@@ -67,7 +67,10 @@ export function AppHeader({ user, onLogout, busy }) {
                 aria-current={active ? 'page' : undefined}
               >
                 <img src={`${ASSETS}${item.icon}`} alt="" />
-                {item.label}
+                {/* При наведении надпись прокручивается вверх, снизу выезжает такая же. */}
+                <span className="roll-link">
+                  <span data-text={item.label}>{item.label}</span>
+                </span>
               </a>
             );
           })}

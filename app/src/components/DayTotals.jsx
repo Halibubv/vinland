@@ -2,6 +2,7 @@
 // Используется в дневнике питания и в профиле.
 import React from 'react';
 import { formatInt, percentOf } from '../lib/format.js';
+import { CountUp } from './CountUp.jsx';
 import '../styles/day-totals.css';
 
 const macros = [
@@ -29,12 +30,16 @@ export function CalorieRing({ eaten, goal }) {
             cy="60"
             r={RADIUS}
             strokeDasharray={`${filled} ${CIRCLE}`}
+            // Длина закрашенной дуги — для анимации «кольцо дорисовывается».
+            style={{ '--ring-length': filled }}
             transform="rotate(-90 60 60)"
           />
         )}
       </svg>
       <div>
-        <strong>{formatInt(eaten)}</strong>
+        <strong>
+          <CountUp value={eaten} />
+        </strong>
         <span>{goalText}</span>
       </div>
     </div>
