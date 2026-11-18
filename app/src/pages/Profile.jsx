@@ -163,9 +163,10 @@ function AvatarPicker({ user, onUpdate }) {
       <label className="profile-avatar" title="Сменить фото">
         <AvatarContent user={user} />
         <input type="file" accept="image/*" onChange={choose} disabled={busy} />
-        <span className="profile-avatar-badge" aria-hidden="true">
-          {busy ? '…' : '+'}
-        </span>
+        <span
+          className={busy ? 'profile-avatar-badge busy' : 'profile-avatar-badge'}
+          aria-hidden="true"
+        />
         <span className="sr-only">Загрузить фото профиля</span>
       </label>
       {user.avatar && !busy && (
