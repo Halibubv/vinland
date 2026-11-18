@@ -45,9 +45,39 @@ export function Modal({ title, className, onClose, children }) {
   );
 }
 
+// Картинка записи в списке. Если картинки нет (или файл не загрузился) —
+// кружок с первой буквой названия.
+export function CatalogThumb({ src, name }) {
+  const [broken, setBroken] = useState(false);
+  if (src && !broken) {
+    return (
+      <span className="catalog-thumb">
+        <img src={src} alt="" loading="lazy" onError={() => setBroken(true)} />
+      </span>
+    );
+  }
+  return (
+    <span className="catalog-thumb catalog-thumb--letter" aria-hidden="true">
+      {name.trim().charAt(0).toUpperCase()}
+    </span>
+  );
+}
+
 // Поиск и выбор записи из справочника (упражнения или продукты).
-// describe(item) — необязательная строка-подсказка под названием.
-export function CatalogDialog({ title, items, describe, onChoose, onClose }) {
+// describe(item) — необязательная строка-подсказка под названием,
+// image(item) — путь к картинке или null.
+// addLabel и onAdd(name) — кнопка «Добавить своё…» под поиском, если нужной записи
+// нет в справочнике. В onAdd передаём то, что ввели в поиск, — это готовое название.
+export function CatalogDialog({
+  title,
+  items,
+  describe,
+  image,
+  addLabel,
+  onAdd,
+  onChoose,
+  onClose,
+}) {
   const [query, setQuery] = useState('');
   const search = query.trim().toLocaleLowerCase('ru-RU');
   const found = items.filter((item) => item.name.toLocaleLowerCase('ru-RU').includes(search));
@@ -68,14 +98,25 @@ export function CatalogDialog({ title, items, describe, onChoose, onClose }) {
         aria-label="Поиск по справочнику"
         placeholder="Поиск по справочнику"
       />
+      {onAdd && (
+        <button type="button" className="catalog-add" onClick={() => onAdd(query.trim())}>
+          <span aria-hidden="true">+</span>
+          {addLabel}
+          {query.trim() && <b>«{query.trim()}»</b>}
+        </button>
+      )}
       <div className="catalog-options">
-        {found.length === 0 && (
-          <p className="muted">Ничего не найдено. Попробуйте другой запрос.</p>
-        )}
+        {found.length === 0 && <p className="muted">В справочнике такого нет.</p>}
         {found.map((item) => (
           <button type="button" key={item.id} onClick={() => onChoose(item)}>
-            <strong>{item.name}</strong>
-            {describe && <small>{describe(item)}</small>}
+            <CatalogThumb src={image ? image(item) : null} name={item.name} />
+            <span className="catalog-option-text">
+              <strong>
+                {item.name}
+                {item.user_id && <em className="catalog-own">своё</em>}
+              </strong>
+              {describe && <small>{describe(item)}</small>}
+            </span>
           </button>
         ))}
       </div>

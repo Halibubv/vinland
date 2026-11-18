@@ -104,7 +104,7 @@ function current_user(): ?array
     }
     // password_hash наружу не отдаём, а роль берём только из базы, не из браузера.
     $user = query('SELECT id, email, name, role, target_calories, target_protein_g,
-        target_fat_g, target_carbs_g FROM users WHERE id = ?', [$_SESSION['user_id']])->fetch();
+        target_fat_g, target_carbs_g, avatar FROM users WHERE id = ?', [$_SESSION['user_id']])->fetch();
     if (!$user) {
         unset($_SESSION['user_id']);
         return null;

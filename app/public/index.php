@@ -77,6 +77,13 @@ if ($method === 'PUT' && $path === '/api/profile') {
     ]);
     respond(['user' => current_user()]);
 }
+// Аватар: картинка в виде data:image/...;base64 (браузер уже уменьшил её) или null — убрать аватар.
+if ($method === 'PUT' && $path === '/api/profile/avatar') {
+    $user = require_user();
+    $avatar = avatar_value(read_json());
+    query('UPDATE users SET avatar = ? WHERE id = ?', [$avatar, $user['id']]);
+    respond(['user' => current_user()]);
+}
 
 // --- Статистика ---
 if ($method === 'GET' && $path === '/api/statistics') {
@@ -104,12 +111,21 @@ if (preg_match('#^/api/admin/(exercises|products)(/(\d+))?$#', $path, $matches))
 
 // --- Справочники для обычного пользователя (только активные записи) ---
 if ($method === 'GET' && $path === '/api/exercises') {
-    require_user();
-    list_exercises();
+    $user = require_user();
+    list_exercises((int) $user['id']);
 }
 if ($method === 'GET' && $path === '/api/products') {
-    require_user();
-    list_products();
+    $user = require_user();
+    list_products((int) $user['id']);
+}
+// Своё упражнение или продукт, которого нет в справочнике.
+if ($method === 'POST' && $path === '/api/exercises') {
+    $user = require_user();
+    create_own_exercise((int) $user['id'], read_json());
+}
+if ($method === 'POST' && $path === '/api/products') {
+    $user = require_user();
+    create_own_product((int) $user['id'], read_json());
 }
 
 // --- Питание ---

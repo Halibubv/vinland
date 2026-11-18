@@ -57,8 +57,11 @@ function owned_meal(int $mealId, int $userId, bool $lock = false): array
 function meal_payload(int $mealId, int $userId): array
 {
     $meal = owned_meal($mealId, $userId);
-    $meal['items'] = query('SELECT id, product_id, product_name_snapshot, quantity_g, calories_snapshot,
-        protein_snapshot, fat_snapshot, carbs_snapshot FROM meal_items WHERE meal_id = ? ORDER BY id', [$mealId])->fetchAll();
+    // Картинку берём из справочника: она не влияет на КБЖУ, поэтому снимок ей не нужен.
+    $meal['items'] = query('SELECT mi.id, mi.product_id, mi.product_name_snapshot, mi.quantity_g, mi.calories_snapshot,
+        mi.protein_snapshot, mi.fat_snapshot, mi.carbs_snapshot, p.image
+        FROM meal_items mi JOIN products p ON p.id = mi.product_id
+        WHERE mi.meal_id = ? ORDER BY mi.id', [$mealId])->fetchAll();
     $meal['totals'] = nutrition_totals($meal['items']);
     return $meal;
 }
@@ -103,7 +106,9 @@ function write_meal(int $userId, array $input, ?int $mealId = null): array
                 invalid('product_id', 'Выберите продукт.');
             }
             $product = query('SELECT id, name, calories_per_100g, protein_per_100g, fat_per_100g, carbs_per_100g
-                FROM products WHERE id = ? AND is_active = TRUE', [$item['product_id']])->fetch();
+                FROM products WHERE id = ? AND is_active = TRUE AND (user_id IS NULL OR user_id = ?)', [
+                $item['product_id'], $userId,
+            ])->fetch();
             if (!$product) {
                 invalid('product_id', 'Выберите активный продукт из справочника.');
             }
@@ -130,11 +135,30 @@ function write_meal(int $userId, array $input, ?int $mealId = null): array
     return meal_payload($mealId, $userId);
 }
 
-function list_products(): never
+// Общий справочник плюс продукты, которые пользователь добавил сам (user_id = он).
+function list_products(int $userId): never
 {
-    $products = query('SELECT id, name, calories_per_100g, protein_per_100g, fat_per_100g, carbs_per_100g
-        FROM products WHERE is_active = TRUE ORDER BY name, id')->fetchAll();
+    $products = query('SELECT id, name, calories_per_100g, protein_per_100g, fat_per_100g, carbs_per_100g, image, user_id
+        FROM products WHERE is_active = TRUE AND (user_id IS NULL OR user_id = ?) ORDER BY name, id', [$userId])->fetchAll();
     respond(['products' => $products]);
+}
+
+// Свой продукт: название и КБЖУ на 100 г. Видно его только этому пользователю.
+function create_own_product(int $userId, array $data): never
+{
+    $values = [
+        text_value($data, 'name', 150),
+        number_value($data, 'calories_per_100g', 999999.99),
+        number_value($data, 'protein_per_100g', 999999.99),
+        number_value($data, 'fat_per_100g', 999999.99),
+        number_value($data, 'carbs_per_100g', 999999.99),
+        $userId,
+    ];
+    $id = insert('INSERT INTO products (name, calories_per_100g, protein_per_100g, fat_per_100g, carbs_per_100g, user_id)
+        VALUES (?, ?, ?, ?, ?, ?)', $values);
+    $product = query('SELECT id, name, calories_per_100g, protein_per_100g, fat_per_100g, carbs_per_100g, image, user_id
+        FROM products WHERE id = ?', [$id])->fetch();
+    respond(['product' => $product], 201);
 }
 
 // Без даты — все приёмы пищи пользователя, с датой — только за этот день.
