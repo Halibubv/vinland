@@ -406,6 +406,32 @@ body.modal-open {
   font-size: 24px;
   font-weight: 700;
 }
+/* Кнопки-фильтры по группе мышц: одна строка, листается пальцем вбок. */
+.catalog-groups {
+  display: flex;
+  gap: 6px;
+  margin: 10px -2px 0;
+  padding: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.catalog-groups button {
+  flex: none;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: none;
+  color: var(--cream);
+  font: inherit;
+  font-size: 14px;
+}
+.catalog-groups button.selected {
+  border-color: var(--cream);
+  background: var(--cream);
+  color: var(--bg);
+  font-weight: 600;
+}
 /* Кнопка «Добавить своё…» под списком. */
 .catalog-add {
   display: flex;

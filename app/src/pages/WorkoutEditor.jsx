@@ -482,6 +482,7 @@ export function WorkoutEditor() {
           title="Выберите упражнение"
           items={catalog}
           describe={(item) => item.muscle_group || 'Своё упражнение'}
+          groupOf={(item) => item.muscle_group}
           image={(item) => entryPhotoUrl({ muscleGroup: item.muscle_group, image: item.image })}
           addLabel="Добавить своё упражнение"
           onAdd={(name) => setPicker({ ...picker, newName: name })}
