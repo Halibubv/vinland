@@ -173,3 +173,25 @@ function nutrition_totals(array $items): array
     }
     return $totals;
 }
+
+// Аватар из профиля: null (убрать аватар) или маленькая картинка JPEG, PNG или WebP
+// в виде строки data:image/jpeg;base64,... Проверяем, что внутри действительно картинка.
+function avatar_value(array $data): ?string
+{
+    $value = $data['avatar'] ?? null;
+    if ($value === null) {
+        return null;
+    }
+    if (!is_string($value) || strlen($value) > 500000) {
+        invalid('avatar', 'Картинка слишком большая. Выберите другое фото.');
+    }
+    if (!preg_match('#^data:image/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$#', $value, $matches)) {
+        invalid('avatar', 'Подходят только фото JPG, PNG или WebP.');
+    }
+    $bytes = base64_decode($matches[2], true);
+    $size = $bytes === false ? false : getimagesizefromstring($bytes);
+    if ($size === false || $size[0] > 1024 || $size[1] > 1024) {
+        invalid('avatar', 'Не удалось прочитать картинку. Выберите другое фото.');
+    }
+    return $value;
+}

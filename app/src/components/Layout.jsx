@@ -29,6 +29,12 @@ export function initials(name = '') {
   return result || 'V';
 }
 
+// Содержимое кружка-аватара: фото пользователя, а если его нет — инициалы.
+export function AvatarContent({ user }) {
+  if (user.avatar) return <img src={user.avatar} alt="" />;
+  return initials(user.name);
+}
+
 export function Brand() {
   return (
     <Link className="brand" to="/" aria-label="ВИНЛАНД — главная">
@@ -83,7 +89,7 @@ export function AppHeader({ user, onLogout, busy }) {
             </Link>
           )}
           <Link to="/profile" className="avatar" aria-label="Открыть профиль">
-            {initials(user.name)}
+            <AvatarContent user={user} />
           </Link>
           <span>{firstName}</span>
           <button className="text-button logout" onClick={onLogout} disabled={busy}>

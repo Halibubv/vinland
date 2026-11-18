@@ -61,7 +61,7 @@ function owned_workout(int $workoutId, int $userId, bool $lock = false): array
 function workout_payload(int $workoutId, int $userId): array
 {
     $workout = owned_workout($workoutId, $userId);
-    $exercises = query('SELECT we.id, we.exercise_id, we.position, we.notes, e.name AS exercise_name, e.muscle_group
+    $exercises = query('SELECT we.id, we.exercise_id, we.position, we.notes, e.name AS exercise_name, e.muscle_group, e.image
         FROM workout_exercises we JOIN exercises e ON e.id = we.exercise_id
         WHERE we.workout_id = ? ORDER BY we.position', [$workoutId])->fetchAll();
     foreach ($exercises as $index => $exercise) {
@@ -108,7 +108,10 @@ function write_workout(int $userId, array $input, ?int $workoutId = null): array
         $countsNow = [];
         foreach ($input['exercises'] as $position => $exercise) {
             $exerciseId = $exercise['exercise_id'];
-            $catalogExercise = query('SELECT is_active FROM exercises WHERE id = ?', [$exerciseId])->fetch();
+            // Подходит упражнение из общего справочника или своё упражнение этого пользователя.
+            $catalogExercise = query('SELECT is_active FROM exercises WHERE id = ? AND (user_id IS NULL OR user_id = ?)', [
+                $exerciseId, $userId,
+            ])->fetch();
             if (!$catalogExercise) {
                 invalid('exercises', 'Выберите активное упражнение из справочника.');
             }
@@ -149,10 +152,25 @@ function list_workouts(int $userId): never
     respond(['workouts' => $workouts]);
 }
 
-function list_exercises(): never
+// Общий справочник плюс упражнения, которые пользователь добавил сам (user_id = он).
+function list_exercises(int $userId): never
 {
-    $exercises = query('SELECT id, name, muscle_group, description FROM exercises WHERE is_active = TRUE ORDER BY name, id')->fetchAll();
+    $exercises = query('SELECT id, name, muscle_group, description, image, user_id FROM exercises
+        WHERE is_active = TRUE AND (user_id IS NULL OR user_id = ?) ORDER BY name, id', [$userId])->fetchAll();
     respond(['exercises' => $exercises]);
+}
+
+// Своё упражнение: его нет в общем справочнике, поэтому пользователь добавляет его сам.
+// Видно оно только ему (user_id), администратор его не правит.
+function create_own_exercise(int $userId, array $data): never
+{
+    $name = text_value($data, 'name', 150);
+    $muscleGroup = optional_text_value($data, 'muscle_group', 100);
+    $id = insert('INSERT INTO exercises (name, muscle_group, user_id) VALUES (?, ?, ?)', [
+        $name, $muscleGroup, $userId,
+    ]);
+    $exercise = query('SELECT id, name, muscle_group, description, image, user_id FROM exercises WHERE id = ?', [$id])->fetch();
+    respond(['exercise' => $exercise], 201);
 }
 
 function delete_workout(int $workoutId, int $userId): never

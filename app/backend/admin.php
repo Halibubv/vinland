@@ -32,9 +32,9 @@ function catalog_input(string $kind, array $data): array
 function catalog_columns(string $kind): string
 {
     if ($kind === 'exercises') {
-        return 'id, name, muscle_group, description, is_active';
+        return 'id, name, muscle_group, description, image, is_active';
     }
-    return 'id, name, calories_per_100g, protein_per_100g, fat_per_100g, carbs_per_100g, is_active';
+    return 'id, name, calories_per_100g, protein_per_100g, fat_per_100g, carbs_per_100g, image, is_active';
 }
 
 // Ключ одной записи в ответе: {"exercise": {...}} или {"product": {...}}.
@@ -46,11 +46,12 @@ function catalog_item_key(string $kind): string
     return 'product';
 }
 
-// Одна запись справочника по id или null, если такой нет.
+// Одна запись общего справочника по id или null, если такой нет.
+// Свои записи пользователей (user_id не NULL) администратор не видит и не правит.
 // MySQL хранит is_active как 1 или 0 — в ответе отдаём true или false.
 function catalog_row(string $kind, int $id): ?array
 {
-    $row = query('SELECT ' . catalog_columns($kind) . ' FROM ' . $kind . ' WHERE id = ?', [$id])->fetch();
+    $row = query('SELECT ' . catalog_columns($kind) . ' FROM ' . $kind . ' WHERE id = ? AND user_id IS NULL', [$id])->fetch();
     if (!$row) {
         return null;
     }
@@ -60,7 +61,7 @@ function catalog_row(string $kind, int $id): ?array
 
 function admin_catalog(string $kind): never
 {
-    $rows = query('SELECT ' . catalog_columns($kind) . ' FROM ' . $kind . ' ORDER BY name, id')->fetchAll();
+    $rows = query('SELECT ' . catalog_columns($kind) . ' FROM ' . $kind . ' WHERE user_id IS NULL ORDER BY name, id')->fetchAll();
     foreach ($rows as &$row) {
         $row['is_active'] = (bool) $row['is_active'];
     }

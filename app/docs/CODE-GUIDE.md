@@ -9,7 +9,7 @@
    После `pnpm run build` превращается в обычные HTML, JS и CSS в `public/ui`.
 2. **Сервер** (`public/index.php` и `backend/`) — PHP без фреймворка.
    Принимает запросы `/api/...`, проверяет данные, работает с базой и отвечает JSON.
-3. **База** (`database/`) — MySQL 8. Таблицы описаны в SQL-файлах `001`–`004`,
+3. **База** (`database/`) — MySQL 8. Таблицы описаны в SQL-файлах `001`–`005`,
    их по порядку выполняет `migrate.php`. Все таблицы — InnoDB (без него не
    работают внешние ключи и транзакции) в кодировке utf8mb4.
 
@@ -44,6 +44,9 @@
 | Шапка, меню, подвал | `src/components/Layout.jsx` |
 | Общие кусочки: поле формы, полоса прогресса, пустое состояние | `src/components/ui.jsx` |
 | Модальное окно, подтверждение, выбор из справочника | `src/components/Dialogs.jsx` |
+| Окна «Своё упражнение» и «Свой продукт» | `src/components/OwnItemDialogs.jsx` |
+| Картинки упражнений и продуктов (`public/assets/catalog`) | `src/components/EntryIcon.jsx` |
+| Фото профиля: обрезка и уменьшение в браузере | `src/lib/image.js`, `AvatarPicker` в `src/pages/Profile.jsx` |
 | Анимации (буквы заголовка, кольцо калорий, карточки) | `src/styles/motion.css`, `RiseText.jsx`, `CountUp.jsx` |
 | Даты («Сегодня», «16 окт.») | `src/lib/dates.js` |
 | Числа и падежи («3 подхода») | `src/lib/format.js` |
@@ -77,8 +80,17 @@
   - `useSearchParams()` — параметры после `?`: выбранный день дневника хранится
     в адресе `/nutrition?date=2026-11-10`.
 - **Фильтры** — `массив.filter(...)`: тренировки выбранного месяца и дня
-  (`Workouts.jsx`), поиск в справочнике (`Dialogs.jsx`), приёмы пищи по типу
-  (`Nutrition.jsx`).
+  (`Workouts.jsx`), поиск и кнопки групп мышц в окне выбора (`Dialogs.jsx`),
+  приёмы пищи по типу (`Nutrition.jsx`), дни с тренировками и дни «в норме
+  калорий» (`Statistics.jsx`).
+
+### Практики курса: где смотреть в коде
+
+| Практика | Пример попроще | Пример посложнее |
+| --- | --- | --- |
+| Пр12 `useState` | `CatalogDialog` в `Dialogs.jsx`: `query` — текст поиска, `group` — выбранная группа | `Statistics.jsx`: `periodDays` (7/14/30), `selected` (день, на который нажали), `data` (ответ сервера) |
+| Пр13 фильтры | `CatalogDialog`: `items.filter(...)` по названию и группе | `Statistics.jsx`: `days.filter(...)` — дни с тренировками и дни, когда ели |
+| Пр14 `useEffect` | `Statistics.jsx`: `useEffect(reload, [periodDays])` — загрузить заново при смене периода | `Modal` в `Dialogs.jsx`: открыть `<dialog>` после показа и вернуть фокус при закрытии |
 
 Больше ничего (Redux, контекст, свои хуки, TypeScript) в проекте нет специально,
 чтобы код можно было прочитать без лишних знаний.
@@ -104,6 +116,10 @@
   `rollBack` в PDO).
 - **Логические поля** (`is_active`) хранятся как `1` или `0`. В ответе
   сервера они превращаются в `true` или `false` (`backend/admin.php`).
+- **`NULL` как «общее»** — в `exercises` и `products` поле `user_id` пустое у
+  общего справочника и заполнено у своей записи пользователя. Поэтому список
+  выбирается условием `user_id IS NULL OR user_id = ?` (`backend/workouts.php`,
+  `backend/meals.php`), а админка видит только `user_id IS NULL`.
 - **Ошибка 1062** — повтор уникального значения. Так `backend/auth.php`
   узнаёт, что email уже занят.
 
