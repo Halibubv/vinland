@@ -1,13 +1,24 @@
 // Создание и редактирование тренировки: дата, заметка, упражнения и их подходы.
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { api, errorText } from '../lib/api.js';
-import { dateLabel, localDate } from '../lib/dates.js';
-import { ASSETS } from '../lib/constants.js';
-import { Shell, Notice, BackLink } from '../components/ui.jsx';
-import { DateStepper } from '../components/DateStepper.jsx';
+import { api, errorText } from '../api.js';
+import { dateLabel, localDate } from '../format.js';
+import { Shell, Notice, DateStepper } from '../components/ui.jsx';
 import { CatalogDialog } from '../components/Dialogs.jsx';
 import './WorkoutEditor.css';
+
+// Ссылка назад над заголовком страницы: "‹ Тренировки / 27 сентября 2026".
+export function BackLink({ to, label, current }) {
+  return (
+    <nav className="back-link" aria-label="Навигация по разделу">
+      <Link to={to}>
+        <span aria-hidden="true">‹</span>
+        {label}
+      </Link>
+      {current && <span className="back-link-current"> / {current}</span>}
+    </nav>
+  );
+}
 
 // key у упражнений и подходов — уникальный ключ строки для React,
 // на сервер он не отправляется. Числа в полях ввода храним строками.
@@ -161,7 +172,7 @@ function ExerciseEditor({ exercise, index, count, catalog, onChange, onMove, onR
           </button>
         </div>
         <button type="button" className="workout-exercise-remove" onClick={onRemove}>
-          <img src={`${ASSETS}icon-trash.svg`} alt="" />
+          <img src="/assets/icon-trash.svg" alt="" />
           <span>
             Удалить<span className="narrow-only"> упражнение</span>
           </span>
@@ -176,12 +187,12 @@ function ExerciseEditor({ exercise, index, count, catalog, onChange, onMove, onR
         </p>
       )}
       <button type="button" className="workout-add-set" onClick={addSet}>
-        <img src={`${ASSETS}icon-plus.svg`} alt="" />
+        <img src="/assets/icon-plus.svg" alt="" />
         Добавить подход
       </button>
       <details className="workout-exercise-notes">
         <summary>
-          <img src={`${ASSETS}icon-pencil.svg`} alt="" />
+          <img src="/assets/icon-pencil.svg" alt="" />
           Заметки к упражнению и подходам
         </summary>
         <label>
@@ -315,8 +326,8 @@ export function WorkoutEditor() {
     try {
       const body = requestBody(form);
       let result;
-      if (id) result = await api(`/workouts/${id}`, { method: 'PUT', body });
-      else result = await api('/workouts', { method: 'POST', body });
+      if (id) result = await api(`/workouts/${id}`, 'PUT', body);
+      else result = await api('/workouts', 'POST', body);
       // replace: «Назад» со страницы тренировки не вернёт к уже сохранённой форме.
       navigate(`/workouts/${result.workout.id}`, { replace: true });
     } catch (problem) {
@@ -396,7 +407,7 @@ export function WorkoutEditor() {
               type="button"
               onClick={addExercise}
             >
-              <img src={`${ASSETS}icon-plus.svg`} alt="" />
+              <img src="/assets/icon-plus.svg" alt="" />
               Добавить упражнение
             </button>
           </div>

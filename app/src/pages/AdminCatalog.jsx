@@ -1,9 +1,8 @@
 // Администрирование справочников упражнений и продуктов (только для роли admin).
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../lib/api.js';
-import { formatNumber } from '../lib/format.js';
-import { ASSETS } from '../lib/constants.js';
+import { api } from '../api.js';
+import { formatNumber } from '../format.js';
 import { Notice, Empty } from '../components/ui.jsx';
 import { Modal } from '../components/Dialogs.jsx';
 import './AdminCatalog.css';
@@ -81,10 +80,8 @@ function EntryDialog({ kind, entry, onSaved, onClose }) {
     setError('');
     setFields({});
     try {
-      await api(entry ? `/admin/${kind}/${entry.id}` : `/admin/${kind}`, {
-        method: entry ? 'PUT' : 'POST',
-        body: form,
-      });
+      if (entry) await api(`/admin/${kind}/${entry.id}`, 'PUT', form);
+      else await api(`/admin/${kind}`, 'POST', form);
       onSaved();
     } catch (problem) {
       setError(problem.message);
@@ -219,7 +216,7 @@ export function AdminCatalog({ kind, user }) {
       // Отправляем ту же запись, поменяв только is_active (id уже есть в адресе).
       const body = { ...row, is_active: !isActive(row) };
       delete body.id;
-      await api(`/admin/${kind}/${row.id}`, { method: 'PUT', body });
+      await api(`/admin/${kind}/${row.id}`, 'PUT', body);
       reload();
     } catch (problem) {
       setError(problem.message);
@@ -273,7 +270,7 @@ export function AdminCatalog({ kind, user }) {
                   />
                 </label>
                 <button className="button button--primary" onClick={() => setEditing('new')}>
-                  <img src={`${ASSETS}icon-plus.svg`} alt="" />
+                  <img src="/assets/icon-plus.svg" alt="" />
                   Добавить {text.one}
                 </button>
               </div>
@@ -347,7 +344,7 @@ export function AdminCatalog({ kind, user }) {
                         <p>{rowSummary(kind, row)}</p>
                         <Status row={row} />
                         <button className="button button--outline" onClick={() => setEditing(row)}>
-                          <img src={`${ASSETS}icon-pencil.svg`} alt="" />
+                          <img src="/assets/icon-pencil.svg" alt="" />
                           Редактировать
                         </button>
                         <button

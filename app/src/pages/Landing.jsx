@@ -2,10 +2,28 @@
 // Все цифры и записи здесь — статичный пример, а не данные пользователя.
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ASSETS } from '../lib/constants.js';
 import { Brand, LinkButton, Footer, GuestMobileNav } from '../components/Layout.jsx';
-import { Progress } from '../components/ui.jsx';
+import { formatInt, percentOf } from '../format.js';
 import { HeroSnow } from '../components/HeroSnow.jsx';
+
+// Полоска «съедено / цель» (используется в демо-блоке на лендинге).
+export function Progress({ label, value, target, unit = 'г' }) {
+  const percent = percentOf(value, target);
+  return (
+    <div className="progress-stat">
+      <div className="progress-label">
+        <span>{label}</span>
+        <strong>
+          {formatInt(value)} / {target ? formatInt(target) : '—'} {unit}
+        </strong>
+      </div>
+      <div className="progress-track">
+        <span style={{ width: `${percent}%` }} />
+      </div>
+      <span className="progress-percent">{target ? `${percent}%` : 'Цель не задана'}</span>
+    </div>
+  );
+}
 
 export function Landing() {
   // Блоки с классом .reveal плавно появляются, когда до них докрутили страницу:
@@ -62,7 +80,7 @@ export function Landing() {
             <span />✦<span />
           </div>
           <h1>
-            <img src={`${ASSETS}wordmark.svg`} alt="ВИНЛАНД" />
+            <img src="/assets/wordmark.svg" alt="ВИНЛАНД" />
           </h1>
           <p>
             Учёт силовых тренировок и дневник питания с КБЖУ. <br />
@@ -97,12 +115,12 @@ export function Landing() {
         </div>
         <img
           className="mobile-device"
-          src={`${ASSETS}mobile-device.png`}
+          src="/assets/mobile-device.png"
           alt="ВИНЛАНД на устройстве на фоне фьорда"
         />
       </section>
       <section className="landing-product reveal" id="features">
-        <img src={`${ASSETS}phone-product.png`} alt="Приложение ВИНЛАНД на двух телефонах" />
+        <img src="/assets/phone-product.png" alt="Приложение ВИНЛАНД на двух телефонах" />
         <div>
           <span className="eyebrow">ВОЗМОЖНОСТИ</span>
           <h2>
@@ -113,7 +131,7 @@ export function Landing() {
           <ul>
             <li>
               <span className="product-icon">
-                <img src={`${ASSETS}feature-dumbbell.svg`} alt="" />
+                <img src="/assets/feature-dumbbell.svg" alt="" />
               </span>
               <div>
                 <strong>Запись тренировок</strong>
@@ -125,7 +143,7 @@ export function Landing() {
             </li>
             <li>
               <span className="product-icon">
-                <img src={`${ASSETS}icon-food.svg`} alt="" />
+                <img src="/assets/icon-food.svg" alt="" />
               </span>
               <div>
                 <strong>Дневник питания с КБЖУ</strong>
@@ -137,7 +155,7 @@ export function Landing() {
             </li>
             <li>
               <span className="product-icon">
-                <img src={`${ASSETS}icon-chart.svg`} alt="" />
+                <img src="/assets/icon-chart.svg" alt="" />
               </span>
               <div>
                 <strong>Статистика и история</strong>
@@ -149,7 +167,7 @@ export function Landing() {
             </li>
             <li>
               <span className="product-icon">
-                <img src={`${ASSETS}icon-sliders.svg`} alt="" />
+                <img src="/assets/icon-sliders.svg" alt="" />
               </span>
               <div>
                 <strong>Цели и личный кабинет</strong>
@@ -163,7 +181,7 @@ export function Landing() {
         </div>
       </section>
       <section className="editorial-row reveal" id="workouts">
-        <img src={`${ASSETS}landing-photo-2.png`} alt="Атлетка выполняет упражнение со штангой" />
+        <img src="/assets/landing-photo-2.png" alt="Атлетка выполняет упражнение со штангой" />
         <div>
           <span className="eyebrow">ТРЕНИРОВКИ</span>
           <h2>
@@ -177,17 +195,17 @@ export function Landing() {
           </p>
           <div className="demo-card">
             <strong>
-              <img src={`${ASSETS}feature-dumbbell.svg`} alt="" />
+              <img src="/assets/feature-dumbbell.svg" alt="" />
               Тренировка сегодня
             </strong>
             <div className="demo-row">
-              <img src={`${ASSETS}squat-photo.png`} alt="" />
+              <img src="/assets/squat-photo.png" alt="" />
               <span>
                 Приседания со штангой<small>3 × 8 · 100 кг</small>
               </span>
             </div>
             <div className="demo-row">
-              <img src={`${ASSETS}exercise-photo.png`} alt="" />
+              <img src="/assets/exercise-photo.png" alt="" />
               <span>
                 Жим лёжа<small>3 × 10 · 80 кг</small>
               </span>
@@ -197,7 +215,7 @@ export function Landing() {
       </section>
       <section className="editorial-row editorial-row--reverse reveal" id="nutrition">
         <img
-          src={`${ASSETS}landing-photo-6.png`}
+          src="/assets/landing-photo-6.png"
           alt="Сбалансированное блюдо с курицей, рисом и овощами"
         />
         <div>
@@ -213,13 +231,13 @@ export function Landing() {
           <div className="demo-card">
             <strong>Обед · 27 сентября 2026</strong>
             <div className="demo-row">
-              <img src={`${ASSETS}food-photo.png`} alt="" />
+              <img src="/assets/food-photo.png" alt="" />
               <span>
                 Куриная грудка · 200 г<small>330 ккал · Б 62 · Ж 8 · У 0</small>
               </span>
             </div>
             <div className="demo-row">
-              <img src={`${ASSETS}food-photo.png`} alt="" />
+              <img src="/assets/food-photo.png" alt="" />
               <span>
                 Рис варёный · 250 г<small>320 ккал · Б 6,75 · Ж 0,75 · У 70</small>
               </span>
@@ -248,7 +266,7 @@ export function Landing() {
         </div>
         <div className="panel demo-progress">
           <div>
-            <img src={`${ASSETS}icon-flame.svg`} alt="" />
+            <img src="/assets/icon-flame.svg" alt="" />
             <span>
               Сегодня в рационе<strong>1 850 / 2 400 ккал</strong>
             </span>

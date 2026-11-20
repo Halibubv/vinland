@@ -1,13 +1,85 @@
 // Экран «Статистика»: график калорий за период, итоги дня и тренировки по дням.
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../lib/api.js';
-import { ASSETS } from '../lib/constants.js';
-import { dateLabel, dayMonth, localDate, offsetDate, relativeDay, weekday } from '../lib/dates.js';
-import { formatInt, plural } from '../lib/format.js';
+import { api } from '../api.js';
+import {
+  dayMonth,
+  formatInt,
+  localDate,
+  offsetDate,
+  percentOf,
+  plural,
+  relativeDay,
+  shortDate,
+  weekday,
+} from '../format.js';
 import { Shell, Notice, Empty } from '../components/ui.jsx';
-import { DaySummary } from '../components/DaySummary.jsx';
 import './Statistics.css';
+
+// Итоги дня по питанию: калории и БЖУ в сравнении с целями.
+const summaryMacros = [
+  { label: 'Белки', key: 'protein', icon: 'icon-muscle.svg' },
+  { label: 'Жиры', key: 'fat', icon: 'icon-drop.svg' },
+  { label: 'Углеводы', key: 'carbs', icon: 'icon-wheat.svg' },
+];
+
+function Bar({ value, target }) {
+  return (
+    <div className="bar" role="presentation">
+      <span style={{ width: `${percentOf(value, target)}%` }} />
+    </div>
+  );
+}
+
+// Цель числом или прочерк, если цель не задана.
+function goalText(goal) {
+  return goal ? formatInt(goal) : '—';
+}
+
+// day — съеденное за день, goals — цели; у обоих поля calories, protein, fat, carbs.
+function DaySummary({ title, day, goals, className = '' }) {
+  let caloriesPercent = 'Цель не задана';
+  if (goals.calories) caloriesPercent = `${percentOf(day.calories, goals.calories)}%`;
+
+  return (
+    <section className={`panel day-summary ${className}`}>
+      <div className="day-summary-calories">
+        <img src="/assets/icon-flame.svg" alt="" />
+        <div>
+          <span>{title}</span>
+          <strong>
+            {formatInt(day.calories)} / {goalText(goals.calories)} ккал
+          </strong>
+        </div>
+      </div>
+      <div className="day-summary-bar">
+        <Bar value={day.calories} target={goals.calories} />
+        <b>{caloriesPercent}</b>
+      </div>
+      <div className="day-summary-macros">
+        {summaryMacros.map((macro) => {
+          const eaten = day[macro.key];
+          const goal = goals[macro.key];
+          return (
+            <div key={macro.key}>
+              <span>
+                <img src={`/assets/${macro.icon}`} alt="" />
+                {macro.label}
+              </span>
+              <strong>
+                {formatInt(eaten)} / {goalText(goal)} г
+              </strong>
+              <div className="day-summary-macro-bar">
+                <Bar value={eaten} target={goal} />
+                <small>{goal ? `${percentOf(eaten, goal)}%` : '—'}</small>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
 
 // Варианты периода в выпадающем списке: количество дней и подпись.
 const periods = [
@@ -71,7 +143,7 @@ function CaloriesChart({ days, goal }) {
       <div className="stats-chart-axis">
         {days.map((day, index) => (
           <span key={day.date} className={dense && index % 5 ? 'is-minor' : ''}>
-            <b className="wide-only">{dateLabel(day.date, { day: 'numeric', month: 'short' })}</b>
+            <b className="wide-only">{shortDate(day.date)}</b>
             <b className="narrow-only">{Number(day.date.slice(8))}</b>
             <small className="wide-only">{weekday(day.date)}</small>
           </span>
@@ -101,7 +173,7 @@ function WeekDay({ day }) {
     <li className="is-active">
       <strong>{dayMonth(day.date)}</strong>
       <small>{weekday(day.date)}</small>
-      <img src={`${ASSETS}nav-workouts.svg`} alt="" />
+      <img src="/assets/nav-workouts.svg" alt="" />
       <span>
         {exercisesText(day)}
         <br />
@@ -120,7 +192,7 @@ function WorkoutsPanel({ days, periodDays }) {
     <section className="panel stats-workouts">
       <div className="stats-workouts-head">
         <h2>
-          <img src={`${ASSETS}nav-workouts.svg`} alt="" />
+          <img src="/assets/nav-workouts.svg" alt="" />
           Тренировки
         </h2>
         <Link to="/workouts" className="wide-only">
@@ -202,7 +274,7 @@ export function StatisticsPage() {
         <div className="stats-overview">
           <section className="panel stats-calories">
             <h2>
-              <img src={`${ASSETS}nav-food.svg`} alt="" />
+              <img src="/assets/nav-food.svg" alt="" />
               Калории и КБЖУ
             </h2>
             <CaloriesChart days={data.days} goal={data.goals.calories} />
@@ -224,7 +296,7 @@ export function StatisticsPage() {
       }
       action={
         <label className="period-select">
-          <img src={`${ASSETS}icon-calendar.svg`} alt="" />
+          <img src="/assets/icon-calendar.svg" alt="" />
           <span className="sr-only">Период</span>
           <select
             value={periodDays}

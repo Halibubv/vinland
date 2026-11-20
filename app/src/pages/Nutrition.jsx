@@ -1,16 +1,12 @@
 // Дневник питания за один день: итоги КБЖУ и четыре приёма пищи.
 // Этот же компонент показывает «Историю питания» (см. NutritionHistory.jsx).
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { api } from '../lib/api.js';
-import { localDate, parseDate, relativeDay } from '../lib/dates.js';
-import { formatInt, formatNumber } from '../lib/format.js';
-import { ASSETS, mealTypes } from '../lib/constants.js';
-import { Notice } from '../components/ui.jsx';
-import { DateStepper } from '../components/DateStepper.jsx';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { api } from '../api.js';
+import { formatInt, formatNumber, isDate, localDate, mealTypes, relativeDay } from '../format.js';
+import { Notice, DateStepper } from '../components/ui.jsx';
 import { DayTotals } from '../components/DayTotals.jsx';
 import { PageHero } from '../components/PageHero.jsx';
-import { entryPhotoUrl } from '../components/EntryIcon.jsx';
 import './Nutrition.css';
 
 // Подпись под датой: сколько калорий осталось до цели дня.
@@ -27,16 +23,16 @@ function MealCard({ type, label, meals, date }) {
   for (const meal of meals) calories += Number(meal.totals.calories);
 
   // Если приём пищи уже есть — добавляем продукт в последний, иначе создаём новый.
-  let addHref = `/nutrition/new?date=${date}&type=${type}&add=1`;
+  let addHref = `/nutrition/add/${date}/${type}`;
   if (meals.length > 0) {
     const lastMeal = meals[meals.length - 1];
-    addHref = `/nutrition/${lastMeal.id}?add=1`;
+    addHref = `/nutrition/${lastMeal.id}/add`;
   }
 
   return (
     <section className={`meal-card ${meals.length ? '' : 'is-empty'}`}>
       <div className="meal-card-photo">
-        <img src={entryPhotoUrl({ meal: type })} alt="" />
+        <img src={`/assets/entries/meal-${type}.jpg`} alt="" />
         <h2>{label}</h2>
         {meals.length > 0 && <span>{formatInt(calories)} ккал</span>}
       </div>
@@ -54,7 +50,7 @@ function MealCard({ type, label, meals, date }) {
         ))}
         {!meals.length && <p className="meal-card-empty">Пока ничего не добавлено</p>}
         <Link className="meal-card-add" to={addHref}>
-          <img src={`${ASSETS}icon-plus.svg`} alt="" />
+          <img src="/assets/icon-plus.svg" alt="" />
           Добавить продукт
         </Link>
       </div>
@@ -64,11 +60,12 @@ function MealCard({ type, label, meals, date }) {
 
 // history — экран «История питания» (его открывает NutritionHistory.jsx).
 export function NutritionPage({ history = false }) {
-  // Выбранный день хранится в адресе: /nutrition?date=2026-11-10.
-  // Так его можно обновить (F5) или отправить ссылкой, а без даты — это сегодня.
-  const [searchParams, setSearchParams] = useSearchParams();
-  let date = searchParams.get('date');
-  if (!parseDate(date)) date = localDate();
+  const navigate = useNavigate();
+  // Выбранный день хранится в адресе: /nutrition/day/2026-11-10 (см. App.jsx).
+  // Так его можно обновить (F5) или отправить ссылкой, а на /nutrition — это сегодня.
+  const params = useParams();
+  let date = params.date;
+  if (!isDate(date)) date = localDate();
   const [meals, setMeals] = useState(null);
   const [statistics, setStatistics] = useState(null);
   const [error, setError] = useState('');
@@ -89,8 +86,9 @@ export function NutritionPage({ history = false }) {
   // Стрелки и календарь меняют дату в адресе. replace: не копим каждый день
   // в истории браузера, чтобы «Назад» сразу уводил со страницы.
   function changeDate(newDate) {
-    if (newDate === localDate() && !history) setSearchParams({}, { replace: true });
-    else setSearchParams({ date: newDate }, { replace: true });
+    if (history) navigate(`/nutrition/history/${newDate}`, { replace: true });
+    else if (newDate === localDate()) navigate('/nutrition', { replace: true });
+    else navigate(`/nutrition/day/${newDate}`, { replace: true });
   }
 
   const loaded = !error && meals && statistics;
@@ -98,11 +96,8 @@ export function NutritionPage({ history = false }) {
   const top = (
     <>
       <DateStepper value={date} onChange={changeDate} label="Дата дневника" />
-      <Link
-        className="button button--primary diary-create"
-        to={`/nutrition/new?date=${date}&add=1`}
-      >
-        <img src={`${ASSETS}icon-plus.svg`} alt="" />
+      <Link className="button button--primary diary-create" to={`/nutrition/add/${date}`}>
+        <img src="/assets/icon-plus.svg" alt="" />
         Добавить продукт
       </Link>
     </>
@@ -113,7 +108,7 @@ export function NutritionPage({ history = false }) {
       <div className="section-banner" />
       <main className="content section-content diary-page">
         <PageHero
-          image={`${ASSETS}hero-nutrition.jpg`}
+          image="/assets/hero-nutrition.jpg"
           top={top}
           eyebrow={history ? 'История питания' : 'Дневник питания'}
           title={relativeDay(date)}
@@ -145,7 +140,7 @@ export function NutritionPage({ history = false }) {
             {history && (
               <>
                 <Link className="history-link" to="/nutrition">
-                  <img src={`${ASSETS}icon-calendar.svg`} alt="" />
+                  <img src="/assets/icon-calendar.svg" alt="" />
                   <span>
                     <strong>К сегодняшнему дню</strong>
                   </span>
@@ -158,7 +153,7 @@ export function NutritionPage({ history = false }) {
             )}
             {!history && (
               <Link className="history-link" to="/nutrition/history">
-                <img src={`${ASSETS}icon-calendar.svg`} alt="" />
+                <img src="/assets/icon-calendar.svg" alt="" />
                 <span>
                   <strong>История питания</strong>
                   <small>Прошлые дни доступны по дате</small>
