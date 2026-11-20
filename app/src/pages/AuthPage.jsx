@@ -1,7 +1,8 @@
 // Экран входа и регистрации (mode = 'login' или 'register').
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../api.js';
+import { api } from '../lib/api.js';
+import { ASSETS } from '../lib/constants.js';
 import { Brand, LinkButton, Footer, GuestMobileNav } from '../components/Layout.jsx';
 import { Field } from '../components/ui.jsx';
 
@@ -51,10 +52,9 @@ export function AuthPage({ mode, onAuth }) {
     setBusy(true);
     setMessage('');
     try {
-      const data = await api(register ? '/auth/register' : '/auth/login', 'POST', {
-        name: values.name.trim(),
-        email: values.email.trim(),
-        password: values.password,
+      const data = await api(register ? '/auth/register' : '/auth/login', {
+        method: 'POST',
+        body: { name: values.name.trim(), email: values.email.trim(), password: values.password },
       });
       // App.jsx сам откроет нужную страницу, когда узнает пользователя.
       onAuth(data.user);
@@ -73,7 +73,7 @@ export function AuthPage({ mode, onAuth }) {
     <div className="auth-layout">
       <div className="auth-visual">
         <Brand />
-        <img src="/assets/hero-athlete.png" alt="Атлет на фоне северных гор" />
+        <img src={`${ASSETS}hero-athlete.png`} alt="Атлет на фоне северных гор" />
       </div>
       <div className="auth-side">
         <div className="auth-top">

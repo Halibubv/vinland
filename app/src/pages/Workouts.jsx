@@ -1,9 +1,12 @@
 // Экран «Тренировки»: список сохранённых тренировок за месяц с фильтром по дню.
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../api.js';
-import { dateLabel, dayMonth, plural, setsSummary } from '../format.js';
-import { Shell, Notice, Empty, EntryPhoto } from '../components/ui.jsx';
+import { api } from '../lib/api.js';
+import { ASSETS } from '../lib/constants.js';
+import { dateLabel, dayMonth, monthShift, monthTitle } from '../lib/dates.js';
+import { plural, setsSummary } from '../lib/format.js';
+import { Shell, Notice, Empty } from '../components/ui.jsx';
+import { EntryPhoto } from '../components/EntryIcon.jsx';
 import './Workouts.css';
 
 // Сколько упражнений показывать в карточке, остальные видны на странице тренировки.
@@ -12,14 +15,6 @@ const SHOWN_EXERCISES = 2;
 // День месяца из даты "2026-10-16" → 16.
 function dayOfMonth(date) {
   return Number(date.slice(8));
-}
-
-// Date → "Ноябрь 2026".
-function monthTitle(date) {
-  const text = date
-    .toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })
-    .replace(' г.', '');
-  return text[0].toUpperCase() + text.slice(1);
 }
 
 // Карточка одной тренировки в списке.
@@ -61,7 +56,7 @@ function WorkoutCard({ workout }) {
           <ul className="workout-card-exercises">
             {exercises.slice(0, SHOWN_EXERCISES).map((exercise) => (
               <li key={exercise.id}>
-                <EntryPhoto muscleGroup={exercise.muscle_group} />
+                <EntryPhoto muscleGroup={exercise.muscle_group} image={exercise.image} />
                 <span>
                   {exercise.exercise_name}
                   <small>{setsSummary(exercise.sets)}</small>
@@ -82,10 +77,7 @@ export function WorkoutsPage() {
   const [workouts, setWorkouts] = useState(null);
   const [error, setError] = useState('');
   // Выбранный месяц (Date на первое число) и выбранный день (число или null — «Все»).
-  const [month, setMonth] = useState(() => {
-    const today = new Date();
-    return new Date(today.getFullYear(), today.getMonth(), 1);
-  });
+  const [month, setMonth] = useState(() => monthShift(new Date(), 0));
   const [day, setDay] = useState(null);
   function reload() {
     setError('');
@@ -112,7 +104,7 @@ export function WorkoutsPage() {
   for (let number = 1; number <= daysInMonth; number++) dayNumbers.push(number);
 
   function changeMonth(offset) {
-    setMonth(new Date(month.getFullYear(), month.getMonth() + offset, 1));
+    setMonth(monthShift(month, offset));
     setDay(null);
   }
 
@@ -122,7 +114,7 @@ export function WorkoutsPage() {
       subtitle="История и записи тренировок"
       action={
         <Link className="button button--primary workouts-add" to="/workouts/new">
-          <img src="/assets/icon-plus.svg" alt="" />
+          <img src={`${ASSETS}icon-plus.svg`} alt="" />
           Добавить тренировку
         </Link>
       }
@@ -130,7 +122,7 @@ export function WorkoutsPage() {
     >
       <div className="workouts-filter">
         <div className="workouts-month">
-          <img src="/assets/icon-calendar.svg" alt="" className="narrow-only" />
+          <img src={`${ASSETS}icon-calendar.svg`} alt="" className="narrow-only" />
           <button type="button" aria-label="Предыдущий месяц" onClick={() => changeMonth(-1)}>
             ‹
           </button>
@@ -163,7 +155,7 @@ export function WorkoutsPage() {
       <div className="workouts-heading wide-only">
         <h2>Сохранённые тренировки</h2>
         <span>
-          <img src="/assets/icon-book.svg" alt="" />
+          <img src={`${ASSETS}icon-book.svg`} alt="" />
           Упражнения добавляются из справочника
         </span>
       </div>

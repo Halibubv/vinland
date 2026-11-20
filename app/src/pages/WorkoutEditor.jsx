@@ -1,24 +1,15 @@
 // Создание и редактирование тренировки: дата, заметка, упражнения и их подходы.
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { api, errorText } from '../api.js';
-import { dateLabel, localDate } from '../format.js';
-import { Shell, Notice, DateStepper } from '../components/ui.jsx';
+import { api, errorText } from '../lib/api.js';
+import { dateLabel, localDate } from '../lib/dates.js';
+import { ASSETS } from '../lib/constants.js';
+import { Shell, Notice, BackLink } from '../components/ui.jsx';
+import { DateStepper } from '../components/DateStepper.jsx';
 import { CatalogDialog } from '../components/Dialogs.jsx';
+import { OwnExerciseDialog } from '../components/OwnItemDialogs.jsx';
+import { entryPhotoUrl } from '../components/EntryIcon.jsx';
 import './WorkoutEditor.css';
-
-// Ссылка назад над заголовком страницы: "‹ Тренировки / 27 сентября 2026".
-export function BackLink({ to, label, current }) {
-  return (
-    <nav className="back-link" aria-label="Навигация по разделу">
-      <Link to={to}>
-        <span aria-hidden="true">‹</span>
-        {label}
-      </Link>
-      {current && <span className="back-link-current"> / {current}</span>}
-    </nav>
-  );
-}
 
 // key у упражнений и подходов — уникальный ключ строки для React,
 // на сервер он не отправляется. Числа в полях ввода храним строками.
@@ -49,6 +40,8 @@ function formFromWorkout(workout) {
       key: crypto.randomUUID(),
       exercise_id: String(exercise.exercise_id),
       exercise_name: exercise.exercise_name,
+      muscle_group: exercise.muscle_group,
+      image: exercise.image,
       notes: exercise.notes || '',
       sets: exercise.sets.map((set) => ({
         key: crypto.randomUUID(),
@@ -77,37 +70,78 @@ function requestBody(form) {
   };
 }
 
-// Таблица подходов: номер, повторения, вес и кнопка удаления.
+// Число в поле ввода ± шаг, не меньше нуля. Округляем до сотых, чтобы 0.1 + 0.2
+// не превратилось в 0.30000000000000004. Возвращаем строку, как хранится в форме.
+function stepValue(value, step) {
+  const next = Math.max(0, (Number(value) || 0) + step);
+  return String(Math.round(next * 100) / 100);
+}
+
+// Поле с кнопками «−» и «+»: на телефоне удобнее нажать, чем набирать число.
+function Stepper({ value, step, label, decimal, onChange }) {
+  return (
+    <div className="set-stepper">
+      <button
+        type="button"
+        onClick={() => onChange(stepValue(value, -step))}
+        aria-label={`${label}: меньше`}
+      >
+        −
+      </button>
+      <input
+        type="number"
+        inputMode={decimal ? 'decimal' : 'numeric'}
+        min="0"
+        max={decimal ? '10000' : '1000'}
+        step={decimal ? '0.01' : '1'}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onFocus={(event) => event.target.select()}
+        aria-label={label}
+      />
+      <button
+        type="button"
+        onClick={() => onChange(stepValue(value, step))}
+        aria-label={`${label}: больше`}
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
+// Объём упражнения: сумма «повторения × вес» по всем подходам, в килограммах.
+function setsVolume(sets) {
+  let total = 0;
+  for (const set of sets) total += (Number(set.repetitions) || 0) * (Number(set.weight_kg) || 0);
+  return Math.round(total);
+}
+
+// Подходы: номер в кружке, повторения и вес с кнопками «−/+», удаление.
 function SetRows({ sets, onEdit, onRemove }) {
   return (
     <div className="workout-sets-edit" role="group" aria-label="Подходы">
-      <div className="workout-sets-edit-head" aria-hidden="true">
-        <span>Подход</span>
+      <div className="workout-set-labels" aria-hidden="true">
+        <span>№</span>
         <span>Повторения</span>
         <span>Вес, кг</span>
+        <span />
       </div>
       {sets.map((set, index) => (
         <div className="workout-set-row" key={set.key}>
-          <span>{index + 1}</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            min="0"
-            max="1000"
-            step="1"
+          <span className="set-edit-number">{index + 1}</span>
+          <Stepper
             value={set.repetitions}
-            onChange={(event) => onEdit(index, { repetitions: event.target.value })}
-            aria-label={`Повторения, подход ${index + 1}`}
+            step={1}
+            label={`Повторения, подход ${index + 1}`}
+            onChange={(repetitions) => onEdit(index, { repetitions })}
           />
-          <input
-            type="number"
-            inputMode="decimal"
-            min="0"
-            max="10000"
-            step="0.01"
+          <Stepper
             value={set.weight_kg}
-            onChange={(event) => onEdit(index, { weight_kg: event.target.value })}
-            aria-label={`Вес, кг, подход ${index + 1}`}
+            step={2.5}
+            decimal
+            label={`Вес, кг, подход ${index + 1}`}
+            onChange={(weight_kg) => onEdit(index, { weight_kg })}
           />
           <button
             type="button"
@@ -130,6 +164,7 @@ function ExerciseEditor({ exercise, index, count, catalog, onChange, onMove, onR
   const selected = catalog.find((item) => String(item.id) === exercise.exercise_id);
   let name = exercise.exercise_name;
   if (selected) name = selected.name;
+  const photo = entryPhotoUrl({ muscleGroup: exercise.muscle_group, image: exercise.image });
 
   function editSet(setIndex, patch) {
     const sets = exercise.sets.map((set, itemIndex) => {
@@ -148,35 +183,47 @@ function ExerciseEditor({ exercise, index, count, catalog, onChange, onMove, onR
     onChange({ sets: [...exercise.sets, newSet(lastSet)] });
   }
 
+  const volume = setsVolume(exercise.sets);
+
   return (
     <li className="workout-exercise">
       <div className="workout-exercise-head">
-        <span className="workout-exercise-handle" aria-hidden="true">
-          ⠿
-        </span>
-        <h3>
-          <button
-            type="button"
-            onClick={onPick}
-            title={selected || !name ? 'Выбрать другое упражнение' : 'Упражнение в архиве'}
-          >
-            {index + 1}. {name || 'Выберите упражнение'}
-          </button>
-        </h3>
-        <div className="workout-exercise-order">
-          <button type="button" onClick={() => onMove(-1)} disabled={index === 0}>
-            Выше
-          </button>
-          <button type="button" onClick={() => onMove(1)} disabled={index === count - 1}>
-            Ниже
-          </button>
-        </div>
-        <button type="button" className="workout-exercise-remove" onClick={onRemove}>
-          <img src="/assets/icon-trash.svg" alt="" />
-          <span>
-            Удалить<span className="narrow-only"> упражнение</span>
+        <button
+          type="button"
+          className="workout-exercise-pick"
+          onClick={onPick}
+          title={selected || !name ? 'Выбрать другое упражнение' : 'Упражнение в архиве'}
+        >
+          <span className="workout-exercise-photo">
+            {photo && <img src={photo} alt="" />}
+            <b>{index + 1}</b>
+          </span>
+          <span className="workout-exercise-title">
+            <strong>{name || 'Выберите упражнение'}</strong>
+            <small>{exercise.muscle_group || 'Нажмите, чтобы сменить'}</small>
           </span>
         </button>
+        <div className="workout-exercise-tools">
+          <button type="button" onClick={() => onMove(-1)} disabled={index === 0} aria-label="Выше">
+            ↑
+          </button>
+          <button
+            type="button"
+            onClick={() => onMove(1)}
+            disabled={index === count - 1}
+            aria-label="Ниже"
+          >
+            ↓
+          </button>
+          <button
+            type="button"
+            className="workout-exercise-remove"
+            onClick={onRemove}
+            aria-label="Удалить упражнение"
+          >
+            <img src={`${ASSETS}icon-trash.svg`} alt="" />
+          </button>
+        </div>
       </div>
       {exercise.sets.length > 0 && (
         <SetRows sets={exercise.sets} onEdit={editSet} onRemove={removeSet} />
@@ -186,13 +233,18 @@ function ExerciseEditor({ exercise, index, count, catalog, onChange, onMove, onR
           Подходов пока нет — упражнение можно сохранить и без них.
         </p>
       )}
-      <button type="button" className="workout-add-set" onClick={addSet}>
-        <img src="/assets/icon-plus.svg" alt="" />
-        Добавить подход
-      </button>
+      <div className="workout-exercise-bottom">
+        <button type="button" className="workout-add-set" onClick={addSet}>
+          <img src={`${ASSETS}icon-plus.svg`} alt="" />
+          Подход
+        </button>
+        {volume > 0 && (
+          <span className="workout-volume">Объём {volume.toLocaleString('ru-RU')} кг</span>
+        )}
+      </div>
       <details className="workout-exercise-notes">
         <summary>
-          <img src="/assets/icon-pencil.svg" alt="" />
+          <img src={`${ASSETS}icon-pencil.svg`} alt="" />
           Заметки к упражнению и подходам
         </summary>
         <label>
@@ -235,7 +287,8 @@ export function WorkoutEditor() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   // Открытое окно выбора упражнения: { index — для какой карточки,
-  // created — карточка только что добавлена }. null — окно закрыто.
+  // created — карточка только что добавлена, newName — если задано, вместо списка
+  // открыта форма «Своё упражнение» с этим названием }. null — окно закрыто.
   const [picker, setPicker] = useState(null);
   const backHref = id ? `/workouts/${id}` : '/workouts';
 
@@ -307,8 +360,19 @@ export function WorkoutEditor() {
   }
 
   function chooseExercise(item) {
-    editExercise(picker.index, { exercise_id: String(item.id), exercise_name: item.name });
+    editExercise(picker.index, {
+      exercise_id: String(item.id),
+      exercise_name: item.name,
+      muscle_group: item.muscle_group,
+      image: item.image,
+    });
     setPicker(null);
+  }
+
+  // Своё упражнение сохранено: добавляем его в справочник на странице и сразу выбираем.
+  function ownExerciseSaved(item) {
+    setCatalog((items) => [...items, item]);
+    chooseExercise(item);
   }
 
   async function save(event) {
@@ -326,8 +390,8 @@ export function WorkoutEditor() {
     try {
       const body = requestBody(form);
       let result;
-      if (id) result = await api(`/workouts/${id}`, 'PUT', body);
-      else result = await api('/workouts', 'POST', body);
+      if (id) result = await api(`/workouts/${id}`, { method: 'PUT', body });
+      else result = await api('/workouts', { method: 'POST', body });
       // replace: «Назад» со страницы тренировки не вернёт к уже сохранённой форме.
       navigate(`/workouts/${result.workout.id}`, { replace: true });
     } catch (problem) {
@@ -407,19 +471,30 @@ export function WorkoutEditor() {
               type="button"
               onClick={addExercise}
             >
-              <img src="/assets/icon-plus.svg" alt="" />
+              <img src={`${ASSETS}icon-plus.svg`} alt="" />
               Добавить упражнение
             </button>
           </div>
         </form>
       )}
-      {picker && (
+      {picker && picker.newName === undefined && (
         <CatalogDialog
           title="Выберите упражнение"
           items={catalog}
-          describe={(item) => item.muscle_group}
+          describe={(item) => item.muscle_group || 'Своё упражнение'}
+          groupOf={(item) => item.muscle_group}
+          image={(item) => entryPhotoUrl({ muscleGroup: item.muscle_group, image: item.image })}
+          addLabel="Добавить своё упражнение"
+          onAdd={(name) => setPicker({ ...picker, newName: name })}
           onChoose={chooseExercise}
           onClose={closePicker}
+        />
+      )}
+      {picker && picker.newName !== undefined && (
+        <OwnExerciseDialog
+          initialName={picker.newName}
+          onSaved={ownExerciseSaved}
+          onBack={() => setPicker({ ...picker, newName: undefined })}
         />
       )}
     </Shell>

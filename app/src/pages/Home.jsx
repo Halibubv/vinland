@@ -1,6 +1,7 @@
 // Главная страница для вошедшего пользователя: приветствие, две главные кнопки и блок «Полезное».
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { ASSETS } from '../lib/constants.js';
 import './Home.css';
 
 // Короткие подсказки в блоке «Полезное», каждая ведёт в свой раздел.
@@ -35,11 +36,11 @@ export function Home({ user }) {
           <p>Сегодня — новый шаг в пути.</p>
           <div className="home-hero-actions">
             <Link className="button button--primary" to="/workouts/new">
-              <img src="/assets/nav-workouts.svg" alt="" />
+              <img src={`${ASSETS}nav-workouts.svg`} alt="" />
               Записать тренировку
             </Link>
             <Link className="button button--outline" to="/nutrition/new">
-              <img src="/assets/nav-food.svg" alt="" />
+              <img src={`${ASSETS}nav-food.svg`} alt="" />
               Добавить питание
             </Link>
           </div>
@@ -51,7 +52,7 @@ export function Home({ user }) {
         <h2>Полезное</h2>
         <p className="home-lead">Знания. Практика. Твой путь.</p>
         <div className="home-useful">
-          <img src="/assets/article-barbell.png" alt="Штанга для силовой тренировки" />
+          <img src={`${ASSETS}article-barbell.png`} alt="Штанга для силовой тренировки" />
           <article className="home-feature">
             <span>Тренировки</span>
             <h3>
@@ -74,8 +75,8 @@ export function Home({ user }) {
                 <Link to={guide.to}>
                   {/* На широком экране — иконка темы, на узком — значок книги. */}
                   <span className="home-guide-icon">
-                    <img className="wide-only" src={`/assets/${guide.icon}`} alt="" />
-                    <img className="narrow-only" src="/assets/icon-book.svg" alt="" />
+                    <img className="wide-only" src={`${ASSETS}${guide.icon}`} alt="" />
+                    <img className="narrow-only" src={`${ASSETS}icon-book.svg`} alt="" />
                   </span>
                   <span className="home-guide-text">
                     <small className="wide-only">{guide.topic}</small>

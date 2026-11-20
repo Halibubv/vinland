@@ -1,339 +1,339 @@
-/* Экран «Статистика»: график калорий, итоги дня и тренировки. */
+/* Экран «Статистика»: баннер с итогами периода, карточка калорий с графиком
+   и КБЖУ выбранного дня, карточка тренировок с клетками по дням.
+   Вёрстка рассчитана в первую очередь на телефон (390px). */
 
-.stats-page .section-title-row {
-  align-items: center;
+.stats-page {
+  padding-bottom: var(--space-xl);
 }
-.period-select {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 42px;
-  padding: 0 16px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+
+/* --- Баннер --- */
+.stats-back {
+  color: var(--muted);
+  font-size: 14px;
 }
-.period-select img {
-  width: 22px;
-  height: 22px;
-}
-.period-select select {
-  appearance: none;
-  padding-right: 18px;
-  border: 0;
-  background: transparent
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23f6efdf' stroke-width='1.4'/%3E%3C/svg%3E")
-    right center no-repeat;
+.stats-back:hover {
   color: var(--cream);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
 }
-.period-select select option {
-  background: var(--surface);
-}
-
-/* Компьютер: график и итоги дня в одной панели. */
-.stats-overview {
-  display: grid;
-  grid-template-columns: minmax(0, 1.75fr) minmax(300px, 1fr);
+/* Переключатель периода: три кнопки в «таблетке». */
+.stats-period {
+  display: inline-grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 4px;
+  padding: 4px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
+  border-radius: 22px;
+  background: rgba(13, 26, 33, 0.7);
 }
-.stats-overview > .panel {
+.stats-period button {
+  min-height: 34px;
+  padding: 0 14px;
   border: 0;
-  background: transparent;
+  border-radius: 17px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  white-space: nowrap;
 }
-.stats-calories {
-  padding: 24px;
-  min-width: 0;
+.stats-period button:hover {
+  color: var(--cream);
 }
-.stats-calories h2,
-.stats-workouts h2 {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin: 0;
-  font-size: 24px;
-  font-weight: 500;
-}
-.stats-calories h2 img,
-.stats-workouts h2 img {
-  width: 26px;
-  height: 26px;
-}
-.stats-today.day-summary {
-  grid-template-columns: 1fr;
-  align-content: start;
-  padding: 24px 32px 24px 8px;
-}
-.stats-today .day-summary-macros {
-  grid-template-columns: 1fr;
-  gap: 14px;
-}
-.stats-today .day-summary-macros > div {
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  align-items: center;
-}
-.stats-today .day-summary-macros strong {
-  margin: 0;
-  font-size: 16px;
-}
-.stats-today .day-summary-macro-bar {
-  grid-column: 2;
+.stats-period button.selected {
+  background: var(--cream);
+  color: var(--bg);
+  font-weight: 600;
 }
 
-/* Столбчатый график. Высота столбиков — в % от самого большого значения (или цели). */
-.stats-chart {
-  margin: 24px 0 0;
+/* --- Карточки --- */
+.stats-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+  align-items: start;
+  gap: 20px;
 }
+.stats-card {
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+}
+.stats-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 14px;
+}
+.stats-card-head h2 {
+  margin: 0;
+  font-family: 'Cormorant SC', Georgia, serif;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+}
+.stats-card-head span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.stats-card-link {
+  display: inline-block;
+  margin-top: 16px;
+  color: var(--cream);
+  font-size: 15px;
+}
+
+/* Выбранный день крупно над графиком. */
+.stats-selected {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 18px;
+}
+.stats-selected small {
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.stats-selected strong {
+  font-family: 'Cormorant SC', Georgia, serif;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+}
+.stats-selected em {
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 20px;
+  font-style: normal;
+}
+.stats-selected span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* --- График калорий --- */
 .stats-chart-plot {
   position: relative;
   display: flex;
-  height: 150px;
-  margin-right: 70px;
+  align-items: flex-end;
+  gap: 6px;
+  height: 180px;
   border-bottom: 1px solid var(--border);
 }
-.stats-chart-grid {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  pointer-events: none;
-}
-.stats-chart-grid span {
-  border-top: 1px solid rgba(64, 82, 92, 0.6);
-}
-.stats-chart-goal {
-  position: absolute;
-  left: 0;
-  right: 0;
-  z-index: 1;
-  border-top: 1px dashed var(--cream);
-  pointer-events: none;
-}
-.stats-chart-goal span {
-  position: absolute;
-  left: calc(100% + 8px);
-  top: -8px;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.3;
-  white-space: nowrap;
-}
+/* Каждый день — кнопка на всю высоту, внутри снизу растёт столбик. */
 .stats-chart-column {
-  position: relative;
   display: flex;
   flex: 1;
   align-items: flex-end;
   justify-content: center;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
 }
 .stats-chart-bar {
-  position: relative;
-  width: min(38px, 60%);
-  border-radius: 3px 3px 0 0;
+  width: 100%;
+  max-width: 34px;
+  min-height: 3px;
+  border-radius: 8px 8px 3px 3px;
+  background: linear-gradient(180deg, rgba(246, 239, 223, 0.55), rgba(246, 239, 223, 0.18));
+  transition:
+    background 0.2s,
+    transform 0.2s;
+  transform-origin: bottom;
+  animation: stats-bar-grow 0.6s ease-out both;
+}
+/* Больше цели на 10% и выше — столбик тёплого цвета. */
+.stats-chart-column.is-over .stats-chart-bar {
+  background: linear-gradient(180deg, rgba(221, 129, 125, 0.75), rgba(221, 129, 125, 0.2));
+}
+.stats-chart-column:hover .stats-chart-bar {
+  background: rgba(246, 239, 223, 0.7);
+}
+.stats-chart-column.is-selected .stats-chart-bar {
   background: var(--cream);
+  box-shadow: 0 0 18px rgba(246, 239, 223, 0.35);
 }
-.stats-chart-bar span {
+@keyframes stats-bar-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+/* Пунктирная линия цели с подписью справа. */
+.stats-chart-goal {
   position: absolute;
-  /* Число над столбиком — поверх пунктира цели и на фоне панели,
-     чтобы линия не перечёркивала цифры. */
-  z-index: 2;
-  bottom: calc(100% + 4px);
-  left: 50%;
-  padding: 0 3px;
-  background: var(--surface);
-  transform: translateX(-50%);
-  font-size: 12px;
-  white-space: nowrap;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed rgba(246, 239, 223, 0.5);
+  pointer-events: none;
 }
+.stats-chart-goal span {
+  position: absolute;
+  right: 0;
+  bottom: 4px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 11px;
+}
+/* Подписи дней под столбиками, в тех же колонках. */
 .stats-chart-axis {
   display: flex;
-  margin: 8px 70px 0 0;
+  gap: 6px;
+  margin-top: 8px;
 }
 .stats-chart-axis span {
-  display: grid;
   flex: 1;
-  justify-items: center;
+  min-width: 0;
   color: var(--muted);
   font-size: 12px;
-  line-height: 1.5;
+  text-align: center;
+  white-space: nowrap;
 }
-.stats-chart-axis b {
-  font-weight: 400;
+.stats-chart-axis span.is-selected {
+  color: var(--cream);
+  font-weight: 600;
 }
-.stats-chart-axis small {
-  text-transform: capitalize;
+/* За 30 дней столбики тоньше и ближе друг к другу. */
+.stats-chart--30 .stats-chart-plot,
+.stats-chart--30 .stats-chart-axis {
+  gap: 2px;
 }
-.stats-chart--dense .stats-chart-bar span {
-  display: none;
+.stats-chart--30 .stats-chart-bar {
+  border-radius: 4px 4px 2px 2px;
 }
-.stats-chart--dense .stats-chart-axis .is-minor {
-  visibility: hidden;
-}
-.stats-chart--dense .stats-chart-axis small {
-  display: none;
-}
-.stats-chart-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  margin-top: 20px;
-  color: var(--muted);
-  font-size: 12px;
+.stats-chart--30 .stats-chart-axis span {
+  overflow: visible;
 }
 
-/* Карточка «Тренировки». */
-.stats-workouts {
-  margin-top: var(--space-m);
-  padding: 20px 24px;
+.stats-day-totals {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--surface2);
 }
-.stats-workouts-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border);
-}
-.stats-workouts-head a,
-.stats-workouts-link {
-  color: var(--muted);
-  font-size: 14px;
-}
-.stats-workouts-head a:hover,
-.stats-workouts-link:hover {
-  color: var(--cream);
-}
-.stats-week {
+
+/* --- Тренировки: клетка на каждый день --- */
+.stats-days {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 12px;
-  margin: 0;
-  padding: 16px 0 0;
-  list-style: none;
-  text-align: center;
-}
-.stats-week li {
-  display: grid;
-  /* Строки: дата, день недели, значок (24px — как иконка, и прочерк тоже
-     в этой высоте), подпись. Одинаковые строки во всех днях, поэтому
-     дни недели и подписи стоят на одной линии по всей неделе. */
-  grid-template-rows: auto auto 24px auto;
-  align-content: start;
-  align-items: center;
-  justify-items: center;
-  gap: 8px;
-  color: var(--muted);
-  font-size: 13px;
-}
-.stats-week strong {
-  color: var(--cream);
-  font-weight: 500;
-}
-.stats-week small {
-  text-transform: capitalize;
-}
-.stats-week img {
-  width: 24px;
-  height: 24px;
-}
-.stats-week .is-active span {
-  color: var(--cream);
-}
-.stats-workout-list {
-  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stats-days li {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 8px 0;
+  border: 1px solid var(--surface2);
+  border-radius: 10px;
+  color: var(--muted);
+}
+.stats-days small {
+  font-size: 11px;
+}
+.stats-days b {
+  font-size: 15px;
+  font-weight: 600;
+}
+.stats-days li.is-trained {
+  border-color: var(--cream);
+  background: var(--cream);
+  color: var(--bg);
+}
+
+.stats-trained {
+  display: grid;
+  gap: 8px;
   margin: 16px 0 0;
   padding: 0;
   list-style: none;
-  color: var(--muted);
-  font-size: 16px;
 }
-.stats-workouts-link {
-  display: inline-block;
-  margin-top: 16px;
-  color: var(--cream);
+.stats-trained li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.stats-trained-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--surface2);
+}
+.stats-trained-icon img {
+  width: 20px;
+  height: 20px;
+}
+.stats-trained strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+.stats-trained small {
+  color: var(--muted);
+  font-size: 13px;
 }
 
-/* Планшет и телефон: три карточки друг под другом. */
 @media (max-width: 900px) {
-  .stats-page .section-title-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .stats-page .section-title-row p {
-    display: none;
-  }
-  .period-select {
-    padding: 0;
-    border: 0;
-  }
-  .period-select select {
-    font-weight: 400;
-  }
-  .stats-overview {
+  .stats-cards {
     grid-template-columns: 1fr;
-    gap: 20px;
-    border: 0;
-    background: none;
-  }
-  .stats-overview > .panel {
-    border: 1px solid var(--border);
-    background: var(--surface);
-  }
-  .stats-calories h2 img,
-  .stats-workouts h2 img {
-    display: none;
-  }
-  .stats-chart-plot,
-  .stats-chart-axis {
-    margin-right: 0;
-  }
-  .stats-chart-goal span {
-    display: none;
-  }
-  .stats-today.day-summary {
-    padding: 20px;
-  }
-  .stats-today .day-summary-macros {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  .stats-today .day-summary-macros > div {
-    display: block;
-  }
-  .stats-today .day-summary-macros strong {
-    margin: 8px 0 6px;
-  }
-  .stats-workouts {
-    margin-top: 20px;
-  }
-  .stats-workouts-head {
-    padding: 0;
-    border: 0;
   }
 }
+
 @media (max-width: 700px) {
-  .stats-calories,
-  .stats-workouts {
-    padding: 20px;
+  .stats-page {
+    padding-bottom: 100px;
   }
-  .stats-calories h2,
-  .stats-workouts h2 {
-    font-size: 20px;
+  /* Три цифры баннера в один ряд. */
+  .stats-page .page-hero-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+    gap: 10px;
+  }
+  /* Цифры сверху, подписи под ними — в каждой колонке на одной высоте. */
+  .stats-page .page-hero-stats > div {
+    justify-content: flex-end;
+  }
+  .stats-page .page-hero-stats dd {
+    font-size: 28px;
+  }
+  .stats-page .page-hero-stats dt {
+    font-size: 12px;
+  }
+  .stats-card {
+    padding: 18px 16px;
+  }
+  .stats-card-head h2 {
+    font-size: 28px;
+  }
+  .stats-selected strong {
+    font-size: 42px;
   }
   .stats-chart-plot {
-    height: 140px;
+    height: 160px;
+    gap: 5px;
   }
+  .stats-chart-axis {
+    gap: 5px;
+  }
+  .stats-period button {
+    padding: 0 12px;
+  }
+  .stats-days {
+    gap: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
   .stats-chart-bar {
-    width: 60%;
-  }
-  .stats-chart-bar span {
-    font-size: 10px;
-  }
-  .stats-workout-list {
-    font-size: 14px;
+    animation: none;
   }
 }

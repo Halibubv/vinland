@@ -1,11 +1,15 @@
 // Личный кабинет: имя и цели КБЖУ, итоги сегодняшнего дня и ссылки на разделы.
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../api.js';
-import { formatInt, localDate, mealTypes, pluralWord, setsSummary } from '../format.js';
-import { initials } from '../components/Layout.jsx';
-import { Field, Notice, EntryPhoto } from '../components/ui.jsx';
+import { api } from '../lib/api.js';
+import { localDate } from '../lib/dates.js';
+import { formatInt, pluralWord, setsSummary } from '../lib/format.js';
+import { ASSETS, mealTypes } from '../lib/constants.js';
+import { AvatarContent } from '../components/Layout.jsx';
+import { squarePhoto } from '../lib/image.js';
+import { Field, Notice } from '../components/ui.jsx';
 import { DayTotals } from '../components/DayTotals.jsx';
+import { EntryPhoto } from '../components/EntryIcon.jsx';
 import { PageHero } from '../components/PageHero.jsx';
 import './Profile.css';
 
@@ -67,7 +71,7 @@ function ProfileForm({ user, onSaved, onCancel }) {
         const value = values[field.key];
         payload[field.key] = value === '' ? null : value;
       }
-      const result = await api('/profile', 'PUT', payload);
+      const result = await api('/profile', { method: 'PUT', body: payload });
       onSaved(result.user);
     } catch (error) {
       setErrors(error.fields || {});
@@ -80,7 +84,7 @@ function ProfileForm({ user, onSaved, onCancel }) {
     <form className="panel profile-form" onSubmit={save} noValidate>
       <div className="profile-form-head">
         <h2>Профиль и цели КБЖУ</h2>
-        <p>Пустое поле — цель не задана. Инициалы формируются из имени.</p>
+        <p>Пустое поле — цель не задана. Фото профиля меняется нажатием на аватар.</p>
       </div>
       <div className="profile-form-grid">
         <Field
@@ -124,6 +128,61 @@ function ProfileForm({ user, onSaved, onCancel }) {
   );
 }
 
+// Аватар в баннере. Нажатие открывает выбор фото (на телефоне — галерея или камера).
+// Фото уменьшаем в браузере (squarePhoto) и отправляем на сервер строкой.
+function AvatarPicker({ user, onUpdate }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function upload(avatar) {
+    setBusy(true);
+    setError('');
+    try {
+      const result = await api('/profile/avatar', { method: 'PUT', body: { avatar } });
+      onUpdate(result.user);
+    } catch (problem) {
+      setError(problem.message);
+    }
+    setBusy(false);
+  }
+
+  async function choose(event) {
+    const file = event.target.files[0];
+    // Сбрасываем поле, чтобы то же самое фото можно было выбрать ещё раз.
+    event.target.value = '';
+    if (!file) return;
+    try {
+      upload(await squarePhoto(file));
+    } catch (problem) {
+      setError(problem.message);
+    }
+  }
+
+  return (
+    <div className="profile-avatar-picker">
+      <label className="profile-avatar" title="Сменить фото">
+        <AvatarContent user={user} />
+        <input type="file" accept="image/*" onChange={choose} disabled={busy} />
+        <span
+          className={busy ? 'profile-avatar-badge busy' : 'profile-avatar-badge'}
+          aria-hidden="true"
+        />
+        <span className="sr-only">Загрузить фото профиля</span>
+      </label>
+      {user.avatar && !busy && (
+        <button type="button" className="profile-avatar-remove" onClick={() => upload(null)}>
+          Убрать фото
+        </button>
+      )}
+      {error && (
+        <p className="profile-avatar-error" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 // Карточка «Сегодня в зале»: упражнения из сегодняшних тренировок.
 function TodayWorkout({ workouts }) {
   // Собираем упражнения всех тренировок за сегодня в один список,
@@ -139,7 +198,7 @@ function TodayWorkout({ workouts }) {
       <h2 className="section-heading">Сегодня в зале</h2>
       {exercises.slice(0, 5).map((exercise, index) => (
         <Link className="profile-entry" to={`/workouts/${exercise.workoutId}`} key={index}>
-          <EntryPhoto muscleGroup={exercise.muscle_group} />
+          <EntryPhoto muscleGroup={exercise.muscle_group} image={exercise.image} />
           <span className="profile-entry-text">
             {exercise.exercise_name}
             <small>{setsSummary(exercise.sets)}</small>
@@ -252,7 +311,7 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
           onClick={toggleSettings}
           aria-expanded={editing}
         >
-          <img src="/assets/icon-settings.svg" alt="" />
+          <img src={`${ASSETS}icon-settings.svg`} alt="" />
           {editing ? 'Закрыть настройки' : 'Настройки профиля'}
         </button>
         <button className="profile-logout" type="button" onClick={onLogout} disabled={logoutBusy}>
@@ -267,9 +326,9 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
       <div className="section-banner" />
       <main className="content section-content profile-page">
         <PageHero
-          image="/assets/hero-profile.jpg"
+          image={`${ASSETS}hero-profile.jpg`}
           top={top}
-          media={<div className="profile-avatar">{initials(user.name)}</div>}
+          media={<AvatarPicker user={user} onUpdate={onUpdate} />}
           title={user.name}
           subtitle={user.email}
           stats={today && profileStats(user, today)}
@@ -293,7 +352,7 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
 
         <nav className="profile-links" aria-label="Разделы профиля">
           <Link to="/statistics">
-            <img src="/assets/icon-chart.svg" alt="" />
+            <img src={`${ASSETS}icon-chart.svg`} alt="" />
             <span>
               <strong>Статистика</strong>
               <small>Динамика тренировок и питания</small>
@@ -301,7 +360,7 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
             <b aria-hidden="true">→</b>
           </Link>
           <Link to="/workouts">
-            <img src="/assets/icon-calendar.svg" alt="" />
+            <img src={`${ASSETS}icon-calendar.svg`} alt="" />
             <span>
               <strong>Тренировки</strong>
               <small>Все выполненные тренировки</small>

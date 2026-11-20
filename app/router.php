@@ -1,7 +1,7 @@
 <?php
-// Маршрутизатор для встроенного сервера PHP (php -S): существующие файлы из public/
-// отдаются как есть, всё остальное уходит в public/index.php. Файлы вне public/ недоступны.
-declare(strict_types=1);
+// Нужен только для встроенного сервера PHP (php -S ... router.php).
+// Если запрошен настоящий файл из папки public (картинка, стиль, скрипт), отдаём его как есть,
+// всё остальное отправляем в public/index.php.
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $publicDir = realpath(__DIR__ . '/public');
 $file = realpath($publicDir . $path);

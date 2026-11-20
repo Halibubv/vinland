@@ -1,7 +1,7 @@
 // Число, которое быстро «досчитывает» от нуля до нужного значения
 // (как карточки статистики на designbookmark.com/motion).
 import React, { useEffect, useState } from 'react';
-import { formatInt } from '../format.js';
+import { formatInt } from '../lib/format.js';
 
 const DURATION = 900; // длительность счёта, мс
 

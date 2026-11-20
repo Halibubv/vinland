@@ -1,10 +1,15 @@
 // Создание и редактирование приёма пищи: дата, тип, список продуктов с граммами.
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { api, errorText } from '../api.js';
-import { dateLabel, formatInt, formatNumber, isDate, localDate, mealTypes } from '../format.js';
-import { Shell, Notice, DateStepper } from '../components/ui.jsx';
-import { CatalogDialog, ConfirmDialog } from '../components/Dialogs.jsx';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { api, errorText } from '../lib/api.js';
+import { dateLabel, localDate, parseDate } from '../lib/dates.js';
+import { formatInt, formatNumber } from '../lib/format.js';
+import { ASSETS, mealTypes } from '../lib/constants.js';
+import { Shell, Notice } from '../components/ui.jsx';
+import { CatalogDialog, CatalogThumb, ConfirmDialog } from '../components/Dialogs.jsx';
+import { OwnProductDialog } from '../components/OwnItemDialogs.jsx';
+import { catalogImageUrl } from '../components/EntryIcon.jsx';
+import { DateStepper } from '../components/DateStepper.jsx';
 import './MealEditor.css';
 
 // КБЖУ на 100 г продукта. Сохранённые продукты хранят значения на день записи
@@ -67,10 +72,12 @@ function describeProduct(product) {
   return `${formatInt(product.calories_per_100g)} ккал · ${macros} / 100 г`;
 }
 
-// Пустая форма. Дату и тип можно передать в адресе: /nutrition/add/2026-11-20/lunch.
-function initialForm(date, type) {
+// Пустая форма. Дату и тип можно передать в адресе: /nutrition/new?date=...&type=lunch.
+function initialForm(searchParams) {
+  const date = searchParams.get('date');
+  const type = searchParams.get('type');
   return {
-    meal_date: isDate(date) ? date : localDate(),
+    meal_date: parseDate(date) ? date : localDate(),
     meal_type: mealTypes[type] ? type : 'breakfast',
     items: [],
   };
@@ -114,13 +121,14 @@ function MealItem({ item, onGramsChange, onRemove }) {
   const values = amounts(item);
   return (
     <li className="panel meal-item">
+      <CatalogThumb src={catalogImageUrl(item)} name={item.product_name_snapshot || item.name} />
       <h3>{item.product_name_snapshot || item.name}</h3>
       <p>
         {formatNumber(item.quantity_g)} г · {formatInt(values.calories)} ккал
         <small>{macroLine(values)}</small>
       </p>
       <label className="meal-item-grams">
-        <img src="/assets/icon-pencil.svg" alt="" />
+        <img src={`${ASSETS}icon-pencil.svg`} alt="" />
         Количество, г
         <input
           id={`grams-${item.key}`}
@@ -134,7 +142,7 @@ function MealItem({ item, onGramsChange, onRemove }) {
         />
       </label>
       <button type="button" className="text-button meal-item-remove" onClick={onRemove}>
-        <img src="/assets/icon-trash.svg" alt="" />
+        <img src={`${ASSETS}icon-trash.svg`} alt="" />
         Удалить из приёма пищи
       </button>
     </li>
@@ -142,13 +150,12 @@ function MealItem({ item, onGramsChange, onRemove }) {
 }
 
 // id есть — редактируем сохранённый приём пищи, нет — создаём новый.
-// openPicker — сразу открыть окно выбора продукта (кнопки «Добавить продукт» в дневнике).
-export function MealEditor({ openPicker = false }) {
-  // Параметры из адреса (см. App.jsx): /nutrition/:id или /nutrition/add/:date/:type.
-  // Чего нет в адресе, то будет undefined.
-  const { id, date, type } = useParams();
+export function MealEditor() {
+  // На /nutrition/:id id есть, на /nutrition/new его нет (undefined).
+  const { id } = useParams();
   const navigate = useNavigate();
-  const [form, setForm] = useState(() => initialForm(date, type));
+  const [searchParams] = useSearchParams();
+  const [form, setForm] = useState(() => initialForm(searchParams));
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -158,7 +165,11 @@ export function MealEditor({ openPicker = false }) {
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // Окно выбора продукта: false — закрыто, 'list' — список справочника,
+  // 'new' — форма «Свой продукт».
   const [picking, setPicking] = useState(false);
+  // Название, с которым открывается форма своего продукта (то, что искали в списке).
+  const [newName, setNewName] = useState('');
   const [confirming, setConfirming] = useState(false);
 
   // Загружаем справочник продуктов и, при редактировании, сам приём пищи.
@@ -183,7 +194,8 @@ export function MealEditor({ openPicker = false }) {
             })),
           });
         }
-        if (openPicker) setPicking(true);
+        // ?add=1 в адресе — сразу открыть окно выбора продукта.
+        if (searchParams.get('add')) setPicking('list');
       })
       .catch((problem) => {
         setLoadError(problem.message);
@@ -222,8 +234,14 @@ export function MealEditor({ openPicker = false }) {
     }, 0);
   }
 
+  // Свой продукт сохранён: добавляем его в справочник на странице и сразу в приём пищи.
+  function ownProductSaved(product) {
+    setProducts((items) => [...items, product]);
+    addProduct(product);
+  }
+
   const total = mealTotal(form.items);
-  const backHref = `/nutrition/day/${form.meal_date}`;
+  const backHref = `/nutrition?date=${form.meal_date}`;
 
   async function save(event) {
     event.preventDefault();
@@ -245,8 +263,8 @@ export function MealEditor({ openPicker = false }) {
         return { product_id: Number(item.product_id), quantity_g: item.quantity_g };
       });
       const body = { meal_date: form.meal_date, meal_type: form.meal_type, items };
-      if (id) await api(`/meals/${id}`, 'PUT', body);
-      else await api('/meals', 'POST', body);
+      if (id) await api(`/meals/${id}`, { method: 'PUT', body });
+      else await api('/meals', { method: 'POST', body });
       // replace: «Назад» из дневника не вернёт к уже сохранённой форме.
       navigate(backHref, { replace: true });
     } catch (problem) {
@@ -258,7 +276,7 @@ export function MealEditor({ openPicker = false }) {
   async function remove() {
     setBusy(true);
     try {
-      await api(`/meals/${id}`, 'DELETE');
+      await api(`/meals/${id}`, { method: 'DELETE' });
       navigate(backHref, { replace: true });
     } catch (problem) {
       setError(problem.message);
@@ -320,9 +338,9 @@ export function MealEditor({ openPicker = false }) {
           <button
             type="button"
             className="button button--outline meal-add"
-            onClick={() => setPicking(true)}
+            onClick={() => setPicking('list')}
           >
-            <img src="/assets/icon-plus.svg" alt="" />
+            <img src={`${ASSETS}icon-plus.svg`} alt="" />
             Добавить продукт
           </button>
           <div className="form-actions">
@@ -345,13 +363,26 @@ export function MealEditor({ openPicker = false }) {
           </div>
         </form>
       )}
-      {picking && (
+      {picking === 'list' && (
         <CatalogDialog
           title="Добавить продукт"
           items={products}
           describe={describeProduct}
+          image={catalogImageUrl}
+          addLabel="Добавить свой продукт"
+          onAdd={(name) => {
+            setNewName(name);
+            setPicking('new');
+          }}
           onChoose={addProduct}
           onClose={() => setPicking(false)}
+        />
+      )}
+      {picking === 'new' && (
+        <OwnProductDialog
+          initialName={newName}
+          onSaved={ownProductSaved}
+          onBack={() => setPicking('list')}
         />
       )}
       {confirming && (

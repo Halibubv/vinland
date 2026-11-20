@@ -1,11 +1,14 @@
 // Просмотр одной сохранённой тренировки (только чтение). Редактирование — на /workouts/:id/edit.
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { api } from '../api.js';
-import { dateLabel, dayMonth, formatInt, formatWeight, pluralWord, weekday } from '../format.js';
-import { Notice, musclePhoto } from '../components/ui.jsx';
+import { api } from '../lib/api.js';
+import { dateLabel } from '../lib/dates.js';
+import { formatInt, formatWeight, pluralWord } from '../lib/format.js';
+import { ASSETS } from '../lib/constants.js';
+import { Notice } from '../components/ui.jsx';
 import { ConfirmDialog } from '../components/Dialogs.jsx';
 import { PageHero } from '../components/PageHero.jsx';
+import { entryPhotoUrl } from '../components/EntryIcon.jsx';
 import './WorkoutView.css';
 
 // Итоги тренировки для крупных цифр в баннере.
@@ -34,7 +37,7 @@ function workoutStats(workout) {
 
 // Строка над датой: "Тренировка · четверг, 2026".
 function heroEyebrow(workoutDate) {
-  const weekdayName = weekday(workoutDate, 'long');
+  const weekdayName = dateLabel(workoutDate, { weekday: 'long' });
   const year = workoutDate.slice(0, 4);
   return `Тренировка · ${weekdayName}, ${year}`;
 }
@@ -65,9 +68,9 @@ function SetsList({ sets }) {
   );
 }
 
-// Карточка упражнения: фото по группе мышц с номером, название и подходы.
+// Карточка упражнения: картинка упражнения (или фото группы мышц) с номером, название и подходы.
 function ExerciseCard({ exercise, number }) {
-  const photo = musclePhoto(exercise.muscle_group);
+  const photo = entryPhotoUrl({ muscleGroup: exercise.muscle_group, image: exercise.image });
   return (
     <li className="exercise-card">
       <div className="exercise-card-photo">
@@ -111,7 +114,7 @@ export function WorkoutView() {
   async function remove() {
     setBusy(true);
     try {
-      await api(`/workouts/${id}`, 'DELETE');
+      await api(`/workouts/${id}`, { method: 'DELETE' });
       // Удалённой тренировки больше нет — убираем её страницу из истории.
       navigate('/workouts', { replace: true });
     } catch (problem) {
@@ -127,12 +130,12 @@ export function WorkoutView() {
   const top = (
     <>
       <Link className="page-hero-link" to="/workouts">
-        <img src="/assets/icon-arrow-left.svg" alt="" />
+        <img src={`${ASSETS}icon-arrow-left.svg`} alt="" />
         Все тренировки
       </Link>
       <div className="page-hero-actions">
         <Link className="button button--primary" to={`/workouts/${id}/edit`}>
-          <img src="/assets/icon-pencil-dark.svg" alt="" />
+          <img src={`${ASSETS}icon-pencil-dark.svg`} alt="" />
           Редактировать
         </Link>
         <button
@@ -142,7 +145,7 @@ export function WorkoutView() {
           title="Удалить тренировку"
           onClick={() => setConfirming(true)}
         >
-          <img src="/assets/icon-trash.svg" alt="" />
+          <img src={`${ASSETS}icon-trash.svg`} alt="" />
         </button>
       </div>
     </>
@@ -157,10 +160,10 @@ export function WorkoutView() {
         {!error && workout && (
           <>
             <PageHero
-              image={'/assets/hero-workout.jpg'}
+              image={`${ASSETS}hero-workout.jpg`}
               top={top}
               eyebrow={heroEyebrow(workout.workout_date)}
-              title={dayMonth(workout.workout_date)}
+              title={dateLabel(workout.workout_date, { day: 'numeric', month: 'long' })}
               subtitle={workout.notes && `«${workout.notes}»`}
               stats={workoutStats(workout)}
             />

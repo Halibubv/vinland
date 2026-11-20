@@ -1,7 +1,7 @@
 // Итоги дня по питанию в новом виде: кольцо калорий и полоски белков, жиров и углеводов.
 // Используется в дневнике питания и в профиле.
 import React from 'react';
-import { formatInt, percentOf } from '../format.js';
+import { formatInt, percentOf } from '../lib/format.js';
 import { CountUp } from './CountUp.jsx';
 import '../styles/day-totals.css';
 
