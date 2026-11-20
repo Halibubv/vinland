@@ -1,7 +1,6 @@
 // Общие части разметки: логотип, шапка с меню, нижнее меню на телефоне и подвал.
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ASSETS } from '../lib/constants.js';
 
 // Пункты главного меню.
 const navigation = [
@@ -29,10 +28,16 @@ export function initials(name = '') {
   return result || 'V';
 }
 
+// Содержимое кружка-аватара: фото пользователя, а если его нет — инициалы.
+export function AvatarContent({ user }) {
+  if (user.avatar) return <img src={user.avatar} alt="" />;
+  return initials(user.name);
+}
+
 export function Brand() {
   return (
     <Link className="brand" to="/" aria-label="ВИНЛАНД — главная">
-      <img src={`${ASSETS}logo-v.svg`} alt="" />
+      <img src="/assets/logo-v.svg" alt="" />
       <span>ВИНЛАНД</span>
     </Link>
   );
@@ -66,7 +71,7 @@ export function AppHeader({ user, onLogout, busy }) {
                 className={active ? 'active' : ''}
                 aria-current={active ? 'page' : undefined}
               >
-                <img src={`${ASSETS}${item.icon}`} alt="" />
+                <img src={`/assets/${item.icon}`} alt="" />
                 {/* При наведении надпись прокручивается вверх, снизу выезжает такая же. */}
                 <span className="roll-link">
                   <span data-text={item.label}>{item.label}</span>
@@ -77,13 +82,13 @@ export function AppHeader({ user, onLogout, busy }) {
         </nav>
         <div className="header-account">
           {user.role === 'admin' && (
-            <Link className="admin-entry" to="/admin/exercises" title="Администрирование">
+            <Link className="admin-entry" to="/admin/users" title="Администрирование">
               <span className="admin-entry-long">Администрирование</span>
               <span className="admin-entry-short">Админ</span>
             </Link>
           )}
           <Link to="/profile" className="avatar" aria-label="Открыть профиль">
-            {initials(user.name)}
+            <AvatarContent user={user} />
           </Link>
           <span>{firstName}</span>
           <button className="text-button logout" onClick={onLogout} disabled={busy}>
@@ -101,7 +106,7 @@ export function AppHeader({ user, onLogout, busy }) {
               className={active ? 'active' : ''}
               aria-current={active ? 'page' : undefined}
             >
-              <img src={`${ASSETS}${item.icon}`} alt="" />
+              <img src={`/assets/${item.icon}`} alt="" />
               <span>{item.label}</span>
             </Link>
           );
@@ -148,7 +153,7 @@ export function GuestMobileNav() {
             to={isHome ? '/' : '/login'}
             aria-label={isHome ? item.label : `${item.label} — войти`}
           >
-            <img src={`${ASSETS}${item.icon}`} alt="" />
+            <img src={`/assets/${item.icon}`} alt="" />
             <span>{item.label}</span>
           </Link>
         );

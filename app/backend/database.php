@@ -1,125 +1,88 @@
 <?php
-// Подключение к MySQL и общие функции для запросов и текущего пользователя.
-declare(strict_types=1);
+// Подключение к базе MySQL через PDO и две короткие функции для запросов.
 
-function database(): PDO
+// Возвращает подключение к базе. Подключаемся один раз за запрос:
+// static-переменная запоминает подключение между вызовами функции.
+function database()
 {
-    static $connection = null;
-    if ($connection === null) {
-        $settings = database_settings();
-        $options = [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            // Настоящие подготовленные запросы: числа из базы приходят числами, а не строками.
-            PDO::ATTR_EMULATE_PREPARES => false,
-            // Если база не отвечает 10 секунд, сразу ошибка, а не долгое зависание.
-            PDO::ATTR_TIMEOUT => 10,
-        ];
-        // Облачные MySQL (например, Aiven) принимают подключение только по SSL.
-        if ($settings['ssl_ca'] !== '') {
-            $options[PDO::MYSQL_ATTR_SSL_CA] = $settings['ssl_ca'];
-            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
-        }
-        $connection = new PDO($settings['dsn'], $settings['user'], $settings['password'], $options);
+    static $pdo = null;
+    if ($pdo !== null) {
+        return $pdo;
     }
-    return $connection;
-}
 
-// Два способа задать базу: одна строка DATABASE_URL (так её выдаёт хостинг, например Aiven)
-// или отдельные DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD (как в .env.example).
-function database_settings(): array
-{
+    // На хостинге база задаётся одной строкой DATABASE_URL, например:
+    // mysql://user:password@mysql-xxxx.aivencloud.com:12345/defaultdb
+    // На своём компьютере — отдельными настройками DB_HOST, DB_NAME и т. д. в .env.
     $url = config('DATABASE_URL');
-    if ($url === '') {
+    if ($url !== '') {
+        $parts = parse_url($url);
+        $host = $parts['host'];
+        $port = $parts['port'] ?? 3306;
+        $name = urldecode(ltrim($parts['path'], '/'));
+        $user = urldecode($parts['user'] ?? '');
+        $password = urldecode($parts['pass'] ?? '');
+    } else {
         $host = config('DB_HOST', '127.0.0.1');
         $port = config('DB_PORT', '3306');
         $name = config('DB_NAME', 'vinland');
         $user = config('DB_USER', 'vinland');
         $password = config('DB_PASSWORD');
-    } else {
-        // Пример: mysql://avnadmin:пароль@mysql-xxxx.aivencloud.com:12345/defaultdb?ssl-mode=REQUIRED
-        $parts = parse_url($url);
-        if ($parts === false || !isset($parts['host'], $parts['path'])) {
-            throw new RuntimeException('DATABASE_URL has an unexpected format');
-        }
-        $host = $parts['host'];
-        $port = (string) ($parts['port'] ?? 3306);
-        $name = urldecode(ltrim($parts['path'], '/'));
-        $user = urldecode($parts['user'] ?? '');
-        $password = urldecode($parts['pass'] ?? '');
     }
 
-    return [
-        // charset=utf8mb4 — чтобы русские буквы передавались без искажений.
-        'dsn' => 'mysql:host=' . $host . ';port=' . $port . ';dbname=' . $name . ';charset=utf8mb4',
-        'user' => $user,
-        'password' => $password,
-        'ssl_ca' => ssl_certificate_file(),
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,       // ошибка SQL сразу останавливает запрос
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,  // строки приходят массивами ['name' => ...]
+        PDO::ATTR_EMULATE_PREPARES => false,               // числа из базы приходят числами
     ];
+
+    // Облачная база (Aiven) пускает только по защищённому соединению SSL.
+    // Для этого нужен файл сертификата, его путь даёт функция ниже.
+    $certificate = ssl_certificate_file();
+    if ($certificate !== '') {
+        $options[PDO::MYSQL_ATTR_SSL_CA] = $certificate;
+        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
+    }
+
+    // charset=utf8mb4 — чтобы русские буквы не превращались в знаки вопроса.
+    $dsn = "mysql:host=$host;port=$port;dbname=$name;charset=utf8mb4";
+    $pdo = new PDO($dsn, $user, $password, $options);
+    return $pdo;
 }
 
-// DB_SSL_CA — сертификат сервера базы (файл ca.pem из панели хостинга).
-// Можно указать путь к файлу или вставить сам текст сертификата: на хостинге
-// приложения проще задать переменную, чем положить файл. Текст сохраняем во
-// временный файл, потому что PDO принимает только путь.
-function ssl_certificate_file(): string
+// Сертификат облачной базы (файл ca.pem из панели Aiven) задаётся в настройке DB_SSL_CA.
+// Там может быть путь к файлу или сам текст сертификата. PDO понимает только путь,
+// поэтому текст сохраняем во временный файл.
+function ssl_certificate_file()
 {
     $value = trim(config('DB_SSL_CA'));
     if ($value === '' || is_file($value)) {
         return $value;
     }
 
-    // Иначе это текст сертификата. При копировании в настройки хостинга могут
-    // пропасть переносы строк или первая строка -----BEGIN CERTIFICATE-----,
-    // поэтому оставляем только сам код сертификата и собираем файл заново.
+    // При копировании в настройки хостинга теряются переносы строк. Убираем строки
+    // BEGIN/END и всё лишнее, оставляем сам код и собираем файл заново по 64 символа в строке.
     $code = preg_replace('/-----[A-Z ]+-----/', '', $value);
     $code = preg_replace('/[^A-Za-z0-9+\/=]/', '', $code);
     $text = "-----BEGIN CERTIFICATE-----\n" . chunk_split($code, 64, "\n") . "-----END CERTIFICATE-----\n";
 
-    $file = sys_get_temp_dir() . '/vinland-db-ca-' . md5($text) . '.pem';
-    if (!is_file($file)) {
-        file_put_contents($file, $text);
-    }
+    $file = sys_get_temp_dir() . '/vinland-db-ca.pem';
+    file_put_contents($file, $text);
     return $file;
 }
 
-function query(string $sql, array $parameters = []): PDOStatement
+// Выполнить SQL-запрос. Вместо значений в SQL пишем знаки ?, а сами значения
+// передаём массивом: так PDO защищает от SQL-инъекций.
+// Пример: query('SELECT * FROM users WHERE id = ?', [5])->fetch();
+function query($sql, $values = [])
 {
     $statement = database()->prepare($sql);
-    $statement->execute($parameters);
+    $statement->execute($values);
     return $statement;
 }
 
-// INSERT и сразу id новой строки (AUTO_INCREMENT).
-function insert(string $sql, array $parameters = []): int
+// INSERT, который возвращает id только что добавленной строки.
+function insert($sql, $values = [])
 {
-    query($sql, $parameters);
+    query($sql, $values);
     return (int) database()->lastInsertId();
-}
-
-function current_user(): ?array
-{
-    if (empty($_SESSION['user_id'])) {
-        return null;
-    }
-    // password_hash наружу не отдаём, а роль берём только из базы, не из браузера.
-    $user = query('SELECT id, email, name, role, target_calories, target_protein_g,
-        target_fat_g, target_carbs_g FROM users WHERE id = ?', [$_SESSION['user_id']])->fetch();
-    if (!$user) {
-        unset($_SESSION['user_id']);
-        return null;
-    }
-    return $user;
-}
-
-function require_user(bool $admin = false): array
-{
-    $user = current_user();
-    if (!$user) {
-        throw new ApiError(401, 'Войдите в аккаунт.');
-    }
-    if ($admin && $user['role'] !== 'admin') {
-        throw new ApiError(403, 'Этот раздел доступен только администратору.');
-    }
-    return $user;
 }

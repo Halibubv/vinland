@@ -1,56 +1,41 @@
 <?php
-// Ответы в JSON, чтение JSON из запроса и проверка CSRF-токена.
-declare(strict_types=1);
+// Ответы сервера браузеру и чтение данных, которые прислал браузер.
+// Браузер и сервер общаются в формате JSON: {"name": "Алексей", "target_calories": 2400}.
 
-// Ошибка, которую можно показать пользователю: код ответа, текст и ошибки по полям формы.
-final class ApiError extends RuntimeException
-{
-    public function __construct(public int $status, string $message, public array $fields = [])
-    {
-        parent::__construct($message);
-    }
-}
-
-const MAX_REQUEST_BYTES = 1024 * 1024;
-
-function respond(array $data, int $status = 200): never
+// Отправить ответ в формате JSON и закончить работу скрипта (exit).
+function respond($data, $status = 200)
 {
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
-    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-function read_json(): array
+// Отправить ошибку. $status — код ответа: 401 не вошёл, 403 нет прав, 404 не найдено,
+// 422 ошибка в форме. $fields — тексты ошибок для полей формы: ['email' => 'Введите email.'].
+function send_error($status, $message, $fields = [])
 {
-    $contentType = strtolower($_SERVER['CONTENT_TYPE'] ?? '');
-    if (!str_starts_with($contentType, 'application/json')) {
-        throw new ApiError(415, 'Отправьте данные в формате JSON.');
-    }
-    // Читаем на один байт больше лимита, чтобы понять, что тело слишком большое.
-    $stream = fopen('php://input', 'rb');
-    $body = stream_get_contents($stream, MAX_REQUEST_BYTES + 1);
-    fclose($stream);
-    if (strlen($body) > MAX_REQUEST_BYTES) {
-        throw new ApiError(413, 'Слишком большой запрос.');
-    }
-    try {
-        $data = json_decode($body, true, 64, JSON_THROW_ON_ERROR);
-    } catch (JsonException) {
-        throw new ApiError(400, 'Некорректный JSON.');
-    }
-    // Нужен именно объект {...}, в том числе пустой, а не JSON-массив [...].
-    if (!is_array($data) || !str_starts_with(ltrim($body), '{')) {
-        throw new ApiError(400, 'Ожидается объект с полями формы.');
-    }
-    return $data;
+    respond(['error' => $message, 'fields' => $fields], $status);
 }
 
-function require_csrf(): void
+// Данные из тела запроса (то, что React отправил в body) в виде массива PHP.
+function read_json()
 {
-    $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-    if (!is_string($token) || !hash_equals($_SESSION['csrf'], $token)) {
-        throw new ApiError(403, 'Обновите страницу и повторите действие.');
+    $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+    if (!str_starts_with($contentType, 'application/json')) {
+        send_error(415, 'Отправьте данные в формате JSON.');
     }
+
+    $body = file_get_contents('php://input');
+    if (strlen($body) > 1024 * 1024) {
+        send_error(413, 'Слишком большой запрос.');
+    }
+
+    // true — получить обычный массив, а не объект.
+    $data = json_decode($body, true);
+    if (!is_array($data)) {
+        send_error(400, 'Некорректный JSON.');
+    }
+    return $data;
 }

@@ -1,115 +1,119 @@
 <?php
-// Точка входа: каждый запрос, который не является файлом из public/, приходит сюда.
-// Ниже — таблица маршрутов: метод + адрес → функция из backend/. Первый подходящий маршрут отвечает и завершает запрос.
-declare(strict_types=1);
-require dirname(__DIR__) . '/backend/bootstrap.php';
+// Точка входа: сюда приходит каждый запрос, кроме готовых файлов (картинки, стили, скрипты).
+// Ниже — список маршрутов: метод (GET, POST, PUT, DELETE) + адрес → что сделать.
+// Подходящий маршрут отправляет ответ через respond(), и на этом скрипт заканчивается.
+require __DIR__ . '/../backend/bootstrap.php';
 
-$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'];
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// --- Страницы интерфейса ---
-// Адреса страниц React-приложения отдают одну и ту же собранную ui/index.html.
-// Только этот список отвечает кодом 200; любые другие адреса (в том числе к backend/ и database/) получат 404.
-$pages = [
-    '/', '/login', '/register', '/profile',
-    '/workouts', '/workouts/new',
-    '/nutrition', '/nutrition/new', '/nutrition/history',
-    '/statistics', '/admin/exercises', '/admin/products',
-];
-$isPage = in_array($path, $pages, true)
-    || preg_match('#^/(workouts|nutrition)/[1-9][0-9]*$#', $path)
-    || preg_match('#^/workouts/[1-9][0-9]*/edit$#', $path);
-function send_ui_page(int $status = 200): never
+// --- Страницы сайта ---
+// Все страницы рисует React, поэтому на любой адрес страницы отдаём один и тот же
+// собранный файл ui/index.html, а React уже сам смотрит на адрес и показывает нужный экран.
+function send_page($status = 200)
 {
-    $entry = __DIR__ . '/ui/index.html';
-    if (!is_file($entry)) {
-        throw new ApiError(503, 'Интерфейс ещё не собран. Выполните pnpm run build.');
+    $file = __DIR__ . '/ui/index.html';
+    if (!is_file($file)) {
+        send_error(503, 'Интерфейс ещё не собран. Выполните pnpm run build.');
     }
     http_response_code($status);
     header('Content-Type: text/html; charset=utf-8');
-    header('Cache-Control: no-cache');
-    readfile($entry);
+    readfile($file);
     exit;
 }
-if (($method === 'GET' || $method === 'HEAD') && $isPage) {
-    send_ui_page();
+
+$pages = ['/', '/login', '/register', '/profile', '/workouts', '/workouts/new',
+    '/nutrition', '/nutrition/new', '/nutrition/history', '/statistics', '/admin/exercises', '/admin/products', '/admin/users'];
+$isPage = in_array($path, $pages)
+    || preg_match('#^/(workouts|nutrition)/\d+$#', $path)   // /workouts/5, /nutrition/7
+    || preg_match('#^/workouts/\d+/edit$#', $path);          // /workouts/5/edit
+if ($method === 'GET' && $isPage) {
+    send_page();
 }
 
-// --- Служебные: текущая сессия и проверка, что сервер и база живы ---
-if ($method === 'GET' && $path === '/api/session') {
-    respond(['user' => current_user(), 'csrf' => $_SESSION['csrf']]);
-}
+// Проверка для хостинга Render: сервер работает и база отвечает.
 if ($method === 'GET' && $path === '/api/health') {
     query('SELECT 1');
     respond(['status' => 'ok']);
 }
 
-// Все маршруты ниже, которые что-то меняют, требуют CSRF-токен.
-if ($method !== 'GET' && $method !== 'HEAD' && $method !== 'OPTIONS') {
-    require_csrf();
-}
-
 // --- Вход и регистрация ---
+if ($method === 'GET' && $path === '/api/session') {
+    respond(['user' => current_user()]);
+}
 if ($method === 'POST' && $path === '/api/auth/register') {
-    register_account(read_json());
+    respond(['user' => register(read_json())], 201);
 }
 if ($method === 'POST' && $path === '/api/auth/login') {
-    login_account(read_json());
+    respond(['user' => login(read_json())]);
 }
 if ($method === 'POST' && $path === '/api/auth/logout') {
-    logout_account();
+    logout();
+    respond(['user' => null]);
 }
 
-// --- Профиль и цели КБЖУ ---
+// --- Профиль ---
 if ($method === 'GET' && $path === '/api/profile') {
     respond(['user' => require_user()]);
 }
 if ($method === 'PUT' && $path === '/api/profile') {
     $user = require_user();
-    $data = read_json();
-    $name = text_value($data, 'name', 100);
-    $calories = number_value($data, 'target_calories', 100000, true, true, true);
-    $protein = number_value($data, 'target_protein_g', 10000, false, true, true);
-    $fat = number_value($data, 'target_fat_g', 10000, false, true, true);
-    $carbs = number_value($data, 'target_carbs_g', 10000, false, true, true);
-    query('UPDATE users SET name = ?, target_calories = ?, target_protein_g = ?, target_fat_g = ?, target_carbs_g = ? WHERE id = ?', [
-        $name, $calories, $protein, $fat, $carbs, $user['id'],
-    ]);
+    update_profile($user['id'], read_json());
+    respond(['user' => current_user()]);
+}
+if ($method === 'PUT' && $path === '/api/profile/avatar') {
+    $user = require_user();
+    update_avatar($user['id'], read_json());
     respond(['user' => current_user()]);
 }
 
 // --- Статистика ---
 if ($method === 'GET' && $path === '/api/statistics') {
-    user_statistics(require_user(), $_GET);
+    $user = require_user();
+    respond(user_statistics($user, $_GET));
 }
 
-// --- Админка: /api/admin/exercises и /api/admin/products, с id или без ---
-if (preg_match('#^/api/admin/(exercises|products)(/(\d+))?$#', $path, $matches)) {
-    require_user(true);
-    $kind = $matches[1];
-    $id = null;
-    if (isset($matches[3])) {
-        $id = (int) $matches[3];
-    }
-    if ($method === 'GET' && $id === null) {
-        admin_catalog($kind);
-    }
-    if ($method === 'POST' && $id === null) {
-        admin_write_catalog($kind, catalog_input($kind, read_json()));
-    }
-    if ($method === 'PUT' && $id !== null) {
-        admin_write_catalog($kind, catalog_input($kind, read_json()), $id);
-    }
-}
-
-// --- Справочники для обычного пользователя (только активные записи) ---
+// --- Справочники для пользователя ---
 if ($method === 'GET' && $path === '/api/exercises') {
-    require_user();
-    list_exercises();
+    $user = require_user();
+    respond(['exercises' => list_exercises($user['id'])]);
+}
+if ($method === 'POST' && $path === '/api/exercises') {
+    $user = require_user();
+    respond(['exercise' => create_own_exercise($user['id'], read_json())], 201);
 }
 if ($method === 'GET' && $path === '/api/products') {
-    require_user();
-    list_products();
+    $user = require_user();
+    respond(['products' => list_products($user['id'])]);
+}
+if ($method === 'POST' && $path === '/api/products') {
+    $user = require_user();
+    respond(['product' => create_own_product($user['id'], read_json())], 201);
+}
+
+// --- Тренировки ---
+if ($method === 'GET' && $path === '/api/workouts') {
+    $user = require_user();
+    respond(['workouts' => list_workouts($user['id'])]);
+}
+if ($method === 'POST' && $path === '/api/workouts') {
+    $user = require_user();
+    respond(['workout' => save_workout($user['id'], read_json())], 201);
+}
+// Адрес с номером: /api/workouts/5. preg_match кладёт найденный номер в $match[1].
+if (preg_match('#^/api/workouts/(\d+)$#', $path, $match)) {
+    $user = require_user();
+    $id = (int) $match[1];
+    if ($method === 'GET') {
+        respond(['workout' => find_workout($id, $user['id'])]);
+    }
+    if ($method === 'PUT') {
+        respond(['workout' => save_workout($user['id'], read_json(), $id)]);
+    }
+    if ($method === 'DELETE') {
+        delete_workout($id, $user['id']);
+        respond(['deleted' => true]);
+    }
 }
 
 // --- Питание ---
@@ -117,55 +121,85 @@ if ($method === 'GET' && $path === '/api/meals') {
     $user = require_user();
     $date = null;
     if (isset($_GET['date'])) {
-        $date = date_value(['date' => $_GET['date']], 'date');
+        $date = date_value($_GET, 'date'); // ?date=2026-11-20 — только этот день
     }
-    list_meals((int) $user['id'], $date);
+    respond(['meals' => list_meals($user['id'], $date)]);
 }
 if ($method === 'POST' && $path === '/api/meals') {
     $user = require_user();
-    respond(['meal' => write_meal((int) $user['id'], meal_input(read_json()))], 201);
+    respond(['meal' => save_meal($user['id'], read_json())], 201);
 }
-if (preg_match('#^/api/meals/(\d+)$#', $path, $matches)) {
-    $mealId = (int) $matches[1];
+if (preg_match('#^/api/meals/(\d+)$#', $path, $match)) {
     $user = require_user();
+    $id = (int) $match[1];
     if ($method === 'GET') {
-        respond(['meal' => meal_payload($mealId, (int) $user['id'])]);
+        respond(['meal' => find_meal($id, $user['id'])]);
     }
     if ($method === 'PUT') {
-        respond(['meal' => write_meal((int) $user['id'], meal_input(read_json()), $mealId)]);
+        respond(['meal' => save_meal($user['id'], read_json(), $id)]);
     }
     if ($method === 'DELETE') {
-        delete_meal($mealId, (int) $user['id']);
+        delete_meal($id, $user['id']);
+        respond(['deleted' => true]);
     }
 }
 
-// --- Тренировки ---
-if ($method === 'GET' && $path === '/api/workouts') {
-    $user = require_user();
-    list_workouts((int) $user['id']);
+// --- Админка справочников ---
+if ($method === 'GET' && $path === '/api/admin/exercises') {
+    require_admin();
+    respond(['exercises' => admin_list_exercises()]);
 }
-if ($method === 'POST' && $path === '/api/workouts') {
-    $user = require_user();
-    respond(['workout' => write_workout((int) $user['id'], workout_input(read_json()))], 201);
+if ($method === 'POST' && $path === '/api/admin/exercises') {
+    require_admin();
+    respond(['exercise' => admin_save_exercise(read_json())], 201);
 }
-if (preg_match('#^/api/workouts/(\d+)$#', $path, $matches)) {
-    $workoutId = (int) $matches[1];
-    $user = require_user();
-    if ($method === 'GET') {
-        respond(['workout' => workout_payload($workoutId, (int) $user['id'])]);
-    }
-    if ($method === 'PUT') {
-        respond(['workout' => write_workout((int) $user['id'], workout_input(read_json()), $workoutId)]);
-    }
-    if ($method === 'DELETE') {
-        delete_workout($workoutId, (int) $user['id']);
-    }
+if ($method === 'PUT' && preg_match('#^/api/admin/exercises/(\d+)$#', $path, $match)) {
+    require_admin();
+    respond(['exercise' => admin_save_exercise(read_json(), (int) $match[1])]);
+}
+if ($method === 'GET' && $path === '/api/admin/products') {
+    require_admin();
+    respond(['products' => admin_list_products()]);
+}
+if ($method === 'POST' && $path === '/api/admin/products') {
+    require_admin();
+    respond(['product' => admin_save_product(read_json())], 201);
+}
+if ($method === 'PUT' && preg_match('#^/api/admin/products/(\d+)$#', $path, $match)) {
+    require_admin();
+    respond(['product' => admin_save_product(read_json(), (int) $match[1])]);
 }
 
-// Ни один маршрут не подошёл. Адрес API получает ошибку в JSON, а страница в браузере —
-// интерфейс с кодом 404: React сам покажет «Страница не найдена» вместо голого JSON.
-$isApi = str_starts_with($path, '/api/');
-if (($method === 'GET' || $method === 'HEAD') && !$isApi) {
-    send_ui_page(404);
+// Картинка записи справочника: PUT /api/admin/exercises/5/image или /api/admin/products/5/image.
+if ($method === 'PUT' && preg_match('#^/api/admin/(exercises|products)/(\d+)/image$#', $path, $match)) {
+    require_admin();
+    admin_save_image($match[1], (int) $match[2], read_json());
+    if ($match[1] === 'exercises') {
+        respond(['exercise' => admin_find_exercise((int) $match[2])]);
+    }
+    respond(['product' => admin_find_product((int) $match[2])]);
 }
-throw new ApiError(404, 'Страница не найдена.');
+
+// --- Админка: панель со статистикой и пользователи ---
+if ($method === 'GET' && $path === '/api/admin/users') {
+    require_admin();
+    respond(admin_dashboard());
+}
+if ($method === 'PUT' && preg_match('#^/api/admin/users/(\d+)$#', $path, $match)) {
+    $admin = require_admin();
+    admin_set_role($admin, (int) $match[1], read_json());
+    respond(admin_dashboard());
+}
+if ($method === 'DELETE' && preg_match('#^/api/admin/users/(\d+)$#', $path, $match)) {
+    $admin = require_admin();
+    admin_delete_user($admin, (int) $match[1]);
+    respond(admin_dashboard());
+}
+
+// --- Ни один маршрут не подошёл ---
+// Для адреса страницы отдаём сайт с кодом 404: React сам покажет «Страница не найдена».
+// Для адреса API — ошибку в JSON.
+if ($method === 'GET' && !str_starts_with($path, '/api/')) {
+    send_page(404);
+}
+send_error(404, 'Страница не найдена.');
