@@ -23,7 +23,7 @@ function send_page($status = 200)
 }
 
 $pages = ['/', '/login', '/register', '/profile', '/workouts', '/workouts/new',
-    '/nutrition', '/nutrition/new', '/nutrition/history', '/statistics', '/admin/exercises', '/admin/products'];
+    '/nutrition', '/nutrition/new', '/nutrition/history', '/statistics', '/admin/exercises', '/admin/products', '/admin/users'];
 $isPage = in_array($path, $pages)
     || preg_match('#^/(workouts|nutrition)/\d+$#', $path)   // /workouts/5, /nutrition/7
     || preg_match('#^/workouts/\d+/edit$#', $path);          // /workouts/5/edit
@@ -168,6 +168,32 @@ if ($method === 'POST' && $path === '/api/admin/products') {
 if ($method === 'PUT' && preg_match('#^/api/admin/products/(\d+)$#', $path, $match)) {
     require_admin();
     respond(['product' => admin_save_product(read_json(), (int) $match[1])]);
+}
+
+// Картинка записи справочника: PUT /api/admin/exercises/5/image или /api/admin/products/5/image.
+if ($method === 'PUT' && preg_match('#^/api/admin/(exercises|products)/(\d+)/image$#', $path, $match)) {
+    require_admin();
+    admin_save_image($match[1], (int) $match[2], read_json());
+    if ($match[1] === 'exercises') {
+        respond(['exercise' => admin_find_exercise((int) $match[2])]);
+    }
+    respond(['product' => admin_find_product((int) $match[2])]);
+}
+
+// --- Админка: панель со статистикой и пользователи ---
+if ($method === 'GET' && $path === '/api/admin/users') {
+    require_admin();
+    respond(admin_dashboard());
+}
+if ($method === 'PUT' && preg_match('#^/api/admin/users/(\d+)$#', $path, $match)) {
+    $admin = require_admin();
+    admin_set_role($admin, (int) $match[1], read_json());
+    respond(admin_dashboard());
+}
+if ($method === 'DELETE' && preg_match('#^/api/admin/users/(\d+)$#', $path, $match)) {
+    $admin = require_admin();
+    admin_delete_user($admin, (int) $match[1]);
+    respond(admin_dashboard());
 }
 
 // --- Ни один маршрут не подошёл ---

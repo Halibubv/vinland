@@ -335,3 +335,24 @@
     flex: 1 1 100%;
   }
 }
+
+/* Фото записи в окне редактирования */
+.admin-photo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.admin-photo img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Название с картинкой в таблице справочника */
+.admin-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}

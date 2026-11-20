@@ -48,6 +48,15 @@ function date_days_ago(int $daysAgo): string
     return (new DateTimeImmutable("-{$daysAgo} days"))->format('Y-m-d');
 }
 
+// Администратор для демонстрации админки: admin@vinland.local / VinlandAdmin2026.
+// Создаётся один раз, если его ещё нет.
+$adminEmail = 'admin@vinland.local';
+if (!query('SELECT id FROM users WHERE email = ?', [$adminEmail])->fetchColumn()) {
+    query("INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'admin')",
+        [$adminEmail, password_hash('VinlandAdmin2026', PASSWORD_DEFAULT), 'Администратор']);
+    echo "Admin account: {$adminEmail} / VinlandAdmin2026\n";
+}
+
 $existingId = query('SELECT id FROM users WHERE email = ?', [$email])->fetchColumn();
 if ($existingId && $onlyIfMissing) {
     echo "Demo account already exists: {$email}\n";

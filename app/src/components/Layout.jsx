@@ -83,7 +83,7 @@ export function AppHeader({ user, onLogout, busy }) {
         </nav>
         <div className="header-account">
           {user.role === 'admin' && (
-            <Link className="admin-entry" to="/admin/exercises" title="Администрирование">
+            <Link className="admin-entry" to="/admin/users" title="Администрирование">
               <span className="admin-entry-long">Администрирование</span>
               <span className="admin-entry-short">Админ</span>
             </Link>
