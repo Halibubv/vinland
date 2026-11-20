@@ -23,6 +23,7 @@ import { MealEditor } from './pages/MealEditor.jsx';
 import { NutritionHistory } from './pages/NutritionHistory.jsx';
 import { StatisticsPage } from './pages/Statistics.jsx';
 import { AdminCatalog } from './pages/AdminCatalog.jsx';
+import { AdminUsers } from './pages/AdminUsers.jsx';
 
 function NotFound() {
   return (
@@ -175,6 +176,7 @@ export default function App() {
         <Route path="/statistics" element={<StatisticsPage />} />
         <Route path="/admin/exercises" element={<AdminCatalog kind="exercises" user={user} />} />
         <Route path="/admin/products" element={<AdminCatalog kind="products" user={user} />} />
+        <Route path="/admin/users" element={<AdminUsers user={user} />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Footer />

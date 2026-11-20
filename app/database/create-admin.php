@@ -1,7 +1,6 @@
 <?php
 // Создаёт администратора или делает администратором существующий аккаунт.
 // Только из консоли: php database/create-admin.php email@example.com "пароль" ["Имя"]
-declare(strict_types=1);
 require dirname(__DIR__) . '/backend/config.php';
 require dirname(__DIR__) . '/backend/database.php';
 

@@ -1,7 +1,6 @@
 <?php
 // Миграции: выполняет по порядку файлы database/*.sql, которые ещё не выполнялись,
 // и отмечает их в таблице migrations. Запуск только из консоли: php database/migrate.php
-declare(strict_types=1);
 require dirname(__DIR__) . '/backend/config.php';
 require dirname(__DIR__) . '/backend/database.php';
 

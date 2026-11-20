@@ -68,9 +68,9 @@ function SetsList({ sets }) {
   );
 }
 
-// Карточка упражнения: фото по группе мышц с номером, название и подходы.
+// Карточка упражнения: картинка упражнения (или фото группы мышц) с номером, название и подходы.
 function ExerciseCard({ exercise, number }) {
-  const photo = entryPhotoUrl({ muscleGroup: exercise.muscle_group });
+  const photo = entryPhotoUrl({ muscleGroup: exercise.muscle_group, image: exercise.image });
   return (
     <li className="exercise-card">
       <div className="exercise-card-photo">

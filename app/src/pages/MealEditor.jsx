@@ -6,7 +6,9 @@ import { dateLabel, localDate, parseDate } from '../lib/dates.js';
 import { formatInt, formatNumber } from '../lib/format.js';
 import { ASSETS, mealTypes } from '../lib/constants.js';
 import { Shell, Notice } from '../components/ui.jsx';
-import { CatalogDialog, ConfirmDialog } from '../components/Dialogs.jsx';
+import { CatalogDialog, CatalogThumb, ConfirmDialog } from '../components/Dialogs.jsx';
+import { OwnProductDialog } from '../components/OwnItemDialogs.jsx';
+import { catalogImageUrl } from '../components/EntryIcon.jsx';
 import { DateStepper } from '../components/DateStepper.jsx';
 import './MealEditor.css';
 
@@ -119,6 +121,7 @@ function MealItem({ item, onGramsChange, onRemove }) {
   const values = amounts(item);
   return (
     <li className="panel meal-item">
+      <CatalogThumb src={catalogImageUrl(item)} name={item.product_name_snapshot || item.name} />
       <h3>{item.product_name_snapshot || item.name}</h3>
       <p>
         {formatNumber(item.quantity_g)} г · {formatInt(values.calories)} ккал
@@ -162,7 +165,11 @@ export function MealEditor() {
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // Окно выбора продукта: false — закрыто, 'list' — список справочника,
+  // 'new' — форма «Свой продукт».
   const [picking, setPicking] = useState(false);
+  // Название, с которым открывается форма своего продукта (то, что искали в списке).
+  const [newName, setNewName] = useState('');
   const [confirming, setConfirming] = useState(false);
 
   // Загружаем справочник продуктов и, при редактировании, сам приём пищи.
@@ -188,7 +195,7 @@ export function MealEditor() {
           });
         }
         // ?add=1 в адресе — сразу открыть окно выбора продукта.
-        if (searchParams.get('add')) setPicking(true);
+        if (searchParams.get('add')) setPicking('list');
       })
       .catch((problem) => {
         setLoadError(problem.message);
@@ -225,6 +232,12 @@ export function MealEditor() {
       const input = document.getElementById(`grams-${key}`);
       if (input) input.select();
     }, 0);
+  }
+
+  // Свой продукт сохранён: добавляем его в справочник на странице и сразу в приём пищи.
+  function ownProductSaved(product) {
+    setProducts((items) => [...items, product]);
+    addProduct(product);
   }
 
   const total = mealTotal(form.items);
@@ -325,7 +338,7 @@ export function MealEditor() {
           <button
             type="button"
             className="button button--outline meal-add"
-            onClick={() => setPicking(true)}
+            onClick={() => setPicking('list')}
           >
             <img src={`${ASSETS}icon-plus.svg`} alt="" />
             Добавить продукт
@@ -350,13 +363,26 @@ export function MealEditor() {
           </div>
         </form>
       )}
-      {picking && (
+      {picking === 'list' && (
         <CatalogDialog
           title="Добавить продукт"
           items={products}
           describe={describeProduct}
+          image={catalogImageUrl}
+          addLabel="Добавить свой продукт"
+          onAdd={(name) => {
+            setNewName(name);
+            setPicking('new');
+          }}
           onChoose={addProduct}
           onClose={() => setPicking(false)}
+        />
+      )}
+      {picking === 'new' && (
+        <OwnProductDialog
+          initialName={newName}
+          onSaved={ownProductSaved}
+          onBack={() => setPicking('list')}
         />
       )}
       {confirming && (

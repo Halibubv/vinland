@@ -1,10 +1,9 @@
 <?php
-// Демо-аккаунт: три недели тренировок и неделя питания, чтобы на каждом экране было что показать.
+// Демо-аккаунт: три недели тренировок и три недели питания, чтобы на каждом экране было что показать.
 // Запускать после миграций, только из консоли:
 //   php database/seed-demo.php [email] [пароль]               — пересоздать демо-аккаунт со свежими датами
 //   php database/seed-demo.php --if-missing [email] [пароль]  — создать, только если аккаунта ещё нет
 // Оба варианта можно запускать сколько угодно раз.
-declare(strict_types=1);
 require dirname(__DIR__) . '/backend/config.php';
 require dirname(__DIR__) . '/backend/database.php';
 
@@ -47,6 +46,22 @@ function product_by_name(string $name): array
 function date_days_ago(int $daysAgo): string
 {
     return (new DateTimeImmutable("-{$daysAgo} days"))->format('Y-m-d');
+}
+
+// Администратор для демонстрации админки: admin@vinland.local / VinlandAdmin2026.
+// Создаётся один раз, если его ещё нет.
+$adminEmail = 'admin@vinland.local';
+if (!query('SELECT id FROM users WHERE email = ?', [$adminEmail])->fetchColumn()) {
+    query("INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'admin')",
+        [$adminEmail, password_hash('VinlandAdmin2026', PASSWORD_DEFAULT), 'Администратор']);
+    echo "Admin account: {$adminEmail} / VinlandAdmin2026\n";
+}
+
+// Ещё один обычный пользователь, чтобы в админке было кого показать в списке пользователей.
+$secondEmail = 'maria@vinland.local';
+if (!query('SELECT id FROM users WHERE email = ?', [$secondEmail])->fetchColumn()) {
+    query('INSERT INTO users (email, password_hash, name, target_calories) VALUES (?, ?, ?, 2000)',
+        [$secondEmail, password_hash('VinlandMaria2026', PASSWORD_DEFAULT), 'Мария Иванова']);
 }
 
 $existingId = query('SELECT id FROM users WHERE email = ?', [$email])->fetchColumn();
@@ -99,7 +114,7 @@ $menu = [
     'snack' => [[['Греческий йогурт 2%', 200], ['Мёд', 15]], [['Творог 5%', 200], ['Яблоко', 150]], [['Миндаль', 30], ['Банан', 120]]],
     'dinner' => [[['Лосось', 200], ['Картофель варёный', 250], ['Огурец', 100]], [['Индейка, филе', 200], ['Макароны варёные', 200], ['Сыр твёрдый', 20]]],
 ];
-for ($daysAgo = 6; $daysAgo >= 0; $daysAgo--) {
+for ($daysAgo = 20; $daysAgo >= 0; $daysAgo--) {
     // Порции 90%, 100% или 110%, чтобы график калорий не был ровной линией.
     $portionFactor = 0.9 + ($daysAgo % 3) * 0.1;
     foreach ($menu as $mealType => $variants) {

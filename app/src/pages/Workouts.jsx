@@ -56,7 +56,7 @@ function WorkoutCard({ workout }) {
           <ul className="workout-card-exercises">
             {exercises.slice(0, SHOWN_EXERCISES).map((exercise) => (
               <li key={exercise.id}>
-                <EntryPhoto muscleGroup={exercise.muscle_group} />
+                <EntryPhoto muscleGroup={exercise.muscle_group} image={exercise.image} />
                 <span>
                   {exercise.exercise_name}
                   <small>{setsSummary(exercise.sets)}</small>

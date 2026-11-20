@@ -25,6 +25,8 @@ COPY public ./public
 COPY router.php start.sh ./
 COPY --from=ui /app/public/ui ./public/ui
 RUN chmod +x start.sh
+# Папка для картинок, которые загружает администратор: сервер работает от www-data и должен в неё писать.
+RUN mkdir -p public/assets/catalog/uploads && chown www-data public/assets/catalog/uploads
 
 # Встроенный сервер PHP с четырьмя процессами, чтобы один медленный запрос не держал остальных.
 ENV PHP_CLI_SERVER_WORKERS=4

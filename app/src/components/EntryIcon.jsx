@@ -31,10 +31,10 @@ export function EntryIcon({ meal, label }) {
   );
 }
 
-// Фото у записи: у упражнения — по группе мышц, у приёма пищи — по его типу.
-// Если для группы мышц фото нет (админ добавил новую группу), показываем иконку.
-export function EntryPhoto({ meal, muscleGroup }) {
-  const photo = entryPhotoUrl({ meal, muscleGroup });
+// Фото у записи: у упражнения — своя картинка из справочника или фото по группе мышц,
+// у приёма пищи — по его типу. Если фото нет (своё упражнение без группы), показываем иконку.
+export function EntryPhoto({ meal, muscleGroup, image }) {
+  const photo = entryPhotoUrl({ meal, muscleGroup, image });
   if (!photo) return <EntryIcon label={muscleGroup} />;
 
   return (
@@ -44,8 +44,17 @@ export function EntryPhoto({ meal, muscleGroup }) {
   );
 }
 
+// Путь к картинке из справочника (поле image) или null, если её нет.
+// Картинки лежат в public/assets/catalog.
+export function catalogImageUrl(item) {
+  if (!item || !item.image) return null;
+  return `${ASSETS}catalog/${item.image}`;
+}
+
 // Путь к фото записи или null, если подходящего фото нет.
-export function entryPhotoUrl({ meal, muscleGroup }) {
+// image — картинка конкретного упражнения, она важнее общего фото группы мышц.
+export function entryPhotoUrl({ meal, muscleGroup, image }) {
+  if (image) return catalogImageUrl({ image });
   let photo = musclePhotos[muscleGroup];
   if (meal) photo = `meal-${meal}.jpg`;
   if (!photo) return null;
