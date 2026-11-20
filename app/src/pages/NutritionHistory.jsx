@@ -1,11 +1,9 @@
-// Экран «История питания»: открывает дневник на последнем дне до сегодняшнего,
-// в котором есть записи. Сам дневник рисует NutritionPage.
+// Экран «История питания»: ищет последний день до сегодняшнего, в котором есть записи.
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { api } from '../lib/api.js';
-import { localDate, offsetDate, parseDate } from '../lib/dates.js';
+import { useNavigate } from 'react-router-dom';
+import { api } from '../api.js';
+import { localDate, offsetDate } from '../format.js';
 import { Shell, Notice } from '../components/ui.jsx';
-import { NutritionPage } from './Nutrition.jsx';
 
 // Самая поздняя дата приёма пищи раньше today или null, если таких нет.
 // Даты в формате "ГГГГ-ММ-ДД" можно сравнивать как обычные строки.
@@ -18,11 +16,11 @@ function lastDayBefore(meals, today) {
   return lastDay;
 }
 
+// Открывается по адресу /nutrition/history. Находит нужный день и переходит
+// на /nutrition/history/ДАТА — там App.jsx показывает <NutritionPage history />.
 export function NutritionHistory() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [error, setError] = useState('');
-  // Если дата уже есть в адресе (?date=...), сразу показываем этот день.
-  const hasDate = Boolean(parseDate(searchParams.get('date')));
 
   function findLastDay() {
     setError('');
@@ -31,16 +29,12 @@ export function NutritionHistory() {
       .then((data) => {
         // Записей в прошлом нет — показываем вчерашний день.
         const day = lastDayBefore(data.meals, today) || offsetDate(today, -1);
-        setSearchParams({ date: day }, { replace: true });
+        navigate(`/nutrition/history/${day}`, { replace: true });
       })
       .catch((problem) => setError(problem.message));
   }
 
-  useEffect(() => {
-    if (!hasDate) findLastDay();
-  }, []);
-
-  if (hasDate) return <NutritionPage history />;
+  useEffect(findLastDay, []);
 
   return (
     <Shell title="История питания">

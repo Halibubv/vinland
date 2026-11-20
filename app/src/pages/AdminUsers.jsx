@@ -1,7 +1,7 @@
 // Панель администратора: общая статистика сайта и список пользователей
 // (сменить роль или удалить пользователя).
 import React, { useEffect, useState } from 'react';
-import { api } from '../lib/api.js';
+import { api } from '../api.js';
 import { Notice } from '../components/ui.jsx';
 import { ConfirmDialog } from '../components/Dialogs.jsx';
 import { AdminTabs } from './AdminCatalog.jsx';
@@ -39,7 +39,7 @@ export function AdminUsers({ user }) {
   async function changeRole(row, role) {
     setError('');
     try {
-      setData(await api(`/admin/users/${row.id}`, { method: 'PUT', body: { role } }));
+      setData(await api(`/admin/users/${row.id}`, 'PUT', { role }));
     } catch (problem) {
       setError(problem.message);
     }
@@ -49,7 +49,7 @@ export function AdminUsers({ user }) {
     setBusy(true);
     setError('');
     try {
-      setData(await api(`/admin/users/${deleting.id}`, { method: 'DELETE' }));
+      setData(await api(`/admin/users/${deleting.id}`, 'DELETE'));
     } catch (problem) {
       setError(problem.message);
     }

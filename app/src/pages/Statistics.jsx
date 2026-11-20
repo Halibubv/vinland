@@ -2,10 +2,17 @@
 // (нажатие на столбик показывает КБЖУ этого дня) и календарь тренировок.
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../lib/api.js';
-import { ASSETS } from '../lib/constants.js';
-import { dateLabel, dayMonth, localDate, offsetDate, relativeDay, weekday } from '../lib/dates.js';
-import { formatInt, plural, pluralWord } from '../lib/format.js';
+import { api } from '../api.js';
+import {
+  dayMonth,
+  formatInt,
+  localDate,
+  offsetDate,
+  plural,
+  pluralWord,
+  relativeDay,
+  weekday,
+} from '../format.js';
 import { Notice, Empty } from '../components/ui.jsx';
 import { DayTotals } from '../components/DayTotals.jsx';
 import { PageHero } from '../components/PageHero.jsx';
@@ -194,7 +201,7 @@ function WorkoutsCard({ days }) {
           .map((day) => (
             <li key={day.date}>
               <span className="stats-trained-icon">
-                <img src={`${ASSETS}nav-workouts.svg`} alt="" />
+                <img src="/assets/nav-workouts.svg" alt="" />
               </span>
               <span>
                 <strong>{relativeDay(day.date)}</strong>
@@ -254,7 +261,7 @@ export function StatisticsPage() {
       <PeriodTabs value={periodDays} onChange={setPeriodDays} />
     </>
   );
-  const subtitle = `${dateLabel(from, { day: 'numeric', month: 'long' })} — ${dateLabel(to, { day: 'numeric', month: 'long' })}`;
+  const subtitle = `${dayMonth(from)} — ${dayMonth(to)}`;
 
   let content;
   if (error) {
@@ -289,7 +296,7 @@ export function StatisticsPage() {
       <div className="section-banner" />
       <main className="content section-content stats-page">
         <PageHero
-          image={`${ASSETS}hero-statistics.jpg`}
+          image="/assets/hero-statistics.jpg"
           top={top}
           eyebrow="Мой прогресс"
           title="Статистика"

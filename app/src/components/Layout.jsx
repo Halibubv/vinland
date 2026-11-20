@@ -1,7 +1,6 @@
 // Общие части разметки: логотип, шапка с меню, нижнее меню на телефоне и подвал.
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ASSETS } from '../lib/constants.js';
 
 // Пункты главного меню.
 const navigation = [
@@ -38,7 +37,7 @@ export function AvatarContent({ user }) {
 export function Brand() {
   return (
     <Link className="brand" to="/" aria-label="ВИНЛАНД — главная">
-      <img src={`${ASSETS}logo-v.svg`} alt="" />
+      <img src="/assets/logo-v.svg" alt="" />
       <span>ВИНЛАНД</span>
     </Link>
   );
@@ -72,7 +71,7 @@ export function AppHeader({ user, onLogout, busy }) {
                 className={active ? 'active' : ''}
                 aria-current={active ? 'page' : undefined}
               >
-                <img src={`${ASSETS}${item.icon}`} alt="" />
+                <img src={`/assets/${item.icon}`} alt="" />
                 {/* При наведении надпись прокручивается вверх, снизу выезжает такая же. */}
                 <span className="roll-link">
                   <span data-text={item.label}>{item.label}</span>
@@ -107,7 +106,7 @@ export function AppHeader({ user, onLogout, busy }) {
               className={active ? 'active' : ''}
               aria-current={active ? 'page' : undefined}
             >
-              <img src={`${ASSETS}${item.icon}`} alt="" />
+              <img src={`/assets/${item.icon}`} alt="" />
               <span>{item.label}</span>
             </Link>
           );
@@ -154,7 +153,7 @@ export function GuestMobileNav() {
             to={isHome ? '/' : '/login'}
             aria-label={isHome ? item.label : `${item.label} — войти`}
           >
-            <img src={`${ASSETS}${item.icon}`} alt="" />
+            <img src={`/assets/${item.icon}`} alt="" />
             <span>{item.label}</span>
           </Link>
         );

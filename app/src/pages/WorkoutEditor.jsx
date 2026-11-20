@@ -1,15 +1,25 @@
 // Создание и редактирование тренировки: дата, заметка, упражнения и их подходы.
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { api, errorText } from '../lib/api.js';
-import { dateLabel, localDate } from '../lib/dates.js';
-import { ASSETS } from '../lib/constants.js';
-import { Shell, Notice, BackLink } from '../components/ui.jsx';
-import { DateStepper } from '../components/DateStepper.jsx';
+import { api, errorText } from '../api.js';
+import { dateLabel, localDate } from '../format.js';
+import { Shell, Notice, exercisePhoto, DateStepper } from '../components/ui.jsx';
 import { CatalogDialog } from '../components/Dialogs.jsx';
 import { OwnExerciseDialog } from '../components/OwnItemDialogs.jsx';
-import { entryPhotoUrl } from '../components/EntryIcon.jsx';
 import './WorkoutEditor.css';
+
+// Ссылка назад над заголовком страницы: "‹ Тренировки / 27 сентября 2026".
+function BackLink({ to, label, current }) {
+  return (
+    <nav className="back-link" aria-label="Навигация по разделу">
+      <Link to={to}>
+        <span aria-hidden="true">‹</span>
+        {label}
+      </Link>
+      {current && <span className="back-link-current"> / {current}</span>}
+    </nav>
+  );
+}
 
 // key у упражнений и подходов — уникальный ключ строки для React,
 // на сервер он не отправляется. Числа в полях ввода храним строками.
@@ -164,7 +174,7 @@ function ExerciseEditor({ exercise, index, count, catalog, onChange, onMove, onR
   const selected = catalog.find((item) => String(item.id) === exercise.exercise_id);
   let name = exercise.exercise_name;
   if (selected) name = selected.name;
-  const photo = entryPhotoUrl({ muscleGroup: exercise.muscle_group, image: exercise.image });
+  const photo = exercisePhoto(exercise.muscle_group, exercise.image);
 
   function editSet(setIndex, patch) {
     const sets = exercise.sets.map((set, itemIndex) => {
@@ -221,7 +231,7 @@ function ExerciseEditor({ exercise, index, count, catalog, onChange, onMove, onR
             onClick={onRemove}
             aria-label="Удалить упражнение"
           >
-            <img src={`${ASSETS}icon-trash.svg`} alt="" />
+            <img src="/assets/icon-trash.svg" alt="" />
           </button>
         </div>
       </div>
@@ -235,7 +245,7 @@ function ExerciseEditor({ exercise, index, count, catalog, onChange, onMove, onR
       )}
       <div className="workout-exercise-bottom">
         <button type="button" className="workout-add-set" onClick={addSet}>
-          <img src={`${ASSETS}icon-plus.svg`} alt="" />
+          <img src="/assets/icon-plus.svg" alt="" />
           Подход
         </button>
         {volume > 0 && (
@@ -244,7 +254,7 @@ function ExerciseEditor({ exercise, index, count, catalog, onChange, onMove, onR
       </div>
       <details className="workout-exercise-notes">
         <summary>
-          <img src={`${ASSETS}icon-pencil.svg`} alt="" />
+          <img src="/assets/icon-pencil.svg" alt="" />
           Заметки к упражнению и подходам
         </summary>
         <label>
@@ -390,8 +400,8 @@ export function WorkoutEditor() {
     try {
       const body = requestBody(form);
       let result;
-      if (id) result = await api(`/workouts/${id}`, { method: 'PUT', body });
-      else result = await api('/workouts', { method: 'POST', body });
+      if (id) result = await api(`/workouts/${id}`, 'PUT', body);
+      else result = await api('/workouts', 'POST', body);
       // replace: «Назад» со страницы тренировки не вернёт к уже сохранённой форме.
       navigate(`/workouts/${result.workout.id}`, { replace: true });
     } catch (problem) {
@@ -471,7 +481,7 @@ export function WorkoutEditor() {
               type="button"
               onClick={addExercise}
             >
-              <img src={`${ASSETS}icon-plus.svg`} alt="" />
+              <img src="/assets/icon-plus.svg" alt="" />
               Добавить упражнение
             </button>
           </div>
@@ -483,7 +493,7 @@ export function WorkoutEditor() {
           items={catalog}
           describe={(item) => item.muscle_group || 'Своё упражнение'}
           groupOf={(item) => item.muscle_group}
-          image={(item) => entryPhotoUrl({ muscleGroup: item.muscle_group, image: item.image })}
+          image={(item) => exercisePhoto(item.muscle_group, item.image)}
           addLabel="Добавить своё упражнение"
           onAdd={(name) => setPicker({ ...picker, newName: name })}
           onChoose={chooseExercise}

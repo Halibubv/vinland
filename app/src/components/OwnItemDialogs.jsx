@@ -1,7 +1,7 @@
 // Окна «Своё упражнение» и «Свой продукт»: если нужной записи нет в справочнике,
 // пользователь добавляет её сам. Запись сохраняется на сервере и видна только ему.
 import React, { useState } from 'react';
-import { api } from '../lib/api.js';
+import { api } from '../api.js';
 import { Modal } from './Dialogs.jsx';
 import { Field } from './ui.jsx';
 
@@ -58,7 +58,7 @@ export function OwnExerciseDialog({ initialName, onSaved, onBack }) {
     setBusy(true);
     try {
       const body = { name: name.trim(), muscle_group: muscleGroup || null };
-      const result = await api('/exercises', { method: 'POST', body });
+      const result = await api('/exercises', 'POST', body);
       onSaved(result.exercise);
     } catch (problem) {
       setErrors(problem.fields || {});
@@ -144,7 +144,7 @@ export function OwnProductDialog({ initialName, onSaved, onBack }) {
     setBusy(true);
     try {
       const body = { ...values, name: values.name.trim() };
-      const result = await api('/products', { method: 'POST', body });
+      const result = await api('/products', 'POST', body);
       onSaved(result.product);
     } catch (problem) {
       setErrors(problem.fields || {});

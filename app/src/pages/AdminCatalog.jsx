@@ -1,13 +1,11 @@
 // Администрирование справочников упражнений и продуктов (только для роли admin).
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../lib/api.js';
-import { formatNumber } from '../lib/format.js';
-import { ASSETS } from '../lib/constants.js';
-import { Notice, Empty } from '../components/ui.jsx';
+import { api } from '../api.js';
+import { formatNumber } from '../format.js';
+import { Notice, Empty, catalogImageUrl } from '../components/ui.jsx';
 import { Modal, CatalogThumb } from '../components/Dialogs.jsx';
-import { catalogImageUrl } from '../components/EntryIcon.jsx';
-import { squarePhoto } from '../lib/image.js';
+import { squarePhoto } from '../image.js';
 import './AdminCatalog.css';
 
 // Тексты и пустая форма для каждого из двух справочников.
@@ -121,14 +119,13 @@ function EntryDialog({ kind, entry, onSaved, onClose }) {
     setError('');
     setFields({});
     try {
-      const data = await api(entry ? `/admin/${kind}/${entry.id}` : `/admin/${kind}`, {
-        method: entry ? 'PUT' : 'POST',
-        body: form,
-      });
+      let data;
+      if (entry) data = await api(`/admin/${kind}/${entry.id}`, 'PUT', form);
+      else data = await api(`/admin/${kind}`, 'POST', form);
       // Если выбрали фото — отправляем его отдельным запросом, когда у записи уже есть id.
       if (photo) {
         const saved = kind === 'exercises' ? data.exercise : data.product;
-        await api(`/admin/${kind}/${saved.id}/image`, { method: 'PUT', body: { image: photo } });
+        await api(`/admin/${kind}/${saved.id}/image`, 'PUT', { image: photo });
       }
       onSaved();
     } catch (problem) {
@@ -274,7 +271,7 @@ export function AdminCatalog({ kind, user }) {
       // Отправляем ту же запись, поменяв только is_active (id уже есть в адресе).
       const body = { ...row, is_active: !isActive(row) };
       delete body.id;
-      await api(`/admin/${kind}/${row.id}`, { method: 'PUT', body });
+      await api(`/admin/${kind}/${row.id}`, 'PUT', body);
       reload();
     } catch (problem) {
       setError(problem.message);
@@ -314,7 +311,7 @@ export function AdminCatalog({ kind, user }) {
                   />
                 </label>
                 <button className="button button--primary" onClick={() => setEditing('new')}>
-                  <img src={`${ASSETS}icon-plus.svg`} alt="" />
+                  <img src="/assets/icon-plus.svg" alt="" />
                   Добавить {text.one}
                 </button>
               </div>
@@ -393,7 +390,7 @@ export function AdminCatalog({ kind, user }) {
                         <p>{rowSummary(kind, row)}</p>
                         <Status row={row} />
                         <button className="button button--outline" onClick={() => setEditing(row)}>
-                          <img src={`${ASSETS}icon-pencil.svg`} alt="" />
+                          <img src="/assets/icon-pencil.svg" alt="" />
                           Редактировать
                         </button>
                         <button

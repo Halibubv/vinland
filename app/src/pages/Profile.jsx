@@ -1,15 +1,12 @@
 // Личный кабинет: имя и цели КБЖУ, итоги сегодняшнего дня и ссылки на разделы.
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../lib/api.js';
-import { localDate } from '../lib/dates.js';
-import { formatInt, pluralWord, setsSummary } from '../lib/format.js';
-import { ASSETS, mealTypes } from '../lib/constants.js';
+import { api } from '../api.js';
+import { formatInt, localDate, mealTypes, pluralWord, setsSummary } from '../format.js';
 import { AvatarContent } from '../components/Layout.jsx';
-import { squarePhoto } from '../lib/image.js';
-import { Field, Notice } from '../components/ui.jsx';
+import { squarePhoto } from '../image.js';
+import { Field, Notice, EntryPhoto } from '../components/ui.jsx';
 import { DayTotals } from '../components/DayTotals.jsx';
-import { EntryPhoto } from '../components/EntryIcon.jsx';
 import { PageHero } from '../components/PageHero.jsx';
 import './Profile.css';
 
@@ -71,7 +68,7 @@ function ProfileForm({ user, onSaved, onCancel }) {
         const value = values[field.key];
         payload[field.key] = value === '' ? null : value;
       }
-      const result = await api('/profile', { method: 'PUT', body: payload });
+      const result = await api('/profile', 'PUT', payload);
       onSaved(result.user);
     } catch (error) {
       setErrors(error.fields || {});
@@ -138,7 +135,7 @@ function AvatarPicker({ user, onUpdate }) {
     setBusy(true);
     setError('');
     try {
-      const result = await api('/profile/avatar', { method: 'PUT', body: { avatar } });
+      const result = await api('/profile/avatar', 'PUT', { avatar });
       onUpdate(result.user);
     } catch (problem) {
       setError(problem.message);
@@ -311,7 +308,7 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
           onClick={toggleSettings}
           aria-expanded={editing}
         >
-          <img src={`${ASSETS}icon-settings.svg`} alt="" />
+          <img src="/assets/icon-settings.svg" alt="" />
           {editing ? 'Закрыть настройки' : 'Настройки профиля'}
         </button>
         <button className="profile-logout" type="button" onClick={onLogout} disabled={logoutBusy}>
@@ -326,7 +323,7 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
       <div className="section-banner" />
       <main className="content section-content profile-page">
         <PageHero
-          image={`${ASSETS}hero-profile.jpg`}
+          image="/assets/hero-profile.jpg"
           top={top}
           media={<AvatarPicker user={user} onUpdate={onUpdate} />}
           title={user.name}
@@ -352,7 +349,7 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
 
         <nav className="profile-links" aria-label="Разделы профиля">
           <Link to="/statistics">
-            <img src={`${ASSETS}icon-chart.svg`} alt="" />
+            <img src="/assets/icon-chart.svg" alt="" />
             <span>
               <strong>Статистика</strong>
               <small>Динамика тренировок и питания</small>
@@ -360,7 +357,7 @@ export function Profile({ user, onUpdate, onLogout, logoutBusy }) {
             <b aria-hidden="true">→</b>
           </Link>
           <Link to="/workouts">
-            <img src={`${ASSETS}icon-calendar.svg`} alt="" />
+            <img src="/assets/icon-calendar.svg" alt="" />
             <span>
               <strong>Тренировки</strong>
               <small>Все выполненные тренировки</small>
