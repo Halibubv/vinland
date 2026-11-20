@@ -1,108 +1,99 @@
 <?php
 // Статистика за период: калории и БЖУ по дням, число тренировок и подходов, цели пользователя.
-declare(strict_types=1);
 
-const NUTRIENTS = ['calories', 'protein', 'fat', 'carbs'];
-
-// Период из ?from=...&to=...; по умолчанию последние 30 дней, включая сегодня.
-function statistics_period(array $params): array
-{
-    $today = new DateTimeImmutable('today');
-    $from = $params['from'] ?? $today->modify('-29 days')->format('Y-m-d');
-    $to = $params['to'] ?? $today->format('Y-m-d');
-    $from = date_value(['from' => $from], 'from');
-    $to = date_value(['to' => $to], 'to');
-
-    $start = new DateTimeImmutable($from);
-    $end = new DateTimeImmutable($to);
-    if ($start > $end || $start->diff($end)->days > 365) {
-        invalid('period', 'Выберите период не длиннее года, с началом до окончания.');
-    }
-    return [$start, $end];
-}
-
-// Цель может быть не задана — тогда в ответе null.
-function goal_value(mixed $value, bool $integer): int|float|null
+// Цель из профиля числом или null, если цель не задана.
+// MySQL отдаёт DECIMAL строкой "160.00", поэтому переводим в число.
+function goal_number($value)
 {
     if ($value === null) {
         return null;
     }
-    if ($integer) {
-        return (int) $value;
-    }
-    return (float) $value;
+    return $value + 0;
 }
 
-function user_statistics(array $user, array $params): never
+function user_statistics($user, $params)
 {
-    [$start, $end] = statistics_period($params);
-    $from = $start->format('Y-m-d');
-    $to = $end->format('Y-m-d');
+    // Период из адреса ?from=2026-11-01&to=2026-11-20. Без него — последние 30 дней.
+    $from = $params['from'] ?? date('Y-m-d', strtotime('-29 days'));
+    $to = $params['to'] ?? date('Y-m-d');
+    $from = date_value(['from' => $from], 'from');
+    $to = date_value(['to' => $to], 'to');
+    $dayCount = (strtotime($to) - strtotime($from)) / 86400; // 86400 секунд в сутках
+    if ($from > $to || $dayCount > 365) {
+        invalid('period', 'Выберите период не длиннее года, с началом до окончания.');
+    }
 
-    // КБЖУ за каждый день, где были приёмы пищи. Граммы * значение на 100 г / 100.
+    // Пустой день: ничего не съедено, тренировок нет. Заводим так каждый день периода,
+    // чтобы на графике не было пропусков.
+    $days = [];
+    for ($date = $from; $date <= $to; $date = date('Y-m-d', strtotime($date . ' +1 day'))) {
+        $days[$date] = ['date' => $date, 'calories' => 0.0, 'protein' => 0.0, 'fat' => 0.0, 'carbs' => 0.0,
+            'workouts' => 0, 'exercises' => 0, 'sets' => 0];
+    }
+
+    // КБЖУ по дням: SUM складывает граммы * КБЖУ на 100 г / 100 по всем продуктам дня.
     $nutritionRows = query('SELECT m.meal_date,
-        COALESCE(SUM(mi.quantity_g * mi.calories_snapshot / 100), 0) AS calories,
-        COALESCE(SUM(mi.quantity_g * mi.protein_snapshot / 100), 0) AS protein,
-        COALESCE(SUM(mi.quantity_g * mi.fat_snapshot / 100), 0) AS fat,
-        COALESCE(SUM(mi.quantity_g * mi.carbs_snapshot / 100), 0) AS carbs
-        FROM meals m LEFT JOIN meal_items mi ON mi.meal_id = m.id
-        WHERE m.user_id = ? AND m.meal_date BETWEEN ? AND ? GROUP BY m.meal_date',
-        [$user['id'], $from, $to])->fetchAll();
-
-    // Тренировки, упражнения и подходы за каждый день, где были тренировки.
-    $workoutRows = query('SELECT w.workout_date, COUNT(DISTINCT w.id) AS workouts,
-        COUNT(DISTINCT we.id) AS exercises, COUNT(ws.id) AS sets
-        FROM workouts w LEFT JOIN workout_exercises we ON we.workout_id = w.id
-        LEFT JOIN workout_sets ws ON ws.workout_exercise_id = we.id
-        WHERE w.user_id = ? AND w.workout_date BETWEEN ? AND ? GROUP BY w.workout_date',
-        [$user['id'], $from, $to])->fetchAll();
-
-    // Собираем данные по датам и параллельно считаем итог за весь период.
-    $byDate = [];
-    $totals = ['calories' => 0.0, 'protein' => 0.0, 'fat' => 0.0, 'carbs' => 0.0, 'workouts' => 0, 'sets' => 0];
+            SUM(mi.quantity_g * mi.calories_snapshot / 100) AS calories,
+            SUM(mi.quantity_g * mi.protein_snapshot / 100) AS protein,
+            SUM(mi.quantity_g * mi.fat_snapshot / 100) AS fat,
+            SUM(mi.quantity_g * mi.carbs_snapshot / 100) AS carbs
+        FROM meals m
+        JOIN meal_items mi ON mi.meal_id = m.id
+        WHERE m.user_id = ? AND m.meal_date BETWEEN ? AND ?
+        GROUP BY m.meal_date', [$user['id'], $from, $to])->fetchAll();
     foreach ($nutritionRows as $row) {
         $date = $row['meal_date'];
-        $byDate[$date] = [];
-        foreach (NUTRIENTS as $nutrient) {
-            $value = (float) $row[$nutrient];
-            $totals[$nutrient] += $value;
-            $byDate[$date][$nutrient] = round($value, 2);
-        }
+        $days[$date]['calories'] = round($row['calories'], 2);
+        $days[$date]['protein'] = round($row['protein'], 2);
+        $days[$date]['fat'] = round($row['fat'], 2);
+        $days[$date]['carbs'] = round($row['carbs'], 2);
     }
+
+    // Тренировки по дням: сколько тренировок, упражнений и подходов.
+    // DISTINCT — считать каждую тренировку и упражнение один раз, а не по числу подходов.
+    $workoutRows = query('SELECT w.workout_date,
+            COUNT(DISTINCT w.id) AS workouts,
+            COUNT(DISTINCT we.id) AS exercises,
+            COUNT(ws.id) AS sets
+        FROM workouts w
+        LEFT JOIN workout_exercises we ON we.workout_id = w.id
+        LEFT JOIN workout_sets ws ON ws.workout_exercise_id = we.id
+        WHERE w.user_id = ? AND w.workout_date BETWEEN ? AND ?
+        GROUP BY w.workout_date', [$user['id'], $from, $to])->fetchAll();
     foreach ($workoutRows as $row) {
         $date = $row['workout_date'];
-        $byDate[$date]['workouts'] = (int) $row['workouts'];
-        $byDate[$date]['exercises'] = (int) $row['exercises'];
-        $byDate[$date]['sets'] = (int) $row['sets'];
-        $totals['workouts'] += (int) $row['workouts'];
-        $totals['sets'] += (int) $row['sets'];
-    }
-    foreach (NUTRIENTS as $nutrient) {
-        $totals[$nutrient] = round($totals[$nutrient], 2);
+        $days[$date]['workouts'] = (int) $row['workouts'];
+        $days[$date]['exercises'] = (int) $row['exercises'];
+        $days[$date]['sets'] = (int) $row['sets'];
     }
 
-    // В ответе есть каждый день периода, даже пустой, чтобы график не имел пропусков.
-    $days = [];
-    for ($date = $start; $date <= $end; $date = $date->modify('+1 day')) {
-        $key = $date->format('Y-m-d');
-        $day = ['date' => $key, 'calories' => 0.0, 'protein' => 0.0, 'fat' => 0.0, 'carbs' => 0.0,
-            'workouts' => 0, 'exercises' => 0, 'sets' => 0];
-        if (isset($byDate[$key])) {
-            $day = array_merge($day, $byDate[$key]);
-        }
-        $days[] = $day;
+    // Итог за весь период. Складываем точные суммы из базы и округляем один раз в конце.
+    $totals = ['calories' => 0, 'protein' => 0, 'fat' => 0, 'carbs' => 0, 'workouts' => 0, 'sets' => 0];
+    foreach ($nutritionRows as $row) {
+        $totals['calories'] += $row['calories'];
+        $totals['protein'] += $row['protein'];
+        $totals['fat'] += $row['fat'];
+        $totals['carbs'] += $row['carbs'];
     }
+    foreach ($workoutRows as $row) {
+        $totals['workouts'] += $row['workouts'];
+        $totals['sets'] += $row['sets'];
+    }
+    $totals['calories'] = round($totals['calories'], 2);
+    $totals['protein'] = round($totals['protein'], 2);
+    $totals['fat'] = round($totals['fat'], 2);
+    $totals['carbs'] = round($totals['carbs'], 2);
 
-    respond([
+    return [
         'from' => $from,
         'to' => $to,
         'goals' => [
-            'calories' => goal_value($user['target_calories'], true),
-            'protein' => goal_value($user['target_protein_g'], false),
-            'fat' => goal_value($user['target_fat_g'], false),
-            'carbs' => goal_value($user['target_carbs_g'], false),
+            'calories' => goal_number($user['target_calories']),
+            'protein' => goal_number($user['target_protein_g']),
+            'fat' => goal_number($user['target_fat_g']),
+            'carbs' => goal_number($user['target_carbs_g']),
         ],
         'totals' => $totals,
-        'days' => $days,
-    ]);
+        'days' => array_values($days), // нужен простой список дней, без ключей-дат
+    ];
 }

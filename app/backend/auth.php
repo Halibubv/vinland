@@ -1,104 +1,82 @@
 <?php
-// Регистрация, вход и выход, а также ограничение числа неверных попыток входа.
-declare(strict_types=1);
+// Регистрация, вход, выход и проверка, кто сейчас вошёл.
+// Кто вошёл, хранится в сессии PHP: $_SESSION['user_id']. Сама сессия — это файл
+// на сервере, а браузер хранит только его номер в cookie vinland_session.
 
-const ACCOUNT_LOGIN_LIMIT = 5;
-const IP_LOGIN_LIMIT = 20;
-
-function client_ip(): string
+// Данные вошедшего пользователя или null, если никто не вошёл.
+// Пароль (password_hash) наружу не отдаём.
+function current_user()
 {
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-    // За прокси (например, на Render) REMOTE_ADDR — это адрес прокси, общий для всех.
-    // Тогда настоящий адрес посетителя — первый в заголовке X-Forwarded-For.
-    // Включается только явно через TRUST_PROXY=1: без прокси этот заголовок может подделать кто угодно.
-    if (config('TRUST_PROXY', '0') === '1' && isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $addresses = explode(',', (string) $_SERVER['HTTP_X_FORWARDED_FOR']);
-        $ip = trim($addresses[0]);
+    if (!isset($_SESSION['user_id'])) {
+        return null;
     }
-    if (!is_string($ip) || $ip === '' || strlen($ip) > 45) {
-        return 'unknown';
+    $user = query('SELECT id, email, name, role, target_calories, target_protein_g,
+        target_fat_g, target_carbs_g, avatar FROM users WHERE id = ?', [$_SESSION['user_id']])->fetch();
+    if (!$user) {
+        return null;
     }
-    return $ip;
+    return $user;
 }
 
-function establish_session(int $userId): void
+// Для страниц только для вошедших: возвращает пользователя или отвечает ошибкой 401.
+function require_user()
 {
-    session_regenerate_id(true);
-    $_SESSION = [
-        'user_id' => $userId,
-        'signed_in' => time(),
-        'last_seen' => time(),
-        'csrf' => bin2hex(random_bytes(32)),
-    ];
+    $user = current_user();
+    if (!$user) {
+        send_error(401, 'Войдите в аккаунт.');
+    }
+    return $user;
 }
 
-function anonymous_session(): void
+// Для админки: пользователь должен быть вошедшим и с ролью admin.
+function require_admin()
 {
-    $_SESSION = [];
-    session_regenerate_id(true);
-    $_SESSION['last_seen'] = time();
-    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+    $user = require_user();
+    if ($user['role'] !== 'admin') {
+        send_error(403, 'Этот раздел доступен только администратору.');
+    }
+    return $user;
 }
 
-function register_account(array $data): never
+function register($data)
 {
     $email = email_value($data);
     $name = text_value($data, 'name', 100);
     $password = password_value($data);
-    try {
-        // Роль специально не передаём: по умолчанию в базе это обычный пользователь.
-        $id = insert('INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)', [
-            $email, password_hash($password, PASSWORD_DEFAULT), $name,
-        ]);
-    } catch (PDOException $error) {
-        // 1062 — код ошибки MySQL «Duplicate entry»: такой email уже есть (поле UNIQUE).
-        if (($error->errorInfo[1] ?? null) === 1062) {
-            invalid('email', 'Этот email уже зарегистрирован.');
-        }
-        throw $error;
+
+    $exists = query('SELECT id FROM users WHERE email = ?', [$email])->fetch();
+    if ($exists) {
+        invalid('email', 'Этот email уже зарегистрирован.');
     }
-    establish_session($id);
-    respond(['user' => current_user(), 'csrf' => $_SESSION['csrf']], 201);
+
+    // В базе хранится не сам пароль, а его хэш. Роль не указываем: по умолчанию 'user'.
+    $hash = password_hash($password, PASSWORD_DEFAULT);
+    $id = insert('INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)', [$email, $hash, $name]);
+
+    // Новый номер сессии при входе, чтобы старый номер нельзя было подсунуть.
+    session_regenerate_id(true);
+    $_SESSION['user_id'] = $id;
+    return current_user();
 }
 
-// Считаем неудачные попытки за последние 15 минут отдельно по email и по IP.
-function too_many_login_attempts(string $email, string $ip): bool
-{
-    query("DELETE FROM login_attempts WHERE attempted_at < CURRENT_TIMESTAMP - INTERVAL 15 MINUTE");
-    $accountAttempts = (int) query("SELECT COUNT(*) FROM login_attempts
-        WHERE email = ? AND attempted_at >= CURRENT_TIMESTAMP - INTERVAL 15 MINUTE", [$email])->fetchColumn();
-    $ipAttempts = (int) query("SELECT COUNT(*) FROM login_attempts
-        WHERE ip = ? AND attempted_at >= CURRENT_TIMESTAMP - INTERVAL 15 MINUTE", [$ip])->fetchColumn();
-    return $accountAttempts >= ACCOUNT_LOGIN_LIMIT || $ipAttempts >= IP_LOGIN_LIMIT;
-}
-
-function record_login_failure(string $email, string $ip): void
-{
-    query('INSERT INTO login_attempts (email, ip) VALUES (?, ?)', [$email, $ip]);
-}
-
-function login_account(array $data): never
+function login($data)
 {
     $email = email_value($data);
     $password = password_value($data);
-    $ip = client_ip();
-    if (too_many_login_attempts($email, $ip)) {
-        throw new ApiError(429, 'Слишком много попыток. Повторите через 15 минут.');
-    }
+
     $user = query('SELECT id, password_hash FROM users WHERE email = ?', [$email])->fetch();
+    // password_verify сравнивает введённый пароль с хэшем из базы.
     if (!$user || !password_verify($password, $user['password_hash'])) {
-        record_login_failure($email, $ip);
-        throw new ApiError(401, 'Неверный email или пароль.');
+        send_error(401, 'Неверный email или пароль.');
     }
-    // После успешного входа чистим попытки только этого аккаунта,
-    // чужие неудачи с того же IP остаются в счёте.
-    query('DELETE FROM login_attempts WHERE email = ?', [$email]);
-    establish_session((int) $user['id']);
-    respond(['user' => current_user(), 'csrf' => $_SESSION['csrf']]);
+
+    session_regenerate_id(true);
+    $_SESSION['user_id'] = $user['id'];
+    return current_user();
 }
 
-function logout_account(): never
+function logout()
 {
-    anonymous_session();
-    respond(['user' => null, 'csrf' => $_SESSION['csrf']]);
+    $_SESSION = [];
+    session_regenerate_id(true);
 }

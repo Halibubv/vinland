@@ -4,7 +4,6 @@
 //   php database/seed-demo.php [email] [пароль]               — пересоздать демо-аккаунт со свежими датами
 //   php database/seed-demo.php --if-missing [email] [пароль]  — создать, только если аккаунта ещё нет
 // Оба варианта можно запускать сколько угодно раз.
-declare(strict_types=1);
 require dirname(__DIR__) . '/backend/config.php';
 require dirname(__DIR__) . '/backend/database.php';
 

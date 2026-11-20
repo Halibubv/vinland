@@ -1,29 +1,56 @@
 <?php
-// Тренировки: упражнения в заданном порядке и подходы (повторения, вес, заметки).
-declare(strict_types=1);
+// Тренировки. Как это лежит в базе:
+//   workouts          — тренировка: пользователь, дата, заметка;
+//   workout_exercises — упражнения тренировки по порядку (position = 1, 2, 3...);
+//   workout_sets      — подходы упражнения: повторения и вес.
 
-function workout_input(array $data): array
+// Тренировка со всеми упражнениями и подходами. Ищем сразу по id и владельцу:
+// чужую тренировку пользователь не увидит, ответ будет как для несуществующей (404).
+function find_workout($workoutId, $userId)
 {
-    $items = $data['exercises'] ?? [];
-    if (!is_array($items) || !array_is_list($items)) {
-        invalid('exercises', 'Передайте список упражнений.');
+    $workout = query('SELECT id, workout_date, notes, created_at FROM workouts WHERE id = ? AND user_id = ?',
+        [$workoutId, $userId])->fetch();
+    if (!$workout) {
+        send_error(404, 'Тренировка не найдена.');
     }
+
+    $exercises = query('SELECT we.id, we.exercise_id, we.position, we.notes, e.name AS exercise_name, e.muscle_group, e.image
+        FROM workout_exercises we
+        JOIN exercises e ON e.id = we.exercise_id
+        WHERE we.workout_id = ?
+        ORDER BY we.position', [$workoutId])->fetchAll();
+
+    // Подходы для каждого упражнения. & — меняем сам элемент массива, а не его копию.
+    foreach ($exercises as &$exercise) {
+        $exercise['sets'] = query('SELECT id, set_number, repetitions, weight_kg, notes FROM workout_sets
+            WHERE workout_exercise_id = ? ORDER BY set_number', [$exercise['id']])->fetchAll();
+    }
+    unset($exercise);
+
+    $workout['exercises'] = $exercises;
+    return $workout;
+}
+
+// Все тренировки пользователя, новые сверху.
+function list_workouts($userId)
+{
+    $rows = query('SELECT id FROM workouts WHERE user_id = ? ORDER BY workout_date DESC, id DESC', [$userId])->fetchAll();
+    $workouts = [];
+    foreach ($rows as $row) {
+        $workouts[] = find_workout($row['id'], $userId);
+    }
+    return $workouts;
+}
+
+// Проверяем форму тренировки и возвращаем чистые данные.
+function workout_input($data)
+{
     $exercises = [];
-    foreach ($items as $item) {
-        if (!is_array($item)) {
-            invalid('exercises', 'Упражнение указано некорректно.');
-        }
-        $sets = $item['sets'] ?? [];
-        if (!is_array($sets) || !array_is_list($sets)) {
-            invalid('sets', 'Передайте список подходов.');
-        }
-        $preparedSets = [];
-        foreach ($sets as $set) {
-            if (!is_array($set)) {
-                invalid('sets', 'Подход указан некорректно.');
-            }
-            $preparedSets[] = [
-                'repetitions' => number_value($set, 'repetitions', 1000, true),
+    foreach (list_value($data, 'exercises', 'Передайте список упражнений.') as $item) {
+        $sets = [];
+        foreach (list_value($item, 'sets', 'Передайте список подходов.') as $set) {
+            $sets[] = [
+                'repetitions' => whole_number_value($set, 'repetitions', 1000),
                 'weight_kg' => number_value($set, 'weight_kg', 10000),
                 'notes' => optional_text_value($set, 'notes', 500),
             ];
@@ -31,12 +58,13 @@ function workout_input(array $data): array
         $exercises[] = [
             'exercise_id' => id_value($item, 'exercise_id'),
             'notes' => optional_text_value($item, 'notes', 2000),
-            'sets' => $preparedSets,
+            'sets' => $sets,
         ];
     }
     if (count($exercises) === 0) {
         invalid('exercises', 'Добавьте хотя бы одно упражнение.');
     }
+
     return [
         'workout_date' => past_date_value($data, 'workout_date'),
         'notes' => optional_text_value($data, 'notes', 4000),
@@ -44,140 +72,69 @@ function workout_input(array $data): array
     ];
 }
 
-// Тренировку ищем сразу по id и владельцу: чужая выглядит так же, как несуществующая.
-function owned_workout(int $workoutId, int $userId, bool $lock = false): array
+// Сохранить тренировку: без $workoutId — новая, с $workoutId — правка.
+function save_workout($userId, $data, $workoutId = null)
 {
-    $sql = 'SELECT id, workout_date, notes, created_at FROM workouts WHERE id = ? AND user_id = ?';
-    if ($lock) {
-        $sql .= ' FOR UPDATE';
-    }
-    $workout = query($sql, [$workoutId, $userId])->fetch();
-    if (!$workout) {
-        throw new ApiError(404, 'Тренировка не найдена.');
-    }
-    return $workout;
-}
+    $input = workout_input($data);
 
-function workout_payload(int $workoutId, int $userId): array
-{
-    $workout = owned_workout($workoutId, $userId);
-    $exercises = query('SELECT we.id, we.exercise_id, we.position, we.notes, e.name AS exercise_name, e.muscle_group, e.image
-        FROM workout_exercises we JOIN exercises e ON e.id = we.exercise_id
-        WHERE we.workout_id = ? ORDER BY we.position', [$workoutId])->fetchAll();
-    foreach ($exercises as $index => $exercise) {
-        $exercises[$index]['sets'] = query('SELECT id, set_number, repetitions, weight_kg, notes
-            FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number', [$exercise['id']])->fetchAll();
+    // Какие упражнения уже были в тренировке до правки.
+    $oldExerciseIds = [];
+    if ($workoutId !== null) {
+        find_workout($workoutId, $userId); // 404, если тренировка чужая или её нет
+        $rows = query('SELECT exercise_id FROM workout_exercises WHERE workout_id = ?', [$workoutId])->fetchAll();
+        foreach ($rows as $row) {
+            $oldExerciseIds[] = $row['exercise_id'];
+        }
     }
-    $workout['exercises'] = $exercises;
-    return $workout;
-}
 
-// MySQL хранит BOOLEAN как число: 1 — активно, 0 — отключено.
-function active_catalog_value(mixed $value): bool
-{
-    return (int) $value === 1;
-}
+    // Сначала проверяем все упражнения, пока в базе ещё ничего не поменяли.
+    // Подходит общее упражнение или своё упражнение этого пользователя. Отключённое
+    // упражнение можно оставить в старой тренировке, но нельзя выбрать заново.
+    foreach ($input['exercises'] as $exercise) {
+        $found = query('SELECT is_active FROM exercises WHERE id = ? AND (user_id IS NULL OR user_id = ?)',
+            [$exercise['exercise_id'], $userId])->fetch();
+        $wasInWorkout = in_array($exercise['exercise_id'], $oldExerciseIds);
+        if (!$found || ($found['is_active'] == 0 && !$wasInWorkout)) {
+            invalid('exercises', 'Выберите активное упражнение из справочника.');
+        }
+    }
 
-// Создаёт тренировку ($workoutId = null) или перезаписывает упражнения существующей.
-// Всё в одной транзакции: при любой ошибке в базе ничего не меняется.
-function write_workout(int $userId, array $input, ?int $workoutId = null): array
-{
+    // Записываем. Транзакция: либо сохранится всё, либо (если база упадёт посередине) ничего.
     $db = database();
     $db->beginTransaction();
-    try {
-        // Сколько раз каждое упражнение уже было в этой тренировке до правки.
-        $countsBefore = [];
-        if ($workoutId === null) {
-            $workoutId = insert('INSERT INTO workouts (user_id, workout_date, notes) VALUES (?, ?, ?)', [
-                $userId, $input['workout_date'], $input['notes'],
-            ]);
-        } else {
-            owned_workout($workoutId, $userId, true);
-            $rows = query('SELECT exercise_id, COUNT(*) AS occurrences FROM workout_exercises
-                WHERE workout_id = ? GROUP BY exercise_id', [$workoutId])->fetchAll();
-            foreach ($rows as $row) {
-                $countsBefore[(int) $row['exercise_id']] = (int) $row['occurrences'];
-            }
-            query('UPDATE workouts SET workout_date = ?, notes = ? WHERE id = ?', [
-                $input['workout_date'], $input['notes'], $workoutId,
-            ]);
-            // Упражнения и подходы проще записать заново; подходы удалятся каскадом.
-            query('DELETE FROM workout_exercises WHERE workout_id = ?', [$workoutId]);
-        }
 
-        $countsNow = [];
-        foreach ($input['exercises'] as $position => $exercise) {
-            $exerciseId = $exercise['exercise_id'];
-            // Подходит упражнение из общего справочника или своё упражнение этого пользователя.
-            $catalogExercise = query('SELECT is_active FROM exercises WHERE id = ? AND (user_id IS NULL OR user_id = ?)', [
-                $exerciseId, $userId,
-            ])->fetch();
-            if (!$catalogExercise) {
-                invalid('exercises', 'Выберите активное упражнение из справочника.');
-            }
-
-            // Отключённое упражнение можно оставить в старой тренировке,
-            // но нельзя добавить ещё раз сверх того, что уже было.
-            $countsNow[$exerciseId] = ($countsNow[$exerciseId] ?? 0) + 1;
-            $isActive = active_catalog_value($catalogExercise['is_active']);
-            $wasThereBefore = $countsNow[$exerciseId] <= ($countsBefore[$exerciseId] ?? 0);
-            if (!$isActive && !$wasThereBefore) {
-                invalid('exercises', 'Выберите активное упражнение из справочника.');
-            }
-
-            $workoutExerciseId = insert('INSERT INTO workout_exercises (workout_id, exercise_id, position, notes)
-                VALUES (?, ?, ?, ?)', [$workoutId, $exerciseId, $position + 1, $exercise['notes']]);
-            foreach ($exercise['sets'] as $setIndex => $set) {
-                query('INSERT INTO workout_sets (workout_exercise_id, set_number, repetitions, weight_kg, notes)
-                    VALUES (?, ?, ?, ?, ?)', [$workoutExerciseId, $setIndex + 1, $set['repetitions'], $set['weight_kg'], $set['notes']]);
-            }
-        }
-        $db->commit();
-    } catch (Throwable $error) {
-        if ($db->inTransaction()) {
-            $db->rollBack();
-        }
-        throw $error;
+    if ($workoutId === null) {
+        $workoutId = insert('INSERT INTO workouts (user_id, workout_date, notes) VALUES (?, ?, ?)',
+            [$userId, $input['workout_date'], $input['notes']]);
+    } else {
+        query('UPDATE workouts SET workout_date = ?, notes = ? WHERE id = ?',
+            [$input['workout_date'], $input['notes'], $workoutId]);
+        // Старые упражнения удаляем и записываем список заново. Их подходы удалит
+        // сама база (ON DELETE CASCADE в схеме).
+        query('DELETE FROM workout_exercises WHERE workout_id = ?', [$workoutId]);
     }
-    return workout_payload($workoutId, $userId);
-}
 
-function list_workouts(int $userId): never
-{
-    $rows = query('SELECT id FROM workouts WHERE user_id = ? ORDER BY workout_date DESC, id DESC', [$userId])->fetchAll();
-    $workouts = [];
-    foreach ($rows as $row) {
-        $workouts[] = workout_payload((int) $row['id'], $userId);
+    $position = 1;
+    foreach ($input['exercises'] as $exercise) {
+        $workoutExerciseId = insert('INSERT INTO workout_exercises (workout_id, exercise_id, position, notes) VALUES (?, ?, ?, ?)',
+            [$workoutId, $exercise['exercise_id'], $position, $exercise['notes']]);
+        $position++;
+
+        $setNumber = 1;
+        foreach ($exercise['sets'] as $set) {
+            query('INSERT INTO workout_sets (workout_exercise_id, set_number, repetitions, weight_kg, notes) VALUES (?, ?, ?, ?, ?)',
+                [$workoutExerciseId, $setNumber, $set['repetitions'], $set['weight_kg'], $set['notes']]);
+            $setNumber++;
+        }
     }
-    respond(['workouts' => $workouts]);
+
+    $db->commit();
+    return find_workout($workoutId, $userId);
 }
 
-// Общий справочник плюс упражнения, которые пользователь добавил сам (user_id = он).
-function list_exercises(int $userId): never
+function delete_workout($workoutId, $userId)
 {
-    $exercises = query('SELECT id, name, muscle_group, description, image, user_id FROM exercises
-        WHERE is_active = TRUE AND (user_id IS NULL OR user_id = ?) ORDER BY name, id', [$userId])->fetchAll();
-    respond(['exercises' => $exercises]);
-}
-
-// Своё упражнение: его нет в общем справочнике, поэтому пользователь добавляет его сам.
-// Видно оно только ему (user_id), администратор его не правит.
-function create_own_exercise(int $userId, array $data): never
-{
-    $name = text_value($data, 'name', 150);
-    $muscleGroup = optional_text_value($data, 'muscle_group', 100);
-    $id = insert('INSERT INTO exercises (name, muscle_group, user_id) VALUES (?, ?, ?)', [
-        $name, $muscleGroup, $userId,
-    ]);
-    $exercise = query('SELECT id, name, muscle_group, description, image, user_id FROM exercises WHERE id = ?', [$id])->fetch();
-    respond(['exercise' => $exercise], 201);
-}
-
-function delete_workout(int $workoutId, int $userId): never
-{
-    $deleted = query('DELETE FROM workouts WHERE id = ? AND user_id = ?', [$workoutId, $userId]);
-    if ($deleted->rowCount() !== 1) {
-        throw new ApiError(404, 'Тренировка не найдена.');
-    }
-    respond(['deleted' => true]);
+    find_workout($workoutId, $userId); // 404, если тренировка чужая или её нет
+    // Упражнения и подходы удалятся вместе с тренировкой (ON DELETE CASCADE).
+    query('DELETE FROM workouts WHERE id = ?', [$workoutId]);
 }
