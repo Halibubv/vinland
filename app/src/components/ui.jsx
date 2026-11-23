@@ -1,9 +1,9 @@
-// Мелкие общие элементы интерфейса: поле формы, полоска прогресса,
-// каркас страницы раздела, сообщение об ошибке и пустое состояние.
+// Мелкие общие элементы интерфейса, которые нужны на нескольких страницах:
+// поле формы, каркас страницы, сообщение об ошибке, пустой список,
+// выбор даты и фото у записи.
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { formatInt, percentOf } from '../lib/format.js';
-import { ASSETS } from '../lib/constants.js';
+import { dateLabel, localDate, offsetDate } from '../format.js';
 
 // Поле формы с подписью и текстом ошибки. Для пароля есть кнопка-глазок «Показать пароль».
 export function Field({
@@ -49,7 +49,7 @@ export function Field({
             onClick={() => setPasswordVisible(!passwordVisible)}
             aria-label={passwordVisible ? 'Скрыть пароль' : 'Показать пароль'}
           >
-            <img src={`${ASSETS}${passwordVisible ? 'icon-eye-off.svg' : 'icon-eye.svg'}`} alt="" />
+            <img src={`/assets/${passwordVisible ? 'icon-eye-off.svg' : 'icon-eye.svg'}`} alt="" />
           </button>
         )}
       </div>
@@ -59,38 +59,6 @@ export function Field({
         </small>
       )}
     </label>
-  );
-}
-
-// Полоска «съедено / цель» (используется в демо-блоке на лендинге).
-export function Progress({ label, value, target, unit = 'г' }) {
-  const percent = percentOf(value, target);
-  return (
-    <div className="progress-stat">
-      <div className="progress-label">
-        <span>{label}</span>
-        <strong>
-          {formatInt(value)} / {target ? formatInt(target) : '—'} {unit}
-        </strong>
-      </div>
-      <div className="progress-track">
-        <span style={{ width: `${percent}%` }} />
-      </div>
-      <span className="progress-percent">{target ? `${percent}%` : 'Цель не задана'}</span>
-    </div>
-  );
-}
-
-// Ссылка назад над заголовком страницы: "‹ Тренировки / 27 сентября 2026".
-export function BackLink({ to, label, current }) {
-  return (
-    <nav className="back-link" aria-label="Навигация по разделу">
-      <Link to={to}>
-        <span aria-hidden="true">‹</span>
-        {label}
-      </Link>
-      {current && <span className="back-link-current"> / {current}</span>}
-    </nav>
   );
 }
 
@@ -140,5 +108,101 @@ export function Empty({ title, detail, action, to }) {
         </Link>
       )}
     </div>
+  );
+}
+
+// Выбор даты: стрелки листают дни, а по клику на дату открывается календарь.
+// Выглядит как "‹ 16 октября 2026 ›". Поверх подписи лежит невидимый <input type="date">.
+// Дальше сегодняшнего дня листать нельзя: записывать еду и тренировки на будущее нет смысла.
+export function DateStepper({ value, onChange, label = 'Дата', className = '' }) {
+  const today = localDate();
+  const isToday = value >= today;
+
+  function openCalendar(event) {
+    // showPicker есть не во всех браузерах, поэтому сначала проверяем.
+    if (event.currentTarget.showPicker) event.currentTarget.showPicker();
+  }
+
+  return (
+    <div className={`date-stepper ${className}`}>
+      <img src="/assets/icon-calendar.svg" alt="" />
+      <button
+        type="button"
+        aria-label="Предыдущий день"
+        onClick={() => onChange(offsetDate(value, -1))}
+      >
+        ‹
+      </button>
+      <label className="date-stepper-value">
+        <span>{dateLabel(value)}</span>
+        <input
+          type="date"
+          value={value}
+          max={today}
+          aria-label={label}
+          onClick={openCalendar}
+          onChange={(event) => {
+            // Пустое значение бывает, когда в календаре нажали «Очистить».
+            // Дату из будущего, набранную вручную, заменяем на сегодня.
+            if (event.target.value)
+              onChange(event.target.value > today ? today : event.target.value);
+          }}
+        />
+      </label>
+      <button
+        type="button"
+        aria-label="Следующий день"
+        disabled={isToday}
+        onClick={() => onChange(offsetDate(value, 1))}
+      >
+        ›
+      </button>
+    </div>
+  );
+}
+
+// Фото упражнений по группе мышц (файлы в public/assets/entries).
+const musclePhotos = {
+  Ноги: 'exercise-legs.jpg',
+  Грудь: 'exercise-chest.jpg',
+  Спина: 'exercise-back.jpg',
+  Плечи: 'exercise-shoulders.jpg',
+  Руки: 'exercise-arms.jpg',
+  Пресс: 'exercise-abs.jpg',
+};
+
+// Картинка из справочника (поле image) или null, если её нет.
+// Картинки лежат в public/assets/catalog.
+export function catalogImageUrl(item) {
+  if (!item || !item.image) return null;
+  return `/assets/catalog/${item.image}`;
+}
+
+// Фото упражнения: своя картинка из справочника (image), иначе общее фото
+// группы мышц, иначе null (своё упражнение без группы).
+export function exercisePhoto(muscleGroup, image) {
+  if (image) return `/assets/catalog/${image}`;
+  const file = musclePhotos[muscleGroup];
+  if (!file) return null;
+  return `/assets/entries/${file}`;
+}
+
+// Картинка слева от записи в списке: у приёма пищи — фото по его типу,
+// у упражнения — своя картинка или фото по группе мышц, а если фото нет — иконка гантели.
+export function EntryPhoto({ meal, muscleGroup, image }) {
+  let photo = exercisePhoto(muscleGroup, image);
+  if (meal) photo = `/assets/entries/meal-${meal}.jpg`;
+
+  if (!photo) {
+    return (
+      <span className="entry-icon" title={muscleGroup}>
+        <img src="/assets/icon-dumbbell.svg" alt="" />
+      </span>
+    );
+  }
+  return (
+    <span className="entry-icon entry-icon--photo" title={muscleGroup}>
+      <img src={photo} alt="" />
+    </span>
   );
 }

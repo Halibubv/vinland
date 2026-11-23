@@ -1,0 +1,35 @@
+/* Плитки статистики на панели администратора */
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 0 0 var(--space-m);
+  padding: 0;
+  list-style: none;
+}
+.admin-stats li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 20px;
+}
+.admin-stats strong {
+  font-size: 32px;
+  line-height: 1.1;
+}
+.admin-stats span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Таблица пользователей: на телефоне её можно прокрутить вбок */
+.admin-panel:has(.admin-users) {
+  overflow-x: auto;
+}
+.admin-users select {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--cream);
+}

@@ -1,11 +1,11 @@
 // Администрирование справочников упражнений и продуктов (только для роли admin).
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../lib/api.js';
-import { formatNumber } from '../lib/format.js';
-import { ASSETS } from '../lib/constants.js';
-import { Notice, Empty } from '../components/ui.jsx';
-import { Modal } from '../components/Dialogs.jsx';
+import { api } from '../api.js';
+import { formatNumber } from '../format.js';
+import { Notice, Empty, catalogImageUrl } from '../components/ui.jsx';
+import { Modal, CatalogThumb } from '../components/Dialogs.jsx';
+import { squarePhoto } from '../image.js';
 import './AdminCatalog.css';
 
 // Тексты и пустая форма для каждого из двух справочников.
@@ -60,6 +60,32 @@ function rowSummary(kind, row) {
   return `${calories} ккал · Б ${protein} · Ж ${fat} · У ${carbs} / 100 г`;
 }
 
+// Вкладки админки: панель с пользователями и два справочника. current — открытая вкладка.
+export function AdminTabs({ current }) {
+  const tabs = [
+    { key: 'users', title: 'Панель и пользователи' },
+    { key: 'exercises', title: kinds.exercises.tab },
+    { key: 'products', title: kinds.products.tab },
+  ];
+  return (
+    <nav className="admin-tabs" aria-label="Администрирование">
+      {tabs.map((tab) => (
+        <Link
+          key={tab.key}
+          to={`/admin/${tab.key}`}
+          className={current === tab.key ? 'selected' : ''}
+          aria-current={current === tab.key ? 'page' : undefined}
+        >
+          {tab.title}
+        </Link>
+      ))}
+      <Link to="/" className="admin-back wide-only">
+        ← В пользовательское приложение
+      </Link>
+    </nav>
+  );
+}
+
 // Окно добавления или редактирования записи. entry = null — новая запись.
 function EntryDialog({ kind, entry, onSaved, onClose }) {
   const [form, setForm] = useState(() => {
@@ -70,6 +96,18 @@ function EntryDialog({ kind, entry, onSaved, onClose }) {
   const [fields, setFields] = useState({});
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  // Новое фото, выбранное в форме (строка data:image/jpeg;base64,...), или '' — фото не меняли.
+  const [photo, setPhoto] = useState('');
+
+  async function choosePhoto(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    try {
+      setPhoto(await squarePhoto(file, 320));
+    } catch (problem) {
+      setError(problem.message);
+    }
+  }
 
   function updateField(key, value) {
     setForm({ ...form, [key]: value });
@@ -81,10 +119,14 @@ function EntryDialog({ kind, entry, onSaved, onClose }) {
     setError('');
     setFields({});
     try {
-      await api(entry ? `/admin/${kind}/${entry.id}` : `/admin/${kind}`, {
-        method: entry ? 'PUT' : 'POST',
-        body: form,
-      });
+      let data;
+      if (entry) data = await api(`/admin/${kind}/${entry.id}`, 'PUT', form);
+      else data = await api(`/admin/${kind}`, 'POST', form);
+      // Если выбрали фото — отправляем его отдельным запросом, когда у записи уже есть id.
+      if (photo) {
+        const saved = kind === 'exercises' ? data.exercise : data.product;
+        await api(`/admin/${kind}/${saved.id}/image`, 'PUT', { image: photo });
+      }
       onSaved();
     } catch (problem) {
       setError(problem.message);
@@ -155,6 +197,16 @@ function EntryDialog({ kind, entry, onSaved, onClose }) {
             ))}
           </div>
         )}
+        <div className="admin-photo">
+          {(photo || catalogImageUrl(entry)) && (
+            <img src={photo || catalogImageUrl(entry)} alt="Фото записи" />
+          )}
+          <label className="button button--outline">
+            {photo || catalogImageUrl(entry) ? 'Заменить фото' : 'Загрузить фото'}
+            <input type="file" accept="image/*" className="sr-only" onChange={choosePhoto} />
+          </label>
+          {fields.image && <small className="field-error">{fields.image}</small>}
+        </div>
         <label className="admin-form-check">
           <input
             type="checkbox"
@@ -219,7 +271,7 @@ export function AdminCatalog({ kind, user }) {
       // Отправляем ту же запись, поменяв только is_active (id уже есть в адресе).
       const body = { ...row, is_active: !isActive(row) };
       delete body.id;
-      await api(`/admin/${kind}/${row.id}`, { method: 'PUT', body });
+      await api(`/admin/${kind}/${row.id}`, 'PUT', body);
       reload();
     } catch (problem) {
       setError(problem.message);
@@ -245,21 +297,7 @@ export function AdminCatalog({ kind, user }) {
         {isAdmin && (
           <>
             <p className="admin-caption narrow-only">Администратор · Справочники</p>
-            <nav className="admin-tabs" aria-label="Справочники">
-              {Object.entries(kinds).map(([key, item]) => (
-                <Link
-                  key={key}
-                  to={`/admin/${key}`}
-                  className={kind === key ? 'selected' : ''}
-                  aria-current={kind === key ? 'page' : undefined}
-                >
-                  {item.tab}
-                </Link>
-              ))}
-              <Link to="/" className="admin-back wide-only">
-                ← В пользовательское приложение
-              </Link>
-            </nav>
+            <AdminTabs current={kind} />
 
             <section className="admin-panel">
               <div className="admin-tools">
@@ -273,7 +311,7 @@ export function AdminCatalog({ kind, user }) {
                   />
                 </label>
                 <button className="button button--primary" onClick={() => setEditing('new')}>
-                  <img src={`${ASSETS}icon-plus.svg`} alt="" />
+                  <img src="/assets/icon-plus.svg" alt="" />
                   Добавить {text.one}
                 </button>
               </div>
@@ -316,7 +354,12 @@ export function AdminCatalog({ kind, user }) {
                     <tbody>
                       {filtered.map((row) => (
                         <tr key={row.id}>
-                          <th scope="row">{row.name}</th>
+                          <th scope="row">
+                            <span className="admin-name">
+                              <CatalogThumb src={catalogImageUrl(row)} name={row.name} />
+                              {row.name}
+                            </span>
+                          </th>
                           {kind === 'exercises' ? (
                             <>
                               <td>{row.muscle_group || '—'}</td>
@@ -347,7 +390,7 @@ export function AdminCatalog({ kind, user }) {
                         <p>{rowSummary(kind, row)}</p>
                         <Status row={row} />
                         <button className="button button--outline" onClick={() => setEditing(row)}>
-                          <img src={`${ASSETS}icon-pencil.svg`} alt="" />
+                          <img src="/assets/icon-pencil.svg" alt="" />
                           Редактировать
                         </button>
                         <button

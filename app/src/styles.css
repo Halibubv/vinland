@@ -647,10 +647,16 @@ h3 {
   width: 42px;
   height: 42px;
   flex: none;
+  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 50%;
   background: var(--surface);
   font-size: 14px;
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .logout {
   /* Без отступов кнопки — текст доходит до правого края, как контент ниже. */

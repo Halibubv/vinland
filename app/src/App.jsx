@@ -1,15 +1,8 @@
 // Корневой компонент: узнаёт, кто вошёл, и по адресу страницы выбирает экран.
 // Какой экран показать по какому адресу, решает React Router (<Routes> и <Route>).
 import React, { useEffect, useState } from 'react';
-import {
-  Routes,
-  Route,
-  Navigate,
-  useLocation,
-  useNavigate,
-  useSearchParams,
-} from 'react-router-dom';
-import { api, session } from './lib/api.js';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { api } from './api.js';
 import { Brand, LinkButton, AppHeader, Footer } from './components/Layout.jsx';
 import { Landing } from './pages/Landing.jsx';
 import { AuthPage } from './pages/AuthPage.jsx';
@@ -23,6 +16,7 @@ import { MealEditor } from './pages/MealEditor.jsx';
 import { NutritionHistory } from './pages/NutritionHistory.jsx';
 import { StatisticsPage } from './pages/Statistics.jsx';
 import { AdminCatalog } from './pages/AdminCatalog.jsx';
+import { AdminUsers } from './pages/AdminUsers.jsx';
 
 function NotFound() {
   return (
@@ -33,24 +27,6 @@ function NotFound() {
       </LinkButton>
     </main>
   );
-}
-
-// Адрес для возврата после входа (параметр ?next=). Принимаем только свои страницы:
-// путь начинается с одного "/". Адрес "//site.com", обратная косая черта или невидимые
-// символы могут увести на чужой сайт — тогда отправляем на главную.
-function safeReturnPath(value) {
-  if (!value || !value.startsWith('/')) return '/';
-  if (value.startsWith('//') || /[\\\u0000-\u001f]/.test(value)) return '/';
-  const path = value.split('?')[0];
-  if (path === '/login' || path === '/register') return '/';
-  return value;
-}
-
-// Вошедший пользователь открыл /login или /register: уводим туда, откуда его
-// попросили войти (/login?next=/statistics), или на главную.
-function AfterLogin() {
-  const [searchParams] = useSearchParams();
-  return <Navigate to={safeReturnPath(searchParams.get('next'))} replace />;
 }
 
 function SessionError({ message }) {
@@ -81,7 +57,7 @@ export default function App() {
 
   // При открытии страницы спрашиваем сервер, кто вошёл.
   useEffect(() => {
-    session()
+    api('/session')
       .then((data) => setUser(data.user))
       .catch((error) => {
         setSessionError(error.message);
@@ -94,23 +70,10 @@ export default function App() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  // Это событие посылает lib/api.js, когда сессия на сервере закончилась.
-  useEffect(() => {
-    function handleExpired() {
-      setSessionError('Сессия истекла. Войдите снова.');
-      setUser(null);
-      // Запоминаем страницу, чтобы после входа вернуться на неё.
-      const here = window.location.pathname + window.location.search;
-      navigate(`/login?next=${encodeURIComponent(here)}`);
-    }
-    window.addEventListener('vinland:auth-required', handleExpired);
-    return () => window.removeEventListener('vinland:auth-required', handleExpired);
-  }, []);
-
   async function logout() {
     setLogoutBusy(true);
     try {
-      await api('/auth/logout', { method: 'POST' });
+      await api('/auth/logout', 'POST');
       setUser(null);
       navigate('/');
     } catch (error) {
@@ -131,7 +94,7 @@ export default function App() {
 
   // Гость: на главной — лендинг, на /register — регистрация, на любом другом
   // адресе — форма входа. После входа адрес не меняется, и на нём сразу
-  // открывается нужная страница (а с /login уводит AfterLogin).
+  // открывается нужная страница (а с /login и /register — главная).
   if (!user) {
     return (
       <>
@@ -146,17 +109,15 @@ export default function App() {
     );
   }
 
-  // key={location.pathname}: при переходе на другой адрес экран создаётся заново
-  // и загружает свои данные (например, с /nutrition/new на /nutrition/5).
   return (
     <>
       <AppHeader user={user} onLogout={logout} busy={logoutBusy} />
       <SessionError message={sessionError} />
-      <Routes key={location.pathname}>
+      <Routes>
         <Route path="/" element={<Home user={user} />} />
         {/* Вошедшему пользователю страницы входа не нужны — отправляем на главную. */}
-        <Route path="/login" element={<AfterLogin />} />
-        <Route path="/register" element={<AfterLogin />} />
+        <Route path="/login" element={<Navigate to="/" replace />} />
+        <Route path="/register" element={<Navigate to="/" replace />} />
         <Route path="/ui/" element={<Navigate to="/" replace />} />
         <Route
           path="/profile"
@@ -168,13 +129,22 @@ export default function App() {
         <Route path="/workouts/new" element={<WorkoutEditor />} />
         <Route path="/workouts/:id" element={<WorkoutView />} />
         <Route path="/workouts/:id/edit" element={<WorkoutEditor />} />
+        {/* Дневник питания: сегодня или выбранный день. */}
         <Route path="/nutrition" element={<NutritionPage />} />
-        <Route path="/nutrition/new" element={<MealEditor />} />
+        <Route path="/nutrition/day/:date" element={<NutritionPage />} />
         <Route path="/nutrition/history" element={<NutritionHistory />} />
+        <Route path="/nutrition/history/:date" element={<NutritionPage history />} />
+        {/* Новый приём пищи. На /add сразу открывается окно выбора продукта. */}
+        <Route path="/nutrition/new" element={<MealEditor />} />
+        <Route path="/nutrition/add/:date" element={<MealEditor openPicker />} />
+        <Route path="/nutrition/add/:date/:type" element={<MealEditor openPicker />} />
+        {/* Редактирование сохранённого приёма пищи. */}
         <Route path="/nutrition/:id" element={<MealEditor />} />
+        <Route path="/nutrition/:id/add" element={<MealEditor openPicker />} />
         <Route path="/statistics" element={<StatisticsPage />} />
         <Route path="/admin/exercises" element={<AdminCatalog kind="exercises" user={user} />} />
         <Route path="/admin/products" element={<AdminCatalog kind="products" user={user} />} />
+        <Route path="/admin/users" element={<AdminUsers user={user} />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Footer />
