@@ -49,9 +49,12 @@ function date_days_ago(int $daysAgo): string
 }
 
 // Администратор для демонстрации админки: admin@vinland.local / VinlandAdmin2026.
-// Создаётся один раз, если его ещё нет.
+// Создаётся один раз, если его ещё нет, и только там, где известный всем пароль не опасен:
+// на своём компьютере (APP_ENV=development) или на публичном демо, где админка только
+// для просмотра (DEMO_MODE=1, см. public/index.php).
 $adminEmail = 'admin@vinland.local';
-if (!query('SELECT id FROM users WHERE email = ?', [$adminEmail])->fetchColumn()) {
+$adminAllowed = config('APP_ENV') === 'development' || config('DEMO_MODE') === '1';
+if ($adminAllowed && !query('SELECT id FROM users WHERE email = ?', [$adminEmail])->fetchColumn()) {
     query("INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'admin')",
         [$adminEmail, password_hash('VinlandAdmin2026', PASSWORD_DEFAULT), 'Администратор']);
     echo "Admin account: {$adminEmail} / VinlandAdmin2026\n";
